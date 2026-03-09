@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="vibe-music-server:Web exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/vibe_music_server_Web_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="vibe-music-server/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="vibe-music-server" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>
