@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { sendChatMessage } from '@/api/chat'
+import { sendChatMessage, type ChatMessage } from '@/api/chat'
 import { ElMessage } from 'element-plus'
 import { Icon } from '@iconify/vue'
 
-const messages = ref<{ role: 'user' | 'assistant'; content: string }[]>([])
+const messages = ref<ChatMessage[]>([])
 const inputMessage = ref('')
 const loading = ref(false)
 const scrollbarRef = ref<HTMLElement | null>(null)
@@ -26,7 +26,7 @@ const handleSend = async () => {
   scrollToBottom()
 
   try {
-    const res = await sendChatMessage(userMsg)
+    const res = await sendChatMessage(messages.value)
     if (res.code === 0) {
       messages.value.push({ role: 'assistant', content: res.data })
     } else {

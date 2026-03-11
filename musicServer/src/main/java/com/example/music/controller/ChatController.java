@@ -22,7 +22,8 @@ public class ChatController {
 
     @PostMapping("/ask")
     public Result<String> ask(@RequestBody ChatRequestDTO chatRequestDTO) {
-        if (chatRequestDTO.getMessage() == null || chatRequestDTO.getMessage().isEmpty()) {
+        if ((chatRequestDTO.getMessage() == null || chatRequestDTO.getMessage().isEmpty()) &&
+                (chatRequestDTO.getMessages() == null || chatRequestDTO.getMessages().isEmpty())) {
             return Result.error("Message cannot be empty");
         }
         String response = deepSeekService.chat(chatRequestDTO);
