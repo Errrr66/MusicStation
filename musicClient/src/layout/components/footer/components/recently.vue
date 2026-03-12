@@ -1,15 +1,37 @@
 <script setup lang="ts">
 import { formatMillisecondsToTime } from '@/utils'
 import { trackModel } from '@/stores/interface'
+import { AudioStore } from '@/stores/modules/audio'
 import { MenuStore } from '@/stores/modules/menu'
-import { storeToRefs } from 'pinia'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { ref, computed } from 'vue'
+
+const props = defineProps({
+  isGlobal: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const menuStore = MenuStore()
-const { isPlaylistOpen } = storeToRefs(menuStore)
 const audio = AudioStore()
 const { loadTrack, play, audioElement } = useAudioPlayer()
 
 const mouseOverIndex = ref(-1) // 用于跟踪鼠标悬停的索引
+const localIsPlaylistOpen = ref(false)
+
+const isPlaylistOpen = computed({
+  get() {
+    return props.isGlobal ? menuStore.isPlaylistOpen : localIsPlaylistOpen.value
+  },
+  set(val: boolean) {
+    if (props.isGlobal) {
+      menuStore.setPlaylistOpen(val)
+    } else {
+      localIsPlaylistOpen.value = val
+    }
+  }
+})
 
 const playMusic = async (song: trackModel) => {
   audio.addTracks(song)

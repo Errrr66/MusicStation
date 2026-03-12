@@ -78,7 +78,7 @@ const togglePlayMode = () => {
       size="small"
       :max="100"
     />
-    <Recently />
+    <Recently :is-global="true" />
   </div>
 </template>
 <style lang="scss">

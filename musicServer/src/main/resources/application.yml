@@ -96,9 +96,9 @@ minio:
 # 请根据你的实际情况修改上述配置文件中的数据库、Redis、MinIO 和邮件服务的相关信息。
 # java版本为17
 
-# cd E:\Redis / redis-server.exe
-# cd E:\IntelliJ IDEA\workspace\music\minio\bin / minio.exe server "E:\IntelliJ IDEA\workspace\music\minio\data"
-# cd E:\PyCharm\workspace\shazamIO / python shazam_server.py
+# cd /d E:\Redis && redis-server.exe
+# cd E:\IntelliJ IDEA\workspace\music\minio\bin && minio.exe server "E:\IntelliJ IDEA\workspace\music\minio\data"
+# cd E:\PyCharm\workspace\shazamIO && python shazam_server.py
 
 # 管理端启动：npx pnpm dev/pnpm dev
 # 前端启动：npm run dev/pnpm dev

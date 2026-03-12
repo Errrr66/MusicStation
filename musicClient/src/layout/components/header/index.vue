@@ -41,18 +41,35 @@ const handleRecognitionSuccess = async (result: any) => {
   const simplifiedTitle = converter(originalTitle)
   const simplifiedArtist = converter(originalArtist)
 
+  // 提取核心标题（去除括号内容），用于匹配不同版本（如 feat. 等）
+  const cleanTitle = (str: string) => {
+    return str.replace(/\s*[\(\[（].*?[\)\]）]/g, '').trim()
+  }
+  const coreTitle = cleanTitle(originalTitle)
+  const simplifiedCoreTitle = converter(coreTitle)
+
   try {
-    // 优先使用简体中文搜索本地曲库
+    // 1. 优先使用简体中文搜索本地曲库
     let res = await getAllSongs({
       songName: simplifiedTitle,
       pageNum: 1,
       pageSize: 20 // 增加搜索范围
     })
 
-    // 如果简体中文搜索无结果且标题不同，尝试原标题搜索
+    // 2. 如果无结果且标题不同，尝试原标题搜索
     if ((!res.data || !res.data.items || res.data.items.length === 0) && originalTitle !== simplifiedTitle) {
-       res = await getAllSongs({
+      res = await getAllSongs({
         songName: originalTitle,
+        pageNum: 1,
+        pageSize: 20
+      })
+    }
+
+    // 3. 如果还是无结果，且核心标题与原标题不同（说明有括号内容），尝试使用核心标题搜索
+    // 这能解决如：识别出 "Song (feat. X)" 但本地只有 "Song" 的情况
+    if ((!res.data || !res.data.items || res.data.items.length === 0) && coreTitle.length > 0 && coreTitle !== originalTitle) {
+      res = await getAllSongs({
+        songName: simplifiedCoreTitle,
         pageNum: 1,
         pageSize: 20
       })
@@ -65,10 +82,12 @@ const handleRecognitionSuccess = async (result: any) => {
           const itemTitle = item.songName.toLowerCase()
           const searchTitleSimp = simplifiedTitle.toLowerCase()
           const searchTitleOrig = originalTitle.toLowerCase()
+          const searchCoreSimp = simplifiedCoreTitle.toLowerCase()
 
           return itemTitle.includes(searchTitleSimp) ||
                  itemTitle.includes(searchTitleOrig) ||
-                 searchTitleSimp.includes(itemTitle)
+                 searchTitleSimp.includes(itemTitle) ||
+                 (searchCoreSimp.length > 1 && itemTitle.includes(searchCoreSimp))
        })
 
        if (matches.length > 0) {
