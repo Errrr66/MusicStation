@@ -65,14 +65,25 @@ watch(
 <template>
   <div class="flex-1 h-full flex flex-col overflow-hidden">
     <Table :data="tableData?.items" class="flex-1 overflow-x-hidden" />
-    <nav class="mx-auto flex w-full justify-center mt-3">
+    <nav class="mx-auto flex w-full justify-center mt-2 md:mt-6 pb-3 md:pb-6">
       <el-pagination
         v-model:page-size="pageSize"
         v-model:currentPage="currentPage"
         v-bind="state"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        class="mb-3"
+        class="hidden md:flex"
+      />
+      <el-pagination
+        v-model:page-size="pageSize"
+        v-model:currentPage="currentPage"
+        layout="prev, pager, next"
+        :total="state.total"
+        :pager-count="5"
+        @current-change="handleCurrentChange"
+        class="md:hidden"
+        small
+        background
       />
     </nav>
   </div>

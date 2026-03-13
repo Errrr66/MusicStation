@@ -320,8 +320,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <!-- 分页 -->
-      <nav class="mx-auto flex w-full justify-center mt-2 md:mt-6 pb-20 md:pb-0">
+      <nav class="mx-auto flex w-full justify-center mt-2 md:mt-6 pb-3 md:pb-6">
         <el-pagination
           v-model:page-size="pageSize"
           v-model:currentPage="currentPage"
