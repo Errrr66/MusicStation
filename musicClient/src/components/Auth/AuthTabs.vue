@@ -40,7 +40,8 @@ const handleSwitchTab = (tab: string) => {
   <el-dialog
     v-model="dialogVisible"
     :title="tabTitles[activeTab]"
-    width="500px"
+    width="90%"
+    style="max-width: 500px;"
     destroy-on-close
     @close="handleClose"
   >

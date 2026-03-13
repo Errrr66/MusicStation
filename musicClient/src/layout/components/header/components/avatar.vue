@@ -7,6 +7,7 @@ import defaultAvatar from '@/assets/user.jpg'
 import { ElMessage } from 'element-plus'
 import { logout } from '@/api/system'
 import { useRouter } from 'vue-router'
+import { fixUrl } from '@/utils'
 
 const showLogin = ref(false)
 const user = UserStore()
@@ -42,7 +43,7 @@ const openFeedbackDialog = () => {
   >
     <span class="flex items-center">
       <el-avatar
-        :src="user.userInfo.avatarUrl || defaultAvatar"
+        :src="fixUrl(user.userInfo.avatarUrl) || defaultAvatar"
         class="mr-1 hover:scale-110 transition-transform duration-200"
         shape="circle"
         :size="32"

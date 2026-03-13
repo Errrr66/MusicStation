@@ -8,6 +8,7 @@ import { ref, provide, watch } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { themeStore } from '@/stores/modules/theme'
 import { Icon } from '@iconify/vue'
+import { fixUrl } from '@/utils'
 
 const theme = themeStore()
 const showDrawer = defineModel<boolean>()
@@ -73,47 +74,52 @@ provide('songDetail', songDetail)
 <template>
   <el-drawer
     :style="{
-      '--track-cover-url': `url(${currentTrack.cover})`,
+      '--track-cover-url': `url(${fixUrl(currentTrack.cover)})`,
     }"
     v-model="showDrawer"
     direction="btt"
     size="100%"
     :modal="false"
     :showClose="false"
-    class="drawer-bg backdrop-filter backdrop-blur-md"
+    class="drawer-bg !p-0 !m-0"
+    :with-header="false"
   >
-    <template #header>
-      <div class="flex items-center justify-between">
-        <div
-          class="flex items-center justify-center gap-2 text-primary-foreground"
-        >
-          <el-button text circle @click="showDrawer = false">
-            <icon-uiw:down />
-          </el-button>
+    <div class="h-full w-full flex flex-col backdrop-filter backdrop-blur-2xl bg-black/40">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-6">
+        <el-button text circle @click="showDrawer = false" class="!bg-white/10 hover:!bg-white/20 !text-white !p-2">
+           <Icon icon="solar:alt-arrow-down-linear" class="text-2xl" />
+        </el-button>
+        <div class="flex-1 text-center mx-4">
+             <!-- Title can go here -->
         </div>
-      </div>
-    </template>
-    <main class="flex h-full">
-      <div class="flex w-full flex-1">
-        <div class="w-1/2">
-          <Left />
-        </div>
-        <div class="w-1/2 relative">
-          <Right />
-        </div>
-      </div>
-    </main>
-    <template #footer>
-      <div class="flex justify-end gap-2 pr-4 pb-4">
-        <button @click="toggleMode" class="text-primary-foreground hover:bg-black/10 dark:hover:bg-white/10 p-2 rounded-full transition-colors">
+        <button @click="toggleMode" class="text-white hover:bg-white/10 p-2 rounded-full transition-colors">
           <Icon class="text-xl" :icon="currentIcon" />
         </button>
       </div>
-    </template>
+
+      <main class="flex-1 overflow-hidden relative">
+        <div class="h-full w-full flex flex-row overflow-x-auto snap-x snap-mandatory md:overflow-hidden no-scrollbar">
+          <!-- Left: Cover & Info -->
+          <div class="w-full md:w-1/2 flex-shrink-0 snap-center h-full flex items-center justify-center p-0 md:p-12 overflow-hidden">
+            <Left />
+          </div>
+          <!-- Right: Lyrics -->
+          <div class="w-full md:w-1/2 flex-shrink-0 snap-center h-full p-0 md:p-10 no-scrollbar overflow-y-auto md:overflow-hidden">
+            <Right />
+          </div>
+        </div>
+      </main>
+   </div>
   </el-drawer>
 </template>
 
 <style scoped>
+:deep(.el-drawer__body) {
+    padding: 0 !important;
+    height: 100% !important;
+}
+
 .drawer-bg {
   background-image: var(--track-cover-url);
   background-size: cover;
@@ -131,5 +137,13 @@ provide('songDetail', songDetail)
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(20px);
   z-index: -1;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

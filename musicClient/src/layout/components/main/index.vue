@@ -1,6 +1,6 @@
 <template>
   <main
-    class="relative flex-1 overflow-x-hidden m-2 ml-0 md:mr-0 rounded-2xl bg-gray-100 dark:bg-[#121212] shadow-xl"
+    class="relative flex-1 overflow-y-auto overflow-x-hidden m-2 ml-2 md:ml-0 md:mr-0 rounded-2xl bg-gray-100 dark:bg-[#121212] shadow-xl"
   >
     <!-- Purple Gradient Background -->
     <div

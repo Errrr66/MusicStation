@@ -10,6 +10,7 @@ import {
   deleteUser,
   getUserInfo,
 } from '@/api/system'
+import { fixUrl } from '@/utils'
 import 'vue-cropper/dist/index.css'
 import { VueCropper } from 'vue-cropper'
 import { useRouter } from 'vue-router'
@@ -214,7 +215,7 @@ const handleDelete = async () => {
       <div class="user-header">
         <div class="avatar-wrapper" @click="handleAvatarClick">
           <el-avatar
-            :src="userStore.userInfo.avatarUrl || defaultAvatar"
+            :src="fixUrl(userStore.userInfo.avatarUrl) || defaultAvatar"
             :size="100"
           />
           <div class="avatar-hover">
@@ -229,7 +230,9 @@ const handleDelete = async () => {
     <el-dialog
       v-model="cropperVisible"
       title="裁剪头像"
-      width="600px"
+      align-center
+      width="90%"
+      class="max-w-[600px]"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
     >
@@ -339,7 +342,7 @@ const handleDelete = async () => {
       </div>
 
       <el-form-item class="button-group">
-        <div class="flex justify-between w-full">
+        <div class="flex flex-col md:flex-row justify-between w-full gap-4 md:gap-0">
           <el-button
             type="primary"
             :loading="loading"
@@ -368,11 +371,18 @@ const handleDelete = async () => {
 <style scoped>
 .user-container {
   max-width: 1000px;
-  margin: 30px auto;
-  padding: 30px 40px 15px;
+  margin: 10px auto 30px;
+  padding: 20px;
   background-color: var(--el-bg-color);
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .user-container {
+    margin: 30px auto;
+    padding: 30px 40px 15px;
+  }
 }
 
 .user-header {
@@ -396,24 +406,17 @@ const handleDelete = async () => {
 :deep(.el-form-item) {
   margin-bottom: 24px;
 }
-
-:deep(.el-input__wrapper) {
-  border-radius: 8px;
-  background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
-}
-
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--el-border-color-hover) inset !important;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
-}
+/* ... (existing styles) ... */
 
 .submit-btn {
   border-radius: 8px;
-  width: 140px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .submit-btn {
+    width: 140px;
+  }
 }
 
 :deep(.el-textarea__inner) {

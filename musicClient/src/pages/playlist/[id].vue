@@ -5,7 +5,7 @@ import {
   likeComment,
   deleteComment,
 } from '@/api/system'
-import { formatNumber } from '@/utils'
+import { formatNumber, fixUrl } from '@/utils'
 import type { PlaylistDetail, Song } from '@/api/interface'
 import coverImg from '@/assets/cover.png'
 import { usePlaylistStore } from '@/stores/modules/playlist'
@@ -63,6 +63,7 @@ const comments = computed(() => {
   return rawComments
     .map((comment) => ({
       ...comment,
+      userAvatar: fixUrl(comment.userAvatar),
       likeCount: comment.likeCount,
     }))
     .sort((a, b) => {
@@ -195,7 +196,7 @@ watch(
           artistName: song.artistName,
           album: song.album,
           duration: song.duration,
-          coverUrl: song.coverUrl || coverImg,
+          coverUrl: fixUrl(song.coverUrl) || coverImg,
           audioUrl: song.audioUrl,
           likeStatus: song.likeStatus,
           releaseTime: song.releaseTime,
@@ -205,7 +206,7 @@ watch(
         playlistStore.setPlaylistInfo({
           name: playlistData.title,
           description: playlistData.introduction,
-          coverImgUrl: playlistData.coverUrl || coverImg,
+          coverImgUrl: fixUrl(playlistData.coverUrl) || coverImg,
           creator: {
             nickname: 'creator',
             avatarUrl: coverImg,
@@ -232,7 +233,7 @@ const handlePlayAll = async () => {
     title: song.songName,
     artist: song.artistName,
     album: song.album,
-    cover: song.coverUrl || coverImg,
+    cover: song.coverUrl || coverImg, // coverUrl already fixed above
     url: song.audioUrl,
     duration: parseFloat(song.duration) * 1000,
     likeStatus: song.likeStatus,
@@ -245,16 +246,20 @@ const handlePlayAll = async () => {
 }
 </script>
 <template>
-  <div class="flex flex-col h-full bg-background flex-1 md:overflow-hidden">
-    <div class="flex flex-col md:flex-row p-6 gap-6">
+  <div class="flex flex-col h-full bg-background flex-1 overflow-y-auto">
+    <div class="flex flex-col items-center md:flex-row md:items-stretch p-6 gap-6">
       <div class="flex-shrink-0 w-60 h-60">
         <img
           :alt="playlist?.name"
           class="w-full h-full object-cover rounded-lg shadow-lg"
-          :src="(playlist?.coverImgUrl || coverImg) + '?param=500y500'"
+          :src="
+            (playlist?.coverImgUrl && playlist.coverImgUrl.startsWith('http')
+              ? playlist.coverImgUrl + '?param=500y500'
+              : playlist?.coverImgUrl || coverImg)
+          "
         />
       </div>
-      <div class="flex flex-col justify-between">
+      <div class="flex flex-col justify-between w-full md:w-auto">
         <div>
           <h1 class="text-3xl font-bold mb-2">{{ playlist?.name }}</h1>
           <p
@@ -273,7 +278,7 @@ const handlePlayAll = async () => {
                 class="aspect-square h-full w-full"
                 :alt="playlist?.creator.nickname"
                 :src="playlist?.creator.avatarUrl"
-            /></span>
+              /></span>
             <span>{{ playlist?.creator.nickname }}</span>
             <span>•</span>
             <span>{{ playlist?.trackCount }} 首歌曲</span>
@@ -312,7 +317,7 @@ const handlePlayAll = async () => {
     </div>
 
     <!-- 选项卡组件 -->
-    <div class="px-6 flex-1 flex flex-col overflow-hidden">
+    <div class="px-6 flex-1 flex flex-col">
       <div class="border-b pb-1">
         <div
           class="inline-flex h-10 items-center rounded-lg bg-muted/70 p-1 text-muted-foreground w-full justify-start mb-2"
@@ -336,8 +341,8 @@ const handlePlayAll = async () => {
       </div>
 
       <!-- 内容区域 -->
-      <div class="flex-1 overflow-y-auto min-h-0">
-        <div v-show="activeTab === 'songs'">
+      <div class="flex-1 min-h-0">
+        <div v-show="activeTab === 'songs'" class="h-full">
           <Table :data="songs" />
         </div>
         <div v-show="activeTab === 'comments'" class="py-4">

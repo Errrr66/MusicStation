@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatTime } from '@/utils'
+import { formatTime, fixUrl } from '@/utils'
 import { Icon } from '@iconify/vue'
 import type { SongDetail } from '@/api/interface'
 import { ref, inject, type Ref } from 'vue'
@@ -56,7 +56,7 @@ const togglePlayMode = () => {
 
 <template>
   <div
-    class="w-full h-[calc(80vh-8rem)] relative inset-0 px-4 flex flex-col items-center"
+    class="w-full min-h-[calc(100vh-8rem)] md:h-[calc(80vh-8rem)] relative inset-0 px-4 flex flex-col items-center justify-center py-4 md:py-0 shrink-0"
   >
     <div class="flex flex-1 flex-col gap-4 items-center justify-center w-full">
       <!-- 封面 -->
@@ -65,14 +65,14 @@ const togglePlayMode = () => {
           <div
             class="album-art rounded-md"
             :style="{
-              backgroundImage: `url(${songDetail?.coverUrl || currentTrack.cover})`,
+              backgroundImage: `url(${fixUrl(songDetail?.coverUrl) || fixUrl(currentTrack.cover)})`,
             }"
           ></div>
           <div
             class="vinyl"
             :style="{
               animationPlayState: isPlaying ? 'running' : 'paused',
-              backgroundImage: `url(${vinylImg}), url(${songDetail?.coverUrl || currentTrack.cover})`,
+              backgroundImage: `url(${vinylImg}), url(${fixUrl(songDetail?.coverUrl) || fixUrl(currentTrack.cover)})`,
             }"
           ></div>
         </div>
@@ -88,7 +88,7 @@ const togglePlayMode = () => {
       </div>
       <!-- 控制区 -->
       <div class="flex gap-2 w-full items-center justify-center mt-8">
-        <div class="flex items-center gap-2 w-2/4">
+        <div class="flex items-center gap-2 w-11/12 md:w-2/4">
           <span class="text-xs w-10 text-foreground/50 text-center">{{
             formatTime(currentTime)
           }}</span>
@@ -105,7 +105,7 @@ const togglePlayMode = () => {
           }}</span>
         </div>
       </div>
-      <div class="flex items-center justify-center gap-14 w-2/4 mt-12">
+      <div class="flex items-center justify-center gap-4 md:gap-14 w-11/12 md:w-2/4 mt-12">
         <el-tooltip
           :content="playModes[currentMode].tooltip"
           placement="top"
@@ -190,6 +190,19 @@ const togglePlayMode = () => {
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .album-art {
+    width: 70vw;
+    height: 70vw;
+    max-width: 300px;
+    max-height: 300px;
+  }
+
+  .vinyl {
+    display: none;
   }
 }
 </style>

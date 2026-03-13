@@ -4,6 +4,7 @@ import type { Song } from '@/api/interface'
 import coverImg from '@/assets/cover.png'
 import { AudioStore } from '@/stores/modules/audio'
 import { useRoute } from 'vue-router'
+import { fixUrl } from '@/utils'
 
 const route = useRoute()
 const audui = AudioStore()
@@ -12,7 +13,7 @@ const { loadTrack, play } = useAudioPlayer()
 const songs = ref<Song[]>([])
 const searchKeyword = ref('')
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(1000)
 
 const playlist = ref({
   name: '我喜欢的音乐',
@@ -40,7 +41,7 @@ const getSongs = async () => {
     playlist.value.trackCount = pageData.total
     // 使用第一首歌的封面作为封面图
     if (pageData.items.length > 0) {
-      playlist.value.coverImgUrl = pageData.items[0].coverUrl || coverImg
+      playlist.value.coverImgUrl = fixUrl(pageData.items[0].coverUrl) || coverImg
     }
   }
 }
@@ -52,7 +53,6 @@ const handleSearch = () => {
 
 const handlePlayAll = async () => {
   audui.setAudioStore('trackList', [])
-
   if (!songs.value.length) return
 
   const result = songs.value.map((song) => ({
@@ -103,22 +103,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-background flex-1 md:overflow-hidden">
-    <div class="flex flex-col md:flex-row p-6 gap-6">
-      <div class="flex-shrink-0 w-60 h-60">
+  <div class="flex flex-col h-full bg-background flex-1 overflow-y-auto">
+    <div class="flex flex-col items-center md:flex-row md:items-stretch p-6 gap-6">
+      <div class="flex-shrink-0 w-40 h-40 md:w-60 md:h-60">
         <img
           :alt="playlist.name"
           class="w-full h-full object-cover rounded-lg shadow-lg"
-          :src="playlist.coverImgUrl + '?param=500y500'"
+          :src="fixUrl(playlist?.coverImgUrl) || coverImg"
         />
       </div>
-      <div class="flex flex-col justify-between flex-1">
+      <div class="flex flex-col justify-between flex-1 w-full md:w-auto">
         <div>
-          <h1 class="text-3xl font-bold mb-2">{{ playlist.name }}</h1>
+          <h1 class="text-3xl font-bold mb-2">{{ playlist?.name }}</h1>
           <div
             class="flex items-center gap-2 text-sm text-muted-foreground mb-4 ml-1"
           >
-            <span>{{ playlist.trackCount }} 首歌曲</span>
+            <span>{{ playlist?.trackCount }} 首歌曲</span>
           </div>
           <div
             class="flex items-center gap-2 text-sm text-muted-foreground"
@@ -133,41 +133,33 @@ onMounted(() => {
             </el-tag>
           </div>
         </div>
-        <div class="flex items-center justify-between mt-4">
+        <div class="flex items-center justify-between mt-4 flex-wrap gap-4 md:flex-nowrap">
           <button
             @click="handlePlayAll"
-            class="text-white inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-lg px-8"
+            class="text-white inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-lg px-8 w-full md:w-auto"
           >
             <icon-solar:play-line-duotone />
             播放全部
           </button>
 
-          <div class="relative">
+          <div class="relative w-full md:w-auto">
             <icon-akar-icons:search
               class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
             />
             <input
               v-model="searchKeyword"
               @keyup.enter="handleSearch"
-              class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-56"
+              class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-full md:w-56"
               placeholder="搜索"
             />
           </div>
         </div>
       </div>
     </div>
-    <Table :data="songs" class="flex-1 md:overflow-x-hidden" />
-    <nav class="mx-auto flex w-full justify-center mt-3">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total="playlist.trackCount"
-        :page-sizes="[10, 20, 30, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="getSongs"
-        @current-change="getSongs"
-        class="mb-3"
-      />
-    </nav>
+    <div class="flex-1 min-h-0 pb-20 md:pb-0">
+      <div class="h-full">
+        <Table :data="songs" />
+      </div>
+    </div>
   </div>
 </template>

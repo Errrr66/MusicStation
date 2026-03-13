@@ -12,6 +12,12 @@ const recognitionState = ref<'idle' | 'recording' | 'analyzing'>('idle')
 const startRecording = async () => {
   if (recognitionState.value !== 'idle') return
 
+  // 检查浏览器兼容性及HTTPS环境
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    ElMessage.error('您的浏览器不支持录音或未在安全环境(HTTPS/localhost)下运行。')
+    return
+  }
+
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     mediaRecorder.value = new MediaRecorder(stream)
@@ -32,7 +38,7 @@ const startRecording = async () => {
     }, 5000)
   } catch (error) {
     console.error("无法获取麦克风权限:", error)
-    alert("无法获取麦克风权限，请检查浏览器设置。")
+    ElMessage.error("无法获取麦克风权限，请检查浏览器设置。")
     recognitionState.value = 'idle'
   }
 }

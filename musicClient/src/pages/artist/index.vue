@@ -2,6 +2,7 @@
 import { categories } from '@/utils/enum'
 import { getAllArtists } from '@/api/system'
 import { ElNotification } from 'element-plus'
+import { fixUrl } from '@/utils'
 
 const router = useRouter()
 const artistList = ref([])
@@ -13,6 +14,7 @@ const selectedArea = ref('-1')
 const currentPage = ref(1)
 const pageSize = ref(12)
 const total = ref(0)
+const isSidebarOpen = ref(true)
 
 const state = reactive({
   size: 'default',
@@ -75,7 +77,7 @@ const handleGetArtistList = () => {
       artistList.value = res.data.items.map((item) => ({
         artistId: item.artistId,
         name: item.artistName,
-        picUrl: item.avatar,
+        picUrl: fixUrl(item.avatar),
         alias: [],
       }))
       total.value = res.data.total
@@ -114,7 +116,7 @@ const handleSearch = () => {
       artistList.value = res.data.items.map((item) => ({
         artistId: item.artistId,
         name: item.artistName,
-        picUrl: item.avatar,
+        picUrl: fixUrl(item.avatar),
         alias: [],
       }))
       total.value = res.data.total
@@ -137,14 +139,31 @@ const handleReset = () => {
   handleGetArtistList()
 }
 
+const toggleSidebar = () => {
+    isSidebarOpen.value = !isSidebarOpen.value
+}
+
 onMounted(() => {
   handleGetArtistList()
 })
 </script>
 <template>
-  <div class="flex h-full">
-    <div class="w-64 bg-background p-4">
-      <div class="flex items-center justify-between mb-4">
+  <div class="flex h-full relative">
+    <!-- Overlay for mobile when sidebar is open -->
+    <div
+      v-if="isSidebarOpen"
+      class="fixed inset-0 bg-black/50 z-20 md:hidden"
+      @click="toggleSidebar"
+    ></div>
+
+    <div
+        class="bg-background p-4 flex-shrink-0 transition-all duration-300 border-r overflow-y-auto no-scrollbar z-30"
+        :class="[
+            isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full md:w-0 md:translate-x-0 !p-0 opacity-0 overflow-hidden',
+            'absolute inset-y-0 left-0 md:relative'
+        ]"
+    >
+      <div class="flex items-center justify-between mb-4 min-w-[220px]">
         <h2 class="text-lg font-semibold">艺人分类</h2>
         <button
           @click="handleReset"
@@ -232,42 +251,69 @@ onMounted(() => {
         </div>
       </nav>
     </div>
-    <main class="flex-1">
-      <div class="p-2 md:p-4 lg:p-6">
-        <div class="w-[86%] mx-auto">
-          <div class="grid grid-cols-4 gap-x-16 gap-y-8">
+
+
+    <main class="flex-1 flex flex-col overflow-hidden w-full relative">
+        <div class="p-2 md:p-4 lg:p-6 flex-1 overflow-y-auto w-full pb-20 md:pb-0">
+            <!-- Sidebar toggle for desktop inside main area -->
+             <div class="mb-4 hidden md:flex" v-if="!isSidebarOpen">
+                 <button @click="toggleSidebar" class="flex items-center gap-2 text-sm text-gray-500 hover:text-primary">
+                    <icon-ri:menu-unfold-line /> 展开分类
+                 </button>
+             </div>
+
+             <div class="mb-4 flex justify-between items-center md:hidden" v-if="!isSidebarOpen">
+                <button @click="toggleSidebar" class="p-2 -ml-2">
+                    <icon-ri:menu-unfold-line class="text-xl" />
+                </button>
+                <div class="font-bold">艺人列表</div>
+                <div class="w-8"></div>
+             </div>
+
+             <!-- Header with close button when sidebar is open on desktop -->
+             <div class="mb-4 hidden md:flex justify-between items-center" v-if="isSidebarOpen">
+                  <div><!-- Spacer or Title --></div>
+                  <button @click="toggleSidebar" class="flex items-center gap-2 text-sm text-gray-500 hover:text-primary" title="收起分类">
+                    <icon-ri:menu-fold-line />
+                 </button>
+             </div>
+
+
+        <div class="w-full md:w-[86%] mx-auto">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-x-8 lg:gap-x-16 gap-y-8">
             <div
               v-for="(artist, index) in artistList"
               :key="index"
-              class="group relative rounded-full text-card-foreground shadow-md hover:shadow-xl"
+              class="group relative text-card-foreground"
             >
               <button
                 @click="router.push(`/artist/${artist.artistId}`)"
-                class="w-full h-full overflow-hidden rounded-full"
+                class="w-full h-full flex flex-col items-center"
               >
-                <div class="w-full h-full relative">
+                <div class="w-full aspect-square relative rounded-full overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                   <el-image
                     lazy
                     :alt="artist.name"
                     class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                     :src="artist.picUrl + '?param=230y230'"
                   />
+                  <!-- Desktop Hover Overlay -->
                   <div
-                    class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 hidden md:block"
                   ></div>
-                  <div
-                    class="absolute bottom-0 left-0 right-0 px-4 py-3 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-10"
+                   <div
+                    class="absolute bottom-0 left-0 right-0 px-4 py-3 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-10 hidden md:block"
                   >
                     <h2 class="mb-1 text-xl font-semibold">
                       {{ artist.name }}
                     </h2>
-                    <p
-                      class="mb-2 text-sm"
-                      v-if="artist.alias && artist.alias.length > 0"
-                    >
-                      {{ artist.alias.join() }}
-                    </p>
                   </div>
+                </div>
+                 <!-- Mobile Name Display (Below Image) -->
+                <div class="mt-2 text-center md:hidden">
+                    <h2 class="text-sm font-semibold truncate w-full">
+                      {{ artist.name }}
+                    </h2>
                 </div>
               </button>
             </div>
@@ -275,13 +321,25 @@ onMounted(() => {
         </div>
       </div>
       <!-- 分页 -->
-      <nav class="mx-auto flex w-full justify-center mt-6">
+      <nav class="mx-auto flex w-full justify-center mt-2 md:mt-6 pb-20 md:pb-0">
         <el-pagination
           v-model:page-size="pageSize"
           v-model:currentPage="currentPage"
           v-bind="state"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
+          class="hidden md:flex"
+        />
+        <el-pagination
+          v-model:page-size="pageSize"
+          v-model:currentPage="currentPage"
+          layout="prev, pager, next"
+          :total="state.total"
+          :pager-count="5"
+          @current-change="handleCurrentChange"
+          class="md:hidden"
+          small
+          background
         />
       </nav>
     </main>

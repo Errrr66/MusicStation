@@ -5,7 +5,7 @@ import {
   getBanner,
 } from '@/api/system'
 import coverImg from '@/assets/cover.png'
-import { formatTime, replaceUrlParams } from '@/utils'
+import { formatTime, replaceUrlParams, fixUrl } from '@/utils'
 import { ElNotification } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 const router = useRouter()
@@ -154,21 +154,21 @@ const isCurrentPlaying = (songId: number) => {
 }
 </script>
 <template>
-  <div class="flex gap-6 p-4 w-full">
+  <div class="flex flex-col gap-4 p-2 md:gap-6 md:p-4 w-full overflow-x-hidden">
     <div class="flex-1">
       <div class="w-full flex flex-col overflow-hidden mb-8">
         <!-- banner -->
-        <el-carousel :interval="4000" type="card" height="260px">
+        <el-carousel :interval="4000" type="card" height="200px" class="md:h-[260px]">
           <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
             <img
-              :src="item.bannerUrl"
+              :src="fixUrl(item.bannerUrl)"
               class="w-full h-full object-cover rounded-lg"
             />
           </el-carousel-item>
         </el-carousel>
 
         <!-- 推荐 -->
-        <button class="mt-6">
+        <div class="mt-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">今日为你推荐</h2>
             <button
@@ -178,10 +178,10 @@ const isCurrentPlaying = (songId: number) => {
               <icon-hugeicons:more class="text-lg" />
             </button>
           </div>
-          <div class="grid grid-cols-4 md:grid-cols-7 gap-4">
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4">
             <div
               class="rounded-2xl transition duration-300 hover:bg-hoverMenuBg bg-card text-card-foreground border-0 shadow-nonec cursor-pointer"
-              v-for="i in recommendedPlaylist.slice(0, 7)"
+              v-for="i in recommendedPlaylist.slice(0, 6)"
               :key="i.playlistId"
               @click="router.push(`/playlist/${i.playlistId}`)"
             >
@@ -194,24 +194,24 @@ const isCurrentPlaying = (songId: number) => {
                     height="200"
                     class="w-full h-full object-cover"
                     :src="
-                      replaceUrlParams(i.coverUrl ?? coverImg, 'param=350y350')
+                      replaceUrlParams(fixUrl(i.coverUrl) ?? coverImg, 'param=350y350')
                     "
                   />
                   />
                 </div>
                 <div class="flex flex-col p-2">
-                  <h3 class="line-clamp-2 font-medium mb-1 playlist-title">
+                  <h3 class="line-clamp-2 font-medium mb-1 playlist-title text-xs md:text-base">
                     {{ i.title }}
                   </h3>
                 </div>
               </div>
             </div>
           </div>
-        </button>
+        </div>
       </div>
 
       <!-- 歌曲 -->
-      <div class="w-full">
+      <div class="w-full mb-20 md:mb-0">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold mb-4">相似推荐</h2>
           <button
@@ -222,48 +222,47 @@ const isCurrentPlaying = (songId: number) => {
           </button>
         </div>
         <el-scrollbar class="h-full" overflow-auto>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 gap-x-16">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:gap-x-16">
             <button
               v-for="item in recommendedSongList"
               :key="item.id"
-              class="grid grid-cols-[auto_2fr_1fr] items-center gap-4 transition duration-300 rounded-2xl w-full group"
+              class="grid grid-cols-[auto_2fr_1fr] items-center gap-2 md:gap-4 transition duration-300 rounded-2xl w-full group p-2 hover:bg-hoverMenuBg"
               :class="[
                 isCurrentPlaying(item.id)
                   ? 'bg-hoverMenuBg'
-                  : 'hover:bg-hoverMenuBg',
+                  : '',
               ]"
               @click.stop="handlePlaylclick(item)"
             >
               <!-- 专辑封面 -->
-              <div class="w-16 h-16 rounded-2xl overflow-hidden relative">
+              <div class="w-12 h-12 md:w-16 md:h-16 rounded-lg md:rounded-2xl overflow-hidden relative flex-shrink-0">
                 <el-image
                   :alt="item.name"
                   width="64"
                   height="64"
                   class="w-full h-full object-cover"
-                  :src="item.album.picUrl + '?param=90y90'"
+                  :src="fixUrl(item.album.picUrl) + '?param=90y90'"
                 />
                 <!-- Play 按钮，使用 group-hover 控制透明度 -->
-                <button
-                  @click.stop="handlePlaylclick(item)"
+                <div
                   class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50"
                 >
                   <icon-tabler:player-play-filled class="text-lg" />
-                </button>
+                </div>
               </div>
 
-              <div class="truncate text-left ml-1">
+              <div class="truncate text-left ml-1 min-w-0">
                 <!-- 歌曲名称 -->
-                <h3 class="font-medium">{{ item.name }}</h3>
+                <h3 class="font-medium truncate text-sm md:text-base">{{ item.name }}</h3>
                 <!-- 艺术家 -->
-                <p class="text-sm text-muted-foreground line-clamp-1">
+                <p class="text-xs md:text-sm text-muted-foreground line-clamp-1">
                   {{ item.artists.map((item) => item.name).join(' ') }}
                 </p>
               </div>
 
               <!-- 时长 -->
-              <div class="text-right mr-5">
-                <p class="text-sm text-muted-foreground line-clamp-1">
+              <div class="text-right mr-2 md:mr-5 flex-shrink-0">
+                <p class="text-xs md:text-sm text-muted-foreground line-clamp-1">
                   {{ formatTime(item.duration) }}
                 </p>
               </div>

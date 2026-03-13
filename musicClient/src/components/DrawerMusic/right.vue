@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SongDetail } from '@/api/interface'
 import { ref, inject, type Ref, computed, watch } from 'vue'
-import { formatNumber } from '@/utils'
+import { formatNumber, fixUrl } from '@/utils'
 import coverImg from '@/assets/cover.png'
 import { likeComment, addSongComment, getSongDetail, deleteComment } from '@/api/system'
 import { ElMessage } from 'element-plus'
@@ -190,9 +190,9 @@ const handleDelete = async (comment: any) => {
 </script>
 
 <template>
-  <div class="h-full p-6 overflow-hidden mr-16 flex flex-col">
+  <div class="h-full w-full p-2 md:p-6 overflow-hidden md:mr-16 flex flex-col">
     <!-- 顶部 Tab 切换 -->
-    <div class="flex justify-center gap-6 mb-6">
+    <div class="flex justify-center gap-6 mb-6 flex-shrink-0">
       <button
           class="text-lg font-bold transition-colors"
           :class="activeTab === 'lyric' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-primary-foreground'"
@@ -210,7 +210,7 @@ const handleDelete = async (comment: any) => {
     </div>
 
     <!-- 歌词视图 -->
-    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-y-auto no-scrollbar mask-image-gradient" ref="lyricContainerRef">
+    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-visible md:overflow-y-auto no-scrollbar mask-image-gradient min-h-[50vh] md:min-h-0" ref="lyricContainerRef">
       <div v-if="parsedLyrics.length > 0" class="flex flex-col items-center py-40 space-y-6">
         <p
             v-for="(line, index) in parsedLyrics"
@@ -232,7 +232,7 @@ const handleDelete = async (comment: any) => {
     </div>
 
     <!-- 评论视图 -->
-    <div v-show="activeTab === 'comment'" class="flex-1 overflow-y-auto pr-2">
+    <div v-show="activeTab === 'comment'" class="flex-1 overflow-visible md:overflow-y-auto pr-2 min-h-[50vh] md:min-h-0">
       <!-- 关键修复：将 v-if 和 v-else 放在同一层级，确保相邻 -->
       <div v-if="songDetail" class="space-y-6">
         <!-- 歌曲信息 -->
@@ -290,7 +290,7 @@ const handleDelete = async (comment: any) => {
                     class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mt-0.5"
                 >
                   <img
-                      :src="comment.userAvatar || coverImg"
+                      :src="fixUrl(comment.userAvatar) || coverImg"
                       alt="avatar"
                       class="w-full h-full object-cover"
                   />

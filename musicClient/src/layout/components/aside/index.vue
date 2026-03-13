@@ -7,6 +7,7 @@ import { UserStore } from '@/stores/modules/user'
 import { ElMessage } from 'element-plus'
 import AuthTabs from '@/components/Auth/AuthTabs.vue'
 import { useFavoriteStore } from '@/stores/modules/favorite'
+import coverImg from '@/assets/cover.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,6 +26,15 @@ const handleProtectedRoute = (path: string) => {
   return true
 }
 
+const props = defineProps({
+  isMobile: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['close'])
+
 // 切换侧边栏收起/展开
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
@@ -42,17 +52,33 @@ watch(
   },
   { immediate: true }
 )
+
+const handleMenuClick = (path: string) => {
+  if (handleProtectedRoute(path)) {
+    router.push(path)
+    if (props.isMobile) emit('close')
+  }
+}
+
+const handlePlaylistClick = (id: number) => {
+  router.push(`/playlist/${id}`)
+  if (props.isMobile) emit('close')
+}
 </script>
 
 <template>
   <aside
-    class="sidebar-card hidden h-[calc(100%-1rem)] overflow-hidden md:block shadow-xl transition-all duration-300 m-2 rounded-2xl dark:bg-[#121212] bg-gray-100"
-    :class="[isCollapsed ? 'w-[120px]' : 'w-96']"
+    class="sidebar-card h-[calc(100%-1rem)] overflow-hidden shadow-xl transition-all duration-300 m-2 rounded-2xl dark:bg-[#121212] bg-gray-100"
+    :class="[
+      isCollapsed ? 'w-[120px]' : 'w-96',
+      isMobile ? 'block !w-full !m-0 !h-full !rounded-none shadow-none' : 'hidden md:block'
+    ]"
   >
     <nav
       class="flex flex-col p-4 space-y-4 flex-1 h-full box-border overflow-hidden"
     >
       <div
+        v-if="!isMobile"
         class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-hoverMenuBg mb-2 text-primary-foreground transition-colors duration-200"
         :class="isCollapsed ? 'justify-center' : 'justify-end'"
         @click="toggleCollapse"
@@ -84,9 +110,7 @@ watch(
             'hover:bg-hoverMenuBg': route.path !== item2.router,
             'justify-center': isCollapsed,
           }"
-          @click="
-            handleProtectedRoute(item2.router) && router.push(item2.router)
-          "
+          @click="handleMenuClick(item2.router)"
           :title="isCollapsed ? item2.title : ''"
         >
           <Icon :icon="item2.icon" class="flex-shrink-0 text-xl" />
@@ -147,15 +171,26 @@ watch(
                 'hover:bg-hoverMenuBg': route.path !== `/playlist/${item.id}`,
                 'justify-center': isCollapsed,
               }"
-              @click="router.push(`/playlist/${item.id}`)"
+              @click="handlePlaylistClick(item.id)"
               :title="isCollapsed ? item.name : ''"
             >
               <el-image
                 lazy
-                :src="item.coverImgUrl + '?param=50y50'"
+                :src="
+                  (item.coverImgUrl && item.coverImgUrl.startsWith('http'))
+                    ? item.coverImgUrl + '?param=50y50'
+                    : (item.coverImgUrl || coverImg)
+                "
                 class="w-10 h-10 rounded-md flex-shrink-0"
                 :alt="item.name"
-              />
+              >
+                <!-- 加载失败或无图片时的占位符 -->
+                <template #error>
+                  <div class="image-slot w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    <Icon icon="ri:music-line" class="text-gray-400 text-xl" />
+                  </div>
+                </template>
+              </el-image>
               <div
                 v-if="!isCollapsed"
                 class="flex-1 min-w-0 transition-opacity duration-300"

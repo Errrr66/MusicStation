@@ -2,9 +2,9 @@
 import { Icon } from '@iconify/vue'
 import Recently from './recently.vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
-import { computed, ref } from 'vue'
+import { computed } from 'vue' // removed ref
 
-const { volume, setVolume, setPlayMode } = useAudioPlayer()
+const { volume, setVolume, playMode, togglePlayMode } = useAudioPlayer()
 
 const isMuted = computed(() => volume.value === 0)
 
@@ -35,21 +35,14 @@ const playModes = {
     tooltip: '单曲循环',
   },
 }
-
-const currentMode = ref('order')
-
-const togglePlayMode = () => {
-  const nextMode = playModes[currentMode.value].next
-  currentMode.value = nextMode
-  setPlayMode(nextMode)
-}
+// Removed currentMode ref and local togglePlayMode
 </script>
 <template>
-  <div class="flex items-center justify-end pr-4 w-96">
+  <div class="hidden md:flex items-center justify-end pr-4 w-96">
     <div class="flex items-center mx-4">
 
       <el-tooltip
-        :content="playModes[currentMode].tooltip"
+        :content="playModes[playMode].tooltip"
         placement="top"
         effect="dark"
       >
@@ -57,7 +50,7 @@ const togglePlayMode = () => {
           class="p-2 rounded-full hover:bg-hoverMenuBg transition w-9 h-9"
           @click="togglePlayMode"
         >
-          <Icon :icon="playModes[currentMode].icon" class="w-full h-full" />
+          <Icon :icon="playModes[playMode].icon" class="w-full h-full" />
         </button>
       </el-tooltip>
     </div>

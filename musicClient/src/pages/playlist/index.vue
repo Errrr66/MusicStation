@@ -2,6 +2,7 @@
 import { getAllPlaylists, getFavoritePlaylists } from '@/api/system'
 import coverImg from '@/assets/cover.png'
 import { ElNotification } from 'element-plus'
+import { fixUrl } from '@/utils'
 
 // 路由
 const router = useRouter()
@@ -63,7 +64,7 @@ const getPlaylists = async () => {
       playlists.value = res.data.items.map((item) => ({
         id: item.playlistId,
         name: item.title,
-        coverImgUrl: item.coverUrl ?? coverImg,
+        coverImgUrl: fixUrl(item.coverUrl) || coverImg,
         creator: {
           nickname: selected.value === 'favorite' ? '' : '',
           avatarUrl: coverImg,
@@ -107,6 +108,7 @@ const handleKeyPress = (e: KeyboardEvent) => {
   }
 }
 
+
 onMounted(() => {
   // 初始化歌单标签
   playTags.value = [
@@ -134,23 +136,23 @@ onMounted(() => {
 </script>
 <template>
   <div
-    class="flex flex-col h-full flex-1 overflow-hidden bg-background px-4 py-2"
+    class="flex flex-col h-full flex-1 overflow-hidden bg-background px-2 py-2 md:px-4"
   >
-    <div class="py-4">
-      <div class="flex flex-col sm:flex-row gap-4">
-        <div class="relative flex-grow">
+    <div class="py-2 md:py-4">
+      <div class="flex flex-col md:flex-row gap-2 md:gap-4">
+        <div class="relative flex-grow w-full">
           <icon-mdi:magnify
             class="lucide lucide-search absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground"
           />
           <input
             v-model="searchKeyword"
             @keydown="handleKeyPress"
-            class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-72"
+            class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-full"
             placeholder="搜索歌单..."
             type="search"
           />
         </div>
-        <el-select class="w-48" v-model="selectedTag" @change="getPlaylists">
+        <el-select class="w-full md:w-48" v-model="selectedTag" @change="getPlaylists">
           <el-option
             v-for="item in playTags"
             :key="item.name"
@@ -160,10 +162,10 @@ onMounted(() => {
         </el-select>
       </div>
     </div>
-    <div class="flex-grow flex flex-col overflow-x-hidden cursor-pointer">
+    <div class="flex-grow flex flex-col overflow-x-hidden cursor-pointer min-h-0">
       <div class="border-b pb-1">
         <div
-          class="inline-flex h-10 items-center rounded-lg bg-muted/70 p-1 text-muted-foreground w-full justify-start mb-2 overflow-x-auto"
+          class="inline-flex h-10 items-center rounded-lg bg-muted/70 p-1 text-muted-foreground w-full justify-start mb-2 overflow-x-auto no-scrollbar"
         >
           <button
             v-for="playlist in playlistsList"
@@ -173,14 +175,14 @@ onMounted(() => {
               'bg-activeMenuBg text-foreground shadow-sm':
                 selected === playlist.value,
             }"
-            class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+            class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-shrink-0"
           >
             {{ playlist.name }}
           </button>
         </div>
       </div>
-      <div class="flex-1 overflow-x-hidden my-2">
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6">
+      <div class="flex-1 overflow-y-auto overflow-x-hidden my-2 pb-20 md:pb-0">
+        <div class="grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2 md:gap-6">
           <div
             v-for="playlist in playlists"
             :key="playlist.id"
@@ -193,10 +195,14 @@ onMounted(() => {
                   lazy
                   :alt="playlist.name"
                   class="w-full aspect-square object-cover"
-                  :src="playlist.coverImgUrl + '?param=330y330'"
+                  :src="
+                    (playlist.coverImgUrl && (playlist.coverImgUrl.startsWith('http') || playlist.coverImgUrl.startsWith('/minio')))
+                      ? playlist.coverImgUrl + '?param=330y330'
+                      : playlist.coverImgUrl
+                  "
                 />
                 <button
-                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 w-10 absolute bottom-2 right-2 rounded-full"
+                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-8 w-8 md:h-10 md:w-10 absolute bottom-1 right-1 md:bottom-2 md:right-2 rounded-full"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -215,15 +221,15 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-            <div class="px-4 pb-2">
+            <div class="px-2 pb-2 md:px-4">
               <h3
-                class="font-semibold tracking-tight text-base mb-2 line-clamp-1"
+                class="font-semibold tracking-tight text-sm md:text-base mb-1 md:mb-2 line-clamp-1"
               >
                 {{ playlist.name }}
               </h3>
-              <div class="flex items-center text-sm text-muted-foreground">
+              <div class="flex items-center text-xs md:text-sm text-muted-foreground">
                 <span
-                  class="relative flex shrink-0 overflow-hidden rounded-full w-6 h-6 mr-2"
+                  class="relative flex shrink-0 overflow-hidden rounded-full w-4 h-4 md:w-6 md:h-6 mr-1 md:mr-2"
                 >
                   <el-avatar
                     class="aspect-square h-full w-full"
@@ -231,21 +237,34 @@ onMounted(() => {
                     :src="playlist.creator.avatarUrl"
                   />
                 </span>
-                <span>{{ playlist.creator.nickname }}</span>
+                <span class="truncate">{{ playlist.creator.nickname }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <nav class="mx-auto flex w-full justify-center mt-3">
+    <nav class="mx-auto flex w-full justify-center mt-1 md:mt-3 pb-20 md:pb-0">
       <el-pagination
         v-model:page-size="pageSize"
         v-model:currentPage="currentPage"
         v-bind="state"
+        :layout="state.layout.replace('total, sizes, ', '').replace('jumper', '')"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        class="mb-3"
+        class="mb-3 hidden md:flex"
+      />
+      <!-- Mobile Pagination (Simple) -->
+      <el-pagination
+        v-model:page-size="pageSize"
+        v-model:currentPage="currentPage"
+        layout="prev, pager, next"
+        :total="state.total"
+        :pager-count="5"
+        @current-change="handleCurrentChange"
+        class="mb-3 md:hidden"
+        small
+        background
       />
     </nav>
   </div>

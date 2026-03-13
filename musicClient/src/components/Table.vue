@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { Song } from '@/api/interface'
-import { PropType, watch } from 'vue'
-import { formatMillisecondsToTime } from '@/utils'
-import default_album from '@/assets/default_album.jpg'
+import type { Song } from '@/api/interface'
+import { AudioStore } from '@/stores/modules/audio'
+import { defaultSong } from '@/mock'
+import { trackModel } from '@/stores/interface'
+import { formatMillisecondsToTime, fixUrl } from '@/utils'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
+import default_album from '@/assets/default_album.jpg'
 import { UserStore } from '@/stores/modules/user'
 
-const audio = AudioStore()
 const userStore = UserStore()
+const audio = AudioStore()
 const { loadTrack, play } = useAudioPlayer()
 
 const props = defineProps({
@@ -39,8 +41,8 @@ const convertToTrackModel = (song: Song) => {
     title: song.songName,
     artist: song.artistName,
     album: song.album,
-    cover: song.coverUrl || default_album,
-    url: song.audioUrl,
+    cover: fixUrl(song.coverUrl) || default_album,
+    url: fixUrl(song.audioUrl),
     duration: Number(song.duration) || 0,
     likeStatus: song.likeStatus || 0,
   }
@@ -132,7 +134,7 @@ const handleLike = async (row: Song, e: Event) => {
 const downLoadMusic = (row: Song, e: Event) => {
   e.stopPropagation() // 阻止事件冒泡
   const link = document.createElement('a')
-  link.href = row.audioUrl
+  link.href = fixUrl(row.audioUrl)
   link.setAttribute('download', `${row.songName} - ${row.artistName}`)
   document.body.appendChild(link)
   link.click()
@@ -156,25 +158,25 @@ const isCurrentPlaying = (songId: number) => {
       --el-table-header-bg-color: none;
       --el-table-row-hover-bg-color: transparent;
     "
-    class="!rounded-lg !h-full transition duration-300"
+    class="!rounded-lg h-auto !w-full transition duration-300"
   >
     <el-table-column>
       <template #header>
         <div
-          class="grid grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-6 w-full text-left mt-2"
+          class="grid grid-cols-[auto_4fr_2fr_2rem] md:grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-2 md:gap-6 w-full text-left mt-2"
         >
           <div class="ml-3">标题</div>
           <div class="w-12"></div>
           <div class="ml-1">歌手</div>
-          <div>专辑</div>
-          <div>喜欢</div>
-          <div class="ml-7">时长</div>
-          <div>下载</div>
+          <div class="hidden md:block">专辑</div>
+          <div class="text-center md:text-left">喜欢</div>
+          <div class="ml-7 hidden md:block">时长</div>
+          <div class="text-center md:text-left hidden md:block">下载</div>
         </div>
       </template>
       <template #default="{ row }">
         <div
-          class="grid grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-6 w-full group transition duration-300 rounded-2xl p-2"
+          class="grid grid-cols-[auto_4fr_2fr_2rem] md:grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-2 md:gap-6 w-full group transition duration-300 rounded-2xl p-2"
           :class="[
             isCurrentPlaying(row.songId)
               ? 'bg-[hsl(var(--hover-menu-bg))]'
@@ -184,19 +186,25 @@ const isCurrentPlaying = (songId: number) => {
           @click="handlePlay(row)"
         >
           <!-- 标题和封面 -->
-          <div class="w-10 h-10 relative" v-if="row.coverUrl">
-            <el-image
-              :src="row.coverUrl"
-              fit="cover"
-              lazy
-              :alt="row.songName"
-              class="w-full h-full rounded-md"
-            />
-            <!-- Play 按钮，使用 group-hover 控制透明度 -->
-            <div
-              class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50 rounded-md"
-            >
-              <icon-tabler:player-play-filled class="text-lg" />
+          <div class="w-10 h-10 relative">
+            <template v-if="row.coverUrl">
+              <el-image
+                :src="fixUrl(row.coverUrl)"
+                fit="cover"
+                lazy
+                :alt="row.songName"
+                class="w-full h-full rounded-md"
+              />
+              <!-- Play 按钮，使用 group-hover 控制透明度 -->
+              <div
+                class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50 rounded-md"
+              >
+                <icon-tabler:player-play-filled class="text-lg" />
+              </div>
+            </template>
+            <!-- 占位符或默认封面，保持网格结构 -->
+            <div v-else class="w-full h-full rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                <icon-tabler:music class="text-gray-400 text-xl" />
             </div>
           </div>
 
@@ -207,14 +215,14 @@ const isCurrentPlaying = (songId: number) => {
 
           <!-- 歌手 -->
           <div class="text-left">
-            <div class="line-clamp-1 w-48">{{ row.artistName }}</div>
+            <div class="line-clamp-1 w-24 md:w-48">{{ row.artistName }}</div>
           </div>
 
           <!-- 专辑 -->
-          <div class="text-left">{{ row.album }}</div>
+          <div class="text-left hidden md:block">{{ row.album }}</div>
 
           <!-- 喜欢 -->
-          <div class="flex items-center ml-1">
+          <div class="flex items-center justify-center md:justify-start ml-1">
             <el-button text circle @click="handleLike(row, $event)">
               <icon-mdi:cards-heart-outline
                 v-if="!userStore.isLoggedIn || row.likeStatus === 0"
@@ -225,14 +233,14 @@ const isCurrentPlaying = (songId: number) => {
           </div>
 
           <!-- 时长 -->
-          <div class="text-left ml-8">
+          <div class="text-left ml-8 hidden md:block">
             <span>{{
               formatMillisecondsToTime(Number(row.duration) * 1000)
             }}</span>
           </div>
 
           <!-- 下载 -->
-          <div class="flex items-center ml-1">
+          <div class="hidden md:flex items-center justify-center md:justify-start ml-1">
             <el-button text circle @click.stop="downLoadMusic(row, $event)">
               <icon-material-symbols:download class="text-lg" />
             </el-button>

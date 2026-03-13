@@ -5,6 +5,7 @@ import SongRecognizer from '@/components/SongRecognizer.vue'
 import { getAllSongs } from '@/api/system'
 import { Song } from '@/api/interface'
 import { AudioStore } from '@/stores/modules/audio'
+import { MenuStore } from '@/stores/modules/menu'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import default_album from '@/assets/default_album.jpg'
 // @ts-ignore
@@ -14,9 +15,23 @@ const route = useRoute()
 const router = useRouter()
 const currentIcon = ref('material-symbols:wb-sunny-outline-rounded')
 const theme = themeStore()
+const menuStore = MenuStore()
 import { useDark, useToggle } from '@vueuse/core'
 
 const searchText = ref('')
+const isMobileSearchOpen = ref(false)
+
+const toggleMobileMenu = () => {
+  menuStore.setMobileMenuOpen(!menuStore.isMobileMenuOpen)
+}
+
+const toggleMobileRightAside = () => {
+  menuStore.setRightAsideOpen(!menuStore.isRightAsideOpen)
+}
+
+const toggleMobileSearch = () => {
+  isMobileSearchOpen.value = !isMobileSearchOpen.value
+}
 
 // 听歌识曲相关
 const showRecognizerDropdown = ref(false)
@@ -177,12 +192,20 @@ watch(
 </script>
 <template>
   <header class="px-4 py-2 border-b flex items-center justify-between relative">
-    <button class="flex relative w-60 items-center" @click="router.push('/')">
-      <img src="\logo.svg?v=1" alt="logo" class="w-10 h-10 ml-2" />
-      <span class="ml-3 text-2xl font-bold">Parachutes</span>
-    </button>
+    <div class="flex items-center gap-2 w-60">
+      <!-- 移动端菜单按钮 -->
+      <button class="md:hidden p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" @click="toggleMobileMenu">
+        <Icon icon="ri:menu-line" class="text-2xl" />
+      </button>
+
+      <button class="flex relative items-center" @click="router.push('/')">
+        <img src="\logo.svg?v=1" alt="logo" class="w-10 h-10 ml-2" />
+        <span class="ml-3 text-2xl font-bold hidden md:block">Parachutes</span>
+      </button>
+    </div>
+
     <!-- 输入框和头像 -->
-    <div class="flex items-center justify-center gap-3 flex-1 relative">
+    <div class="hidden md:flex items-center justify-center gap-3 flex-1 relative">
       <div class="relative mr-6">
         <Icon
           icon="mdi:magnify"
@@ -196,54 +219,90 @@ watch(
           @keyup.enter="router.push('/library?query=' + searchText)"
         />
 
-        <!-- 听歌识曲结果下拉框 -->
-        <div
-          v-if="showRecognizerDropdown"
-          class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 border border-gray-200 dark:border-gray-700 p-2"
-        >
-          <div class="flex justify-between items-center mb-2 px-1">
-             <span class="text-xs text-gray-500 font-bold">识别结果</span>
-             <button @click="closeRecognizerDropdown" class="text-gray-400 hover:text-gray-600">
-               <Icon icon="mdi:close" />
-             </button>
-          </div>
-
-          <div
-            v-if="recognizedTrack"
-            class="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-            :class="{'opacity-50 cursor-not-allowed': !localSongMatch && !isCheckingLocal}"
-            @click="playRecognizedSong"
-          >
-             <!-- 封面 -->
-             <div class="relative w-12 h-12 flex-shrink-0">
-               <img
-                 :src="localSongMatch?.coverUrl || recognizedTrack.photo_url || default_album"
-                 class="w-full h-full object-cover rounded-md"
-                 alt="cover"
-               />
-               <div v-if="localSongMatch" class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md opacity-0 hover:opacity-100 transition-opacity">
-                 <Icon icon="mdi:play" class="text-white text-xl" />
-               </div>
-             </div>
-
-             <!-- 信息 -->
-             <div class="flex-1 min-w-0">
-               <h3 class="font-medium text-sm truncate text-gray-900 dark:text-gray-100">{{ recognizedTrack.title }}</h3>
-               <p class="text-xs text-gray-500 truncate">{{ recognizedTrack.subtitle }}</p>
-               <p v-if="isCheckingLocal" class="text-xs text-blue-500 mt-1">正在查找曲库...</p>
-               <p v-else-if="!localSongMatch" class="text-xs text-red-500 mt-1">歌曲暂未收录</p>
-               <p v-else class="text-xs text-green-500 mt-1">点击播放</p>
-             </div>
-          </div>
-        </div>
-
+        <!-- 听歌识曲结果下拉框已移动到外层 -->
       </div>
       <SongRecognizer @success="handleRecognitionSuccess" />
       <button @click="toggleMode">
-        <Icon class="text-xl" :icon="currentIcon" />
+        <Icon class="text-xl" :class="theme.isDark ? '' : 'text-orange-500'" :icon="currentIcon" />
       </button>
     </div>
-    <div class="w-60 flex justify-end items-center gap-3"><Avatar /></div>
+    <div class="md:w-60 flex justify-end items-center gap-3 ml-auto">
+       <!-- 移动端搜索和主题控制 -->
+       <div class="flex items-center gap-3 md:hidden">
+        <SongRecognizer @success="handleRecognitionSuccess" />
+        <button @click="toggleMobileSearch">
+          <Icon icon="mdi:magnify" class="text-xl" />
+        </button>
+        <button @click="toggleMode">
+          <Icon class="text-xl" :class="theme.isDark ? '' : 'text-orange-500'" :icon="currentIcon" />
+        </button>
+        <button @click="toggleMobileRightAside">
+          <Icon icon="mdi:music-box-outline" class="text-xl" />
+        </button>
+      </div>
+      <Avatar />
+    </div>
+
+    <!-- 听歌识曲结果下拉框 (Global) -->
+    <div
+      v-if="showRecognizerDropdown"
+      class="absolute top-[calc(100%+0.5rem)] left-1/2 -translate-x-1/2 w-[95%] md:w-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-xl z-[100] border border-gray-200 dark:border-gray-700 p-2"
+    >
+      <div class="flex justify-between items-center mb-2 px-1">
+          <span class="text-xs text-gray-500 font-bold">识别结果</span>
+          <button @click="closeRecognizerDropdown" class="text-gray-400 hover:text-gray-600">
+            <Icon icon="mdi:close" />
+          </button>
+      </div>
+
+      <div
+        v-if="recognizedTrack"
+        class="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+        :class="{'opacity-50 cursor-not-allowed': !localSongMatch && !isCheckingLocal}"
+        @click="playRecognizedSong"
+      >
+          <!-- 封面 -->
+          <div class="relative w-12 h-12 flex-shrink-0">
+            <img
+              :src="localSongMatch?.coverUrl || recognizedTrack.photo_url || default_album"
+              class="w-full h-full object-cover rounded-md"
+              alt="cover"
+            />
+            <div v-if="localSongMatch" class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md opacity-0 hover:opacity-100 transition-opacity">
+              <Icon icon="mdi:play" class="text-white text-xl" />
+            </div>
+          </div>
+
+          <!-- 信息 -->
+          <div class="flex-1 min-w-0">
+            <h3 class="font-medium text-sm truncate text-gray-900 dark:text-gray-100">{{ recognizedTrack.title }}</h3>
+            <p class="text-xs text-gray-500 truncate">{{ recognizedTrack.subtitle }}</p>
+            <p v-if="isCheckingLocal" class="text-xs text-blue-500 mt-1">正在查找曲库...</p>
+            <p v-else-if="!localSongMatch" class="text-xs text-red-500 mt-1">歌曲暂未收录</p>
+            <p v-else class="text-xs text-green-500 mt-1">点击播放</p>
+          </div>
+      </div>
+    </div>
+
+    <!-- 移动端搜索栏覆盖层 -->
+    <div v-if="isMobileSearchOpen" class="absolute inset-0 bg-white dark:bg-[#121212] flex items-center px-4 z-50 md:hidden">
+       <button @click="toggleMobileSearch" class="mr-2">
+         <Icon icon="mdi:arrow-left" class="text-xl" />
+       </button>
+       <div class="relative flex-1">
+         <Icon
+            icon="mdi:magnify"
+            class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl"
+          />
+         <input
+            v-model="searchText"
+            type="text"
+            class="w-full text-sm pl-8 pr-2 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300 search-bg"
+            placeholder="想播放什么？"
+            @keyup.enter="router.push('/library?query=' + searchText); toggleMobileSearch()"
+          />
+       </div>
+    </div>
   </header>
 </template>
 

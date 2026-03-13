@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatMillisecondsToTime } from '@/utils'
+import { formatMillisecondsToTime, fixUrl } from '@/utils'
 import { trackModel } from '@/stores/interface'
 import { AudioStore } from '@/stores/modules/audio'
 import { MenuStore } from '@/stores/modules/menu'
@@ -86,7 +86,7 @@ const handleClearAll = () => {
             :class="`hover:bg-gray-300 ${audio.currentSongIndex == index ? 'bg-gray-300 dark:bg-[#414243]' : ''} dark:hover:bg-[#414243] `"
           >
             <div class="w-10 h-auto rounded-lg overflow-hidden relative">
-              <img :src="item.cover" alt="" />
+              <img :src="fixUrl(item.cover)" alt="" />
               <!-- Play 按钮，使用 group-hover 控制透明度 -->
               <div
                 class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50 rounded-md"

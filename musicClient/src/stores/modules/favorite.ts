@@ -6,6 +6,7 @@ import {
 } from '@/api/system'
 import type { ResultTable } from '@/api/system'
 import { ElMessage } from 'element-plus'
+import { fixUrl } from '@/utils'
 import coverImg from '@/assets/cover.png'
 
 interface FavoritePlaylist {
@@ -37,7 +38,7 @@ export const useFavoriteStore = defineStore('favorite', {
             this.favoritePlaylists = data.items.map((item) => ({
               id: item.playlistId,
               name: item.title,
-              coverImgUrl: item.coverUrl ?? coverImg,
+              coverImgUrl: fixUrl(item.coverUrl) || coverImg,
             }))
           }
         }

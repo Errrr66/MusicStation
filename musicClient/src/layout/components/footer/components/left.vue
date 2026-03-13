@@ -116,33 +116,33 @@ const handleLike = async () => {
 </script>
 
 <template>
-  <div class="flex items-center gap-4 h-full pl-4 w-96">
+  <div class="flex items-center gap-2 md:gap-4 h-full pl-2 md:pl-4 flex-1 md:flex-none md:w-96 min-w-0">
     <div
-      class="flex items-center gap-2 cursor-pointer select-none hover:bg-hoverMenuBg transition-colors rounded-lg p-1"
+      class="flex items-center gap-2 cursor-pointer select-none hover:bg-hoverMenuBg transition-colors rounded-lg p-1 min-w-0 flex-1 md:flex-initial overflow-hidden"
       @click="showDrawerMusic = !showDrawerMusic"
     >
-      <div class="w-16 h-16 flex-shrink-0">
+      <div class="w-10 h-10 md:w-16 md:h-16 flex-shrink-0">
         <img
           :src="currentTrack.cover + '?param=90y90'"
           :alt="currentTrack.title"
           class="w-full h-full object-cover rounded-lg shadow-md"
         />
       </div>
-      <div class="min-w-0">
+      <div class="min-w-0 flex-1">
         <div
-          class="text-base text-primary-foreground line-clamp-1 mb-0.5 mx-2 font-medium"
+          class="text-sm md:text-base text-primary-foreground line-clamp-1 mb-0.5 mx-1 md:mx-2 font-medium truncate"
           :title="currentTrack.title"
         >
           {{ currentTrack.title }}
         </div>
-        <div class="text-xs text-muted-foreground line-clamp-1 mt-0.5 mx-2">
+        <div class="text-xs text-muted-foreground line-clamp-1 mt-0.5 mx-1 md:mx-2 truncate">
           {{ currentTrack.artist }}
         </div>
       </div>
     </div>
 
     <button
-      class="p-2 rounded-full hover:bg-hoverMenuBg transition text-primary-foreground/70 hover:text-primary-foreground"
+      class="p-2 rounded-full hover:bg-hoverMenuBg transition text-primary-foreground/70 hover:text-primary-foreground flex-shrink-0"
       @click.stop="handleLike"
     >
       <Icon

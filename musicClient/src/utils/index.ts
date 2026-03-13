@@ -47,6 +47,24 @@ export function getTimeState() {
   if (hours >= 0 && hours <= 6) return `凌晨好 🌛`
 }
 
+/**
+ * 修复 MinIO URL 在局域网访问时的问题
+ * 将 localhost 或 127.0.0.1 替换为当前访问的主机名
+ */
+export function fixUrl(url: string | undefined | null): string {
+  if (!url) return ''
+  // 如果是相对路径，直接返回
+  if (url.startsWith('/')) return url
+  
+  // 替换 localhost 和 127.0.0.1 为当前 hostname
+  try {
+    const currentHost = window.location.hostname
+    return url.replace(/localhost|127\.0\.0\.1/g, currentHost)
+  } catch (e) {
+    return url
+  }
+}
+
 export function formatNumber(num: number): string {
   if (num >= 1e8) {
     return (num / 1e8).toFixed(0) + '亿' // 1亿

@@ -36,6 +36,8 @@ export interface trackModel {
 export interface MenuState {
   menuIndex: string // 当前菜单索引
   isPlaylistOpen: boolean // 是否打开播放队列
+  isMobileMenuOpen: boolean // 是否打开移动端菜单
+  isRightAsideOpen: boolean // 是否打开移动端侧边栏（右）
 }
 
 /* SettingState */

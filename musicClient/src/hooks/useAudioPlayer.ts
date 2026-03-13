@@ -4,6 +4,7 @@ import { ElNotification } from 'element-plus'
 import { PlayMode } from './interface'
 import { urlV1 } from '@/api'
 import { AudioStore } from '@/stores/modules/audio'
+import { fixUrl } from '@/utils'
 
 interface AudioPlayer {
   isPlaying: Ref<boolean>
@@ -11,6 +12,7 @@ interface AudioPlayer {
   currentTime: Ref<number>
   duration: Ref<number>
   volume: Ref<number>
+  playMode: Ref<PlayMode> // added playMode
   //   currentLyricIndex: Ref<number>
   audioElement: Ref<HTMLAudioElement | null>
   play: () => void
@@ -20,7 +22,7 @@ interface AudioPlayer {
   seek: (time: number) => void
   togglePlayPause: () => void
   setVolume: (volume: number) => void
-  setPlayMode: (mode: PlayMode) => void
+  togglePlayMode: () => void // added togglePlayMode
   loadTrack: () => Promise<void>
 }
 
@@ -32,9 +34,14 @@ export const AudioPlayer = () => {
   const playMode = ref<PlayMode>('order') // 默认为顺序播放
 
   // 当前播放的歌曲
-  const currentTrack = computed<trackModel>(
-    () => audioStore.trackList[audioStore.currentSongIndex] || defaultSong
-  )
+  const currentTrack = computed<trackModel>(() => {
+    const track = audioStore.trackList[audioStore.currentSongIndex] || defaultSong
+    return {
+      ...track,
+      cover: fixUrl(track.cover),
+      url: fixUrl(track.url),
+    }
+  })
   const currentTime = ref(0)
   const duration = ref(0)
   // 播放音乐
@@ -129,7 +136,7 @@ export const AudioPlayer = () => {
     // checkLyrics()
 
     if (audioElement.value) {
-      audioElement.value.src = currentTrack.value.url
+      audioElement.value.src = fixUrl(currentTrack.value.url)
       audioElement.value.load()
     }
   }
@@ -148,7 +155,7 @@ export const AudioPlayer = () => {
         (track: { id: any }) => track.id === currentTrack.value.id
       )
       if (trackIndex !== -1) {
-        audioStore.trackList[trackIndex].url = url // 更新 URL
+        audioStore.trackList[trackIndex].url = fixUrl(url) // 更新 URL
       }
     }
     return Promise.resolve()
@@ -201,6 +208,13 @@ export const AudioPlayer = () => {
       type: 'success',
     })
   }
+  
+  const togglePlayMode = () => {
+    const modes: PlayMode[] = ['order', 'shuffle', 'loop', 'single']
+    const currentIndex = modes.indexOf(playMode.value)
+    const nextIndex = (currentIndex + 1) % modes.length
+    setPlayMode(modes[nextIndex])
+  }
 
   // 组件挂载时初始化音频元素
   onMounted(() => {
@@ -230,6 +244,7 @@ export const AudioPlayer = () => {
     currentTime,
     duration,
     volume,
+    playMode, // added playMode
     // currentLyricIndex,
     audioElement,
     play,
@@ -239,7 +254,7 @@ export const AudioPlayer = () => {
     seek,
     togglePlayPause,
     setVolume,
-    setPlayMode,
+    togglePlayMode, // added togglePlayMode
     loadTrack,
   }
 

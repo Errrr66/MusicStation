@@ -15,6 +15,15 @@ import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { useRouter } from 'vue-router'
 import defaultSongCover from '@/assets/default_album.jpg'
 import defaultUserAvatar from '@/assets/user.jpg'
+import { fixUrl } from '@/utils'
+
+const props = defineProps<{
+  isMobile?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 
 const isCollapsed = ref(false)
 const audioStore = AudioStore()
@@ -78,7 +87,11 @@ const nextTrackInfo = computed(() => {
 
 // Toggle Sidebar
 const toggleCollapse = () => {
-  isCollapsed.value = !isCollapsed.value
+  if (props.isMobile) {
+    emit('close')
+  } else {
+    isCollapsed.value = !isCollapsed.value
+  }
 }
 
 // Handle Like/Unlike
@@ -127,37 +140,42 @@ const openQueue = () => {
 
 <template>
   <aside
-    class="sidebar-card hidden h-[calc(100%-1rem)] overflow-hidden md:block shadow-xl transition-all duration-300 m-2 rounded-2xl dark:bg-[#121212] bg-gray-100"
-    :class="[isCollapsed ? 'w-[120px]' : 'w-96']"
+    class="sidebar-card h-[calc(100%-1rem)] overflow-hidden shadow-xl transition-all duration-300 m-2 rounded-2xl dark:bg-[#121212] bg-gray-100"
+    :class="[
+      isMobile ? 'block w-[calc(100%-1rem)] h-full !m-2' : 'hidden md:block',
+      !isMobile && (isCollapsed ? 'w-[120px]' : 'w-96')
+    ]"
   >
     <nav class="flex flex-col p-4 h-full box-border">
       <!-- Header: Collapse Button -->
       <div
         class="flex items-center mb-4 transition-all duration-300"
-        :class="isCollapsed ? 'justify-center' : 'justify-start'"
+        :class="(isCollapsed && !isMobile) ? 'justify-center' : 'justify-between'"
       >
         <button
           class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           @click="toggleCollapse"
-          :title="isCollapsed ? '展开' : '收起'"
+          :title="isMobile ? '关闭' : (isCollapsed ? '展开' : '收起')"
         >
           <Icon
-            :icon="isCollapsed ? 'ri:menu-fold-line' : 'ri:menu-unfold-line'"
+            :icon="isMobile ? 'material-symbols:close' : (isCollapsed ? 'ri:menu-fold-line' : 'ri:menu-unfold-line')"
             class="text-xl text-primary-foreground"
           />
         </button>
         <span
-          v-if="!isCollapsed"
-          class="ml-2 font-bold text-lg dark:text-white"
+          v-if="!isCollapsed || isMobile"
+          class="font-bold text-lg dark:text-white"
         >
           Now Playing
         </span>
+         <!-- Spacer to balance the close button on mobile if needed, or just let strict flex handle it -->
+         <div v-if="isMobile" class="w-8"></div>
       </div>
 
       <!-- Main Content (Hidden when collapsed) -->
       <div
-        v-if="!isCollapsed"
-        class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-6"
+        v-if="!isCollapsed || isMobile"
+        class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-6 pb-24 md:pb-6"
       >
         <!-- Section 1: Current Song Info -->
         <div class="w-full">
@@ -166,7 +184,7 @@ const openQueue = () => {
             class="w-full aspect-square rounded-xl shadow-lg overflow-hidden mb-4 relative group"
           >
             <img
-              :src="currentTrack.cover || defaultSongCover"
+              :src="fixUrl(currentTrack.cover) || defaultSongCover"
               alt="Cover"
               class="w-full h-full object-cover"
             />
@@ -217,7 +235,7 @@ const openQueue = () => {
               @click="router.push(`/artist/${artistInfo.artistId}`)"
             >
               <img
-                :src="artistInfo.avatar || defaultUserAvatar"
+                :src="fixUrl(artistInfo.avatar) || defaultUserAvatar"
                 alt="Artist Avatar"
                 class="w-12 h-12 rounded-full object-cover shadow-sm"
               />
@@ -286,9 +304,9 @@ const openQueue = () => {
           >
             <div class="relative w-12 h-12 flex-shrink-0">
               <img
-                :src="nextTrackInfo.cover || defaultSongCover"
+                :src="fixUrl(nextTrackInfo.cover) || defaultSongCover"
                 alt="Next Song Cover"
-                class="w-full h-full rounded-md object-cover"
+                class="w-full h-full object-cover rounded-md"
               />
               <div
                 class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-md"
