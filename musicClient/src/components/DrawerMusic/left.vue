@@ -56,7 +56,7 @@ const togglePlayMode = () => {
 
 <template>
   <div
-    class="w-full min-h-[calc(100vh-8rem)] md:h-[calc(80vh-8rem)] relative inset-0 px-4 flex flex-col items-center justify-center py-4 md:py-0 shrink-0"
+    class="w-full h-full relative inset-0 px-4 flex flex-col items-center justify-center py-4 md:py-0 shrink-0"
   >
     <div class="flex flex-1 flex-col gap-4 items-center justify-center w-full">
       <!-- 封面 -->
@@ -105,7 +105,7 @@ const togglePlayMode = () => {
           }}</span>
         </div>
       </div>
-      <div class="flex items-center justify-center gap-4 md:gap-14 w-11/12 md:w-2/4 mt-12">
+      <div class="flex items-center justify-between md:justify-center md:gap-14 w-full md:w-2/4 mt-12 px-2 md:px-0">
         <el-tooltip
           :content="playModes[currentMode].tooltip"
           placement="top"

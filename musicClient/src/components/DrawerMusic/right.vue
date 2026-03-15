@@ -190,7 +190,7 @@ const handleDelete = async (comment: any) => {
 </script>
 
 <template>
-  <div class="h-full w-full p-2 md:p-6 overflow-hidden md:mr-16 flex flex-col">
+  <div class="h-full w-full p-4 md:p-6 overflow-hidden md:mr-16 flex flex-col">
     <!-- 顶部 Tab 切换 -->
     <div class="flex justify-center gap-6 mb-6 flex-shrink-0">
       <button
@@ -210,7 +210,7 @@ const handleDelete = async (comment: any) => {
     </div>
 
     <!-- 歌词视图 -->
-    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-visible md:overflow-y-auto no-scrollbar mask-image-gradient min-h-[50vh] md:min-h-0" ref="lyricContainerRef">
+    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-y-auto no-scrollbar mask-image-gradient min-h-0" ref="lyricContainerRef">
       <div v-if="parsedLyrics.length > 0" class="flex flex-col items-center py-40 space-y-6">
         <p
             v-for="(line, index) in parsedLyrics"
@@ -232,7 +232,7 @@ const handleDelete = async (comment: any) => {
     </div>
 
     <!-- 评论视图 -->
-    <div v-show="activeTab === 'comment'" class="flex-1 overflow-visible md:overflow-y-auto pr-2 min-h-[50vh] md:min-h-0">
+    <div v-show="activeTab === 'comment'" class="flex-1 overflow-y-auto pr-2 no-scrollbar md:min-h-0">
       <!-- 关键修复：将 v-if 和 v-else 放在同一层级，确保相邻 -->
       <div v-if="songDetail" class="space-y-6">
         <!-- 歌曲信息 -->

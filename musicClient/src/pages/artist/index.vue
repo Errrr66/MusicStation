@@ -254,7 +254,7 @@ onMounted(() => {
 
 
     <main class="flex-1 flex flex-col overflow-hidden w-full relative">
-        <div class="p-2 md:p-4 lg:p-6 flex-1 overflow-y-auto w-full pb-20 md:pb-0">
+        <div class="p-2 md:p-4 lg:p-6 flex-1 overflow-y-auto overflow-x-hidden w-full pb-20 md:pb-0">
             <!-- Sidebar toggle for desktop inside main area -->
              <div class="mb-4 hidden md:flex" v-if="!isSidebarOpen">
                  <button @click="toggleSidebar" class="flex items-center gap-2 text-sm text-gray-500 hover:text-primary">
@@ -310,7 +310,7 @@ onMounted(() => {
                   </div>
                 </div>
                  <!-- Mobile Name Display (Below Image) -->
-                <div class="mt-2 text-center md:hidden">
+                <div class="mt-2 text-center md:hidden w-full overflow-hidden px-1">
                     <h2 class="text-sm font-semibold truncate w-full">
                       {{ artist.name }}
                     </h2>
@@ -320,7 +320,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <nav class="mx-auto flex w-full justify-center mt-2 md:mt-6 pb-3 md:pb-6">
+      <nav class="mx-auto flex w-full justify-center mt-2 md:mt-6 pb-1 md:pb-12 overflow-x-hidden px-2">
         <el-pagination
           v-model:page-size="pageSize"
           v-model:currentPage="currentPage"

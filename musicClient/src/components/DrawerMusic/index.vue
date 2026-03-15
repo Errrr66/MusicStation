@@ -105,7 +105,7 @@ provide('songDetail', songDetail)
             <Left />
           </div>
           <!-- Right: Lyrics -->
-          <div class="w-full md:w-1/2 flex-shrink-0 snap-center h-full p-0 md:p-10 no-scrollbar overflow-y-auto md:overflow-hidden">
+          <div class="w-full md:w-1/2 flex-shrink-0 snap-center h-full p-0 md:p-10 overflow-hidden">
             <Right />
           </div>
         </div>
@@ -134,8 +134,8 @@ provide('songDetail', songDetail)
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(20px);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8));
+  backdrop-filter: blur(60px) saturate(180%) contrast(1.1);
   z-index: -1;
 }
 

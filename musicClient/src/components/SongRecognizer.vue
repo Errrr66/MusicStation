@@ -65,7 +65,7 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
 
   try {
     // 调用 Python 服务
-    const response = await fetch('http://localhost:8000/recognize', {
+    const response = await fetch('http://101.200.154.124/recognize', {
       method: 'POST',
       body: formData
     })
