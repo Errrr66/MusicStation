@@ -56,6 +56,10 @@ export const AudioPlayer = () => {
     if (audioElement.value) {
       audioElement.value.currentTime = time
       currentTime.value = time
+      // 自动播放
+      if (!isPlaying.value) {
+        play()
+      }
     }
   }
   // 暂停音乐

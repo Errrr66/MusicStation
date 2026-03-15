@@ -9,12 +9,19 @@ import AuthTabs from '@/components/Auth/AuthTabs.vue'
 import { useFavoriteStore } from '@/stores/modules/favorite'
 import coverImg from '@/assets/cover.png'
 
+const props = defineProps({
+  isMobile: {
+    type: Boolean,
+    default: false
+  }
+})
+
 const route = useRoute()
 const router = useRouter()
 const user = UserStore()
 const favoriteStore = useFavoriteStore()
 const authVisible = ref(false)
-const isCollapsed = ref(false)
+const isCollapsed = ref(!props.isMobile)
 
 // 处理需要登录的路由
 const handleProtectedRoute = (path: string) => {
@@ -26,12 +33,6 @@ const handleProtectedRoute = (path: string) => {
   return true
 }
 
-const props = defineProps({
-  isMobile: {
-    type: Boolean,
-    default: false
-  }
-})
 
 const emit = defineEmits(['close'])
 

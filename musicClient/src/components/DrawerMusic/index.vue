@@ -81,10 +81,10 @@ provide('songDetail', songDetail)
     size="100%"
     :modal="false"
     :showClose="false"
-    class="drawer-bg !p-0 !m-0"
+    class="drawer-bg !p-0 !m-0 rounded-t-3xl overflow-hidden"
     :with-header="false"
   >
-    <div class="h-full w-full flex flex-col backdrop-filter backdrop-blur-2xl bg-black/40">
+    <div class="h-full w-full flex flex-col backdrop-filter backdrop-blur-2xl bg-black/40 rounded-3xl overflow-hidden">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 px-6">
         <el-button text circle @click="showDrawer = false" class="!bg-white/10 hover:!bg-white/20 !text-white !p-2">
@@ -115,6 +115,22 @@ provide('songDetail', songDetail)
 </template>
 
 <style scoped>
+:deep(.el-drawer) {
+    border-top-left-radius: 1.5rem !important; /* rounded-3xl approx */
+    border-top-right-radius: 1.5rem !important;
+    overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+  :deep(.el-drawer) {
+    height: calc(100% - 20px) !important;
+    margin-bottom: 10px !important;
+    border-radius: 1.5rem !important;
+    width:calc(100% - 20px) !important;
+    margin-left: 10px !important;
+  }
+}
+
 :deep(.el-drawer__body) {
     padding: 0 !important;
     height: 100% !important;

@@ -60,3 +60,19 @@ const closeRightAside = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Mobile Menu Drawer (Left) - Round right corners */
+:deep(.mobile-menu-drawer.el-drawer) {
+  border-top-right-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+  overflow: hidden;
+}
+
+/* Mobile Right Aside Drawer (Right) - Round left corners */
+:deep(.mobile-right-aside-drawer.el-drawer) {
+  border-top-left-radius: 1.5rem;
+  border-bottom-left-radius: 1.5rem;
+  overflow: hidden;
+}
+</style>

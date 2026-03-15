@@ -195,14 +195,14 @@ const handleDelete = async (comment: any) => {
     <div class="flex justify-center gap-6 mb-6 flex-shrink-0">
       <button
           class="text-lg font-bold transition-colors"
-          :class="activeTab === 'lyric' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-primary-foreground'"
+          :class="activeTab === 'lyric' ? 'text-white' : 'text-white/50 hover:text-white'"
           @click="activeTab = 'lyric'"
       >
         歌词
       </button>
       <button
           class="text-lg font-bold transition-colors"
-          :class="activeTab === 'comment' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-primary-foreground'"
+          :class="activeTab === 'comment' ? 'text-white' : 'text-white/50 hover:text-white'"
           @click="activeTab = 'comment'"
       >
         评论
@@ -210,129 +210,127 @@ const handleDelete = async (comment: any) => {
     </div>
 
     <!-- 歌词视图 -->
-    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-y-auto no-scrollbar mask-image-gradient min-h-0" ref="lyricContainerRef">
-      <div v-if="parsedLyrics.length > 0" class="flex flex-col items-center py-40 space-y-6">
+    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar mask-image-gradient min-h-0 w-full" ref="lyricContainerRef">
+      <div v-if="parsedLyrics.length > 0" class="flex flex-col items-center py-40 space-y-3 md:space-y-6 w-full px-4">
         <p
             v-for="(line, index) in parsedLyrics"
             :key="index"
-            class="text-center transition-all duration-300 cursor-pointer hover:text-white"
+            class="text-center transition-all duration-300 cursor-pointer hover:text-white break-words w-full"
             :class="[
             index === currentLyricIndex
-              ? 'text-primary-foreground text-2xl font-bold scale-110'
-              : 'text-muted-foreground/60 text-lg'
+              ? 'text-white text-base md:text-2xl font-bold'
+              : 'text-white/60 text-xs md:text-lg'
           ]"
             @click="seek(line.time)"
         >
           {{ line.text }}
         </p>
       </div>
-      <div v-else class="flex flex-col items-center justify-center h-full text-muted-foreground">
+      <div v-else class="flex flex-col items-center justify-center h-full text-white/50">
         <p>暂无歌词</p>
       </div>
     </div>
 
     <!-- 评论视图 -->
-    <div v-show="activeTab === 'comment'" class="flex-1 overflow-y-auto pr-2 no-scrollbar md:min-h-0">
+    <div v-show="activeTab === 'comment'" class="flex-1 flex flex-col overflow-hidden min-h-0 w-full">
       <!-- 关键修复：将 v-if 和 v-else 放在同一层级，确保相邻 -->
-      <div v-if="songDetail" class="space-y-6">
-        <!-- 歌曲信息 -->
-        <div class="space-y-2">
-          <h3 class="text-xl font-semibold text-primary-foreground">歌曲信息</h3>
-          <div class="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-            <div>
-              <span class="text-primary-foreground">专辑：</span>
-              {{ songDetail.album }}
+      <div v-if="songDetail" class="flex flex-col h-full overflow-hidden relative">
+        <!-- 可滚动区域：歌曲信息 + 评论列表 -->
+        <div class="flex-1 overflow-y-auto overflow-x-hidden pr-2 no-scrollbar pb-4">
+          <!-- 歌曲信息 -->
+          <div class="space-y-2">
+            <h3 class="text-xl font-semibold text-white">歌曲信息</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm text-white/60">
+              <div>
+                <span class="text-white">专辑：</span>
+                {{ songDetail.album }}
+              </div>
+              <div>
+                <span class="text-white">发行时间：</span>
+                {{ formatDate(songDetail.releaseTime) }}
+              </div>
             </div>
-            <div>
-              <span class="text-primary-foreground">发行时间：</span>
-              {{ formatDate(songDetail.releaseTime) }}
+          </div>
+
+          <!-- 评论列表区域 -->
+          <div class="space-y-4 mt-8">
+            <h3 class="text-xl font-semibold text-white">
+              评论（{{ formatNumber(songDetail.comments?.length || 0) }}）
+            </h3>
+
+            <div v-if="comments.length > 0" class="space-y-6 pb-4">
+              <template v-for="comment in comments" :key="comment.commentId">
+                <div class="flex gap-3">
+                  <!-- Avatar -->
+                  <div class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
+                    <img
+                        :src="fixUrl(comment.userAvatar) || coverImg"
+                        alt="avatar"
+                        class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <!-- Content Right -->
+                  <div class="flex-1 min-w-0 flex flex-col">
+                    <!-- Header: User & Like -->
+                    <div class="flex justify-between items-start">
+                      <div class="flex flex-col gap-0.5">
+                         <span class="text-sm text-white/90 font-medium leading-none">{{ comment.username }}</span>
+                         <span class="text-[11px] text-white/50">{{ comment.createTime }}</span>
+                      </div>
+
+                      <div class="flex items-center gap-4">
+                        <button
+                            v-if="comment.username === currentUsername"
+                            class="text-white/60 hover:text-red-500 transition-colors"
+                            @click="handleDelete(comment)"
+                        >
+                          <icon-material-symbols:delete-outline class="text-lg" />
+                        </button>
+                        <button
+                            class="flex items-center gap-1 text-white/60 hover:text-red-500 transition-colors"
+                            @click="handleLike(comment)"
+                        >
+                          <span class="text-xs font-medium">{{ formatNumber(comment.likeCount) || '0' }}</span>
+                          <icon-material-symbols:thumb-up class="text-lg" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Comment Body -->
+                    <p class="text-[15px] text-white/95 mt-2 leading-relaxed break-words font-normal">
+                      {{ comment.content }}
+                    </p>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div v-else class="text-center py-8 text-white/50">
+              <p>暂无评论，快来抢沙发吧~</p>
             </div>
           </div>
         </div>
 
-        <!-- 评论区 -->
-        <div class="space-y-4">
-          <h3 class="text-xl font-semibold text-primary-foreground mt-12">
-            评论（{{ formatNumber(songDetail.comments?.length || 0) }}）
-          </h3>
-
-          <!-- 评论输入框 -->
-          <div class="mb-4">
-            <div class="flex items-start gap-3">
-              <div class="flex-1">
-                <el-input
-                    v-model="commentContent"
-                    type="textarea"
-                    :rows="4"
-                    :maxlength="maxLength"
-                    placeholder="说点什么吧"
-                    resize="none"
-                    show-word-limit
-                />
-                <div class="flex justify-end items-center mt-4">
-                  <button
-                      @click="handleComment"
-                      :disabled="!commentContent.trim()"
-                      class="px-6 py-1.5 bg-primary text-white rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
-                  >
-                    发布
-                  </button>
-                </div>
-              </div>
+        <!-- 固定底部的评论输入框 -->
+        <div class="flex-shrink-0 p-3 z-10 w-full bg-white/5 backdrop-blur-xl border border-white/5 rounded-2xl">
+            <div class="flex gap-3 items-end px-3">
+              <el-input
+                  v-model="commentContent"
+                  type="textarea"
+                  :rows="1"
+                  :autosize="{ minRows: 1, maxRows: 3 }"
+                  :maxlength="maxLength"
+                  placeholder="说点什么..."
+                  resize="none"
+                  class="flex-1 !bg-transparent custom-input"
+              />
+              <button
+                  @click="handleComment"
+                  :disabled="!commentContent.trim()"
+                  class="px-5 h-9 bg-primary text-primary-foreground rounded-full text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-all flex items-center justify-center shrink-0 mb-0.5 shadow-sm active:scale-95"
+              >
+                发布
+              </button>
             </div>
-          </div>
-
-          <!-- 评论列表 -->
-          <div v-if="comments.length > 0" class="space-y-4">
-            <template v-for="comment in comments" :key="comment.commentId">
-              <div class="flex gap-3 group">
-                <div
-                    class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mt-0.5"
-                >
-                  <img
-                      :src="fixUrl(comment.userAvatar) || coverImg"
-                      alt="avatar"
-                      class="w-full h-full object-cover"
-                  />
-                </div>
-                <div class="flex-1">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium text-blue-500">{{
-                        comment.username
-                      }}</span>
-                  </div>
-                  <p class="text-sm mt-1 mb-2">{{ comment.content }}</p>
-                  <div
-                      class="flex items-center justify-between text-sm text-gray-400"
-                  >
-                    <span class="text-xs">{{ comment.createTime }}</span>
-                    <div class="flex items-center gap-4">
-                      <!-- 如果是用户自己的评论，显示删除按钮 -->
-                      <button
-                          v-if="comment.username === currentUsername"
-                          class="flex items-center gap-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                          @click="handleDelete(comment)"
-                      >
-                        <icon-material-symbols:delete-outline />
-                        <span>删除</span>
-                      </button>
-                      <button
-                          class="flex items-center gap-1 hover:text-gray-600"
-                          @click="handleLike(comment)"
-                      >
-                        <span>{{ formatNumber(comment.likeCount) }}</span>
-                        <icon-material-symbols:thumb-up />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="border-b border-gray-300/70"></div>
-            </template>
-          </div>
-          <div v-else class="text-center py-8 text-gray-500">
-            <p>暂无评论，快来抢沙发吧~</p>
-          </div>
         </div>
       </div>
       <div v-else class="flex items-center justify-center h-full">
@@ -372,10 +370,20 @@ const handleDelete = async (comment: any) => {
 }
 
 :deep(.el-input__wrapper) {
-  border-radius: 8px;
+  border-radius: 24px;
 }
 
 :deep(.el-textarea__inner) {
-  border-radius: 12px !important;
+  border-radius: 20px !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+  padding: 8px 16px;
+  color: white !important; /* Force white text */
+}
+
+/* Placeholder styling */
+:deep(.el-textarea__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>
