@@ -65,13 +65,15 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
 
   try {
     // 调用 Python 服务
-    const response = await fetch('http://101.200.154.124/recognize', {
+    const response = await fetch('/recognize', {
       method: 'POST',
       body: formData
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const errorData = await response.text();
+      console.error('Server Error Detail:', errorData);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorData}`)
     }
 
     const result = await response.json()

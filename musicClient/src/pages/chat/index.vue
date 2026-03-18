@@ -26,9 +26,20 @@ const handleSend = async () => {
   scrollToBottom()
 
   try {
+    // 确保 API 返回类型匹配
     const res = await sendChatMessage(messages.value)
-    if (res.code === 0) {
-      messages.value.push({ role: 'assistant', content: res.data })
+    if (res.code === 0 && res.data) {
+      // 提取回复文本和音频
+      const answerText = typeof res.data === 'string' ? res.data : res.data.answer
+      const audioUrl = typeof res.data === 'string' ? '' : res.data.audio
+
+      messages.value.push({ role: 'assistant', content: answerText })
+
+      // 播放语音
+      if (audioUrl) {
+        const audio = new Audio(audioUrl)
+        audio.play().catch(e => console.error('Audio play failed', e))
+      }
     } else {
       ElMessage.error(res.message || '发送失败')
     }
@@ -47,7 +58,6 @@ const handleSend = async () => {
     <div
       class="text-2xl font-bold text-primary-foreground flex items-center gap-2"
     >
-      <Icon icon="ri:robot-line" />
       <span>Ciallo～(∠・ω< )⌒★</span>
     </div>
 

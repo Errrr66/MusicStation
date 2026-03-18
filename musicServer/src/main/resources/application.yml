@@ -1,8 +1,11 @@
+server:
+  port: 8080 # 更改为 8081，避免与 Nginx 的 8080 端口冲突 (Change to 8081 to avoid conflict with Nginx)
+
 spring:
   # 配置数据源
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://101.200.154.124:3306/vibe_music?useUnicode=true&characterEncoding=utf-8&useSSL=false # 修改你的 MySQL 地址和库名
+    url: jdbc:mysql://localhost:3306/vibe_music?useUnicode=true&characterEncoding=utf-8&useSSL=false # 推荐使用 127.0.0.1 提高各服务间连接速度和安全性 (Use localhost for speed and security)
     username: root # 修改你的 MySQL 用户名
     password: 123456 # 修改你的 MySQL 密码
     type: com.alibaba.druid.pool.DruidDataSource # 配置连接池
@@ -11,7 +14,7 @@ spring:
   data:
     redis:
       database: 1
-      host: 101.200.154.124
+      host: 127.0.0.1 # 推荐使用 127.0.0.1 (Use localhost)
       port: 6379
       password:
 
@@ -51,9 +54,9 @@ spring:
 
 # DeepSeek API Configuration
 deepseek:
-  api-key: sk-ae6fa52b68af466eac0480a8b4e6a853 # 替换为你的 DeepSeek API 密钥
-  base-url: https://api.deepseek.com
-  model: deepseek-chat
+  api-key: sk-576b0d5ae1d34c5db797d9e530381768 # 替换为你的 DeepSeek API 密钥
+  base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  model: deepseek-v3.2
 
 # 配置 mybatis-plus
 mybatis-plus:
@@ -84,7 +87,7 @@ role-path-permissions:
       - "/feedback/"
 
 minio:
-  endpoint: http://101.200.154.124:9000 # 修改你的 MinIO 端点
+  endpoint: http://127.0.0.1:9000 # 修改你的 MinIO 端点
   accessKey: minioadmin # 修改你的 MinIO Access Key
   secretKey: minioadmin # 修改你的 MinIO Secret Key
   bucket: vibe-music-data # 确认 Bucket 名称与你创建的一致

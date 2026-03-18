@@ -6,7 +6,7 @@ export interface ChatMessage {
 }
 
 export const sendChatMessage = (messages: ChatMessage[]) => {
-  return httpPost<{ code: number; message: string; data: string }>(
+  return httpPost<{ code: number; message: string; data: { answer: string; audio: string } }>(
     '/chat/ask',
     { messages }
   )

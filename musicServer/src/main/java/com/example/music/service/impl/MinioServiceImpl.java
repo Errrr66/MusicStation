@@ -62,6 +62,40 @@ public class MinioServiceImpl implements MinioService {
     }
 
     /**
+     * 通过输入流上传文件
+     *
+     * @param inputStream     文件输入流
+     * @param originalFileName 原始文件名
+     * @param contentType     文件内容类型
+     * @param folder          文件夹
+     * @return 可访问的 URL
+     */
+    @Override
+    public String uploadFile(InputStream inputStream, String originalFileName, String contentType, String folder) {
+        try {
+            // 生成唯一文件名
+            String fileName = folder + "/" + UUID.randomUUID() + "-" + originalFileName;
+
+            // 上传文件
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .stream(inputStream, -1, 10485760) // Part size 10MB
+                            .contentType(contentType)
+                            .build()
+            );
+
+            // 返回可访问的 URL
+            return endpoint + "/" + bucketName + "/" + fileName;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("文件上传失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 删除文件
      *
      * @param fileUrl 文件 URL
