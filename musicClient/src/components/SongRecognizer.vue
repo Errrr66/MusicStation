@@ -65,7 +65,7 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
 
   try {
     // 调用 Python 服务
-    const response = await fetch('/recognize', {
+    const response = await fetch('/shazam/recognize', { //在宝塔linux中改为/recognize
       method: 'POST',
       body: formData
     })
