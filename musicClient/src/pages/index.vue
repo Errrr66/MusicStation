@@ -170,7 +170,7 @@ const isCurrentPlaying = (songId: number) => {
     <!-- Recommended Playlists -->
     <section class="spotify-home-section">
       <div class="spotify-section-header">
-        <h2 class="spotify-section-title">今日为你推荐</h2>
+        <h2 class="spotify-section-title">推荐歌单</h2>
         <button @click="router.push('/playlist')" class="spotify-section-link">
           <icon-hugeicons:more class="text-lg" />
         </button>
@@ -201,38 +201,49 @@ const isCurrentPlaying = (songId: number) => {
     <!-- Recommended Songs -->
     <section class="spotify-home-section">
       <div class="spotify-section-header">
-        <h2 class="spotify-section-title">相似推荐</h2>
+        <h2 class="spotify-section-title">推荐歌曲</h2>
         <button @click="handleRefreshSongs()" class="spotify-section-link">
           <icon-tabler:refresh class="text-lg" />
         </button>
       </div>
-      <div class="spotify-song-list">
+      <div class="spotify-song-table">
+        <div class="spotify-song-header-row">
+          <span class="spotify-song-header-num">#</span>
+          <span class="spotify-song-header-title">标题</span>
+          <span class="spotify-song-header-album">专辑</span>
+          <span class="spotify-song-header-duration">
+            <Icon icon="mdi:clock-outline" />
+          </span>
+        </div>
         <div
-          v-for="item in recommendedSongList"
+          v-for="(item, index) in recommendedSongList"
           :key="item.id"
-          class="spotify-song-item"
-          :class="{ 'spotify-song-item-active': isCurrentPlaying(item.id) }"
+          class="spotify-song-row"
+          :class="{ 'spotify-song-row-active': isCurrentPlaying(item.id) }"
           @click.stop="handlePlaylclick(item)"
         >
-          <div class="spotify-song-cover">
+          <div class="spotify-song-num">
+            <span v-if="!isCurrentPlaying(item.id)" class="spotify-song-index">{{ index + 1 }}</span>
+            <Icon v-else icon="mdi:volume-high" class="spotify-song-playing-icon" />
+            <button class="spotify-song-row-play">
+              <Icon icon="mdi:play" />
+            </button>
+          </div>
+          <div class="spotify-song-main">
             <el-image
               :alt="item.name"
-              class="spotify-song-img"
-              :src="fixUrl(item.album.picUrl) + '?param=90y90'"
+              class="spotify-song-row-img"
+              :src="fixUrl(item.album.picUrl) + '?param=50y50'"
             />
-            <div class="spotify-song-play">
-              <icon-tabler:player-play-filled class="text-lg" />
+            <div class="spotify-song-row-info">
+              <span class="spotify-song-row-title">{{ item.name }}</span>
+              <span class="spotify-song-row-artist">
+                {{ item.artists.map((a) => a.name).join(', ') }}
+              </span>
             </div>
           </div>
-          <div class="spotify-song-info">
-            <h3 class="spotify-song-title">{{ item.name }}</h3>
-            <p class="spotify-song-artist">
-              {{ item.artists.map((item) => item.name).join(' ') }}
-            </p>
-          </div>
-          <div class="spotify-song-duration">
-            {{ formatTime(item.duration) }}
-          </div>
+          <div class="spotify-song-row-album">{{ item.album.name }}</div>
+          <div class="spotify-song-row-duration">{{ formatTime(item.duration) }}</div>
         </div>
       </div>
     </section>
@@ -372,93 +383,168 @@ const isCurrentPlaying = (songId: number) => {
   line-height: 1.4;
 }
 
-.spotify-song-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+.spotify-song-table {
+  width: 100%;
 }
 
-.spotify-song-item {
+.spotify-song-header-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 40px 1fr 1fr 80px;
   align-items: center;
-  gap: 16px;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  margin-bottom: 8px;
+}
+
+.spotify-song-header-num,
+.spotify-song-header-duration {
+  font-size: 0.75rem;
+  color: var(--text-subdued, #b3b3b3);
+  font-weight: 400;
+}
+
+.spotify-song-header-title {
+  font-size: 0.75rem;
+  color: var(--text-subdued, #b3b3b3);
+  font-weight: 400;
+}
+
+.spotify-song-header-album {
+  font-size: 0.75rem;
+  color: var(--text-subdued, #b3b3b3);
+  font-weight: 400;
+}
+
+.spotify-song-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 80px;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 200ms ease;
 }
 
-.spotify-song-item:hover {
+.spotify-song-row:hover {
   background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-song-item-active {
+.spotify-song-row-active {
   background-color: var(--bg-active, rgba(255, 255, 255, 0.2));
 }
 
-.spotify-song-cover {
+.spotify-song-row-active:hover {
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.25));
+}
+
+.spotify-song-num {
   position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.spotify-song-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.spotify-song-play {
-  position: absolute;
-  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  width: 16px;
+  height: 16px;
+}
+
+.spotify-song-index {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-song-playing-icon {
+  font-size: 1rem;
+  color: var(--text-accent, #1db954);
+}
+
+.spotify-song-row-play {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-base, #fff);
+  cursor: pointer;
   opacity: 0;
   transition: opacity 200ms ease;
 }
 
-.spotify-song-item:hover .spotify-song-play {
+.spotify-song-row:hover .spotify-song-row-play {
   opacity: 1;
 }
 
-.spotify-song-info {
-  min-width: 0;
-  flex: 1;
+.spotify-song-row:hover .spotify-song-index,
+.spotify-song-row:hover .spotify-song-playing-icon {
+  opacity: 0;
 }
 
-.spotify-song-title {
+.spotify-song-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.spotify-song-row-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-song-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.spotify-song-row-title {
   font-size: 0.9375rem;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text-base, #fff);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.spotify-song-item-active .spotify-song-title {
+.spotify-song-row-active .spotify-song-row-title {
   color: var(--text-accent, #1db954);
 }
 
-.spotify-song-artist {
+.spotify-song-row-artist {
   font-size: 0.8125rem;
   color: var(--text-subdued, #b3b3b3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-top: 2px;
 }
 
-.spotify-song-duration {
-  font-size: 0.8125rem;
+.spotify-song-row-artist:hover {
+  color: var(--text-base, #fff);
+  text-decoration: underline;
+}
+
+.spotify-song-row-album {
+  font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
-  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-song-row-album:hover {
+  color: var(--text-base, #fff);
+  text-decoration: underline;
+}
+
+.spotify-song-row-duration {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  text-align: right;
 }
 
 /* Light Theme */
@@ -470,6 +556,7 @@ const isCurrentPlaying = (songId: number) => {
   --bg-active: rgba(0, 0, 0, 0.12);
   --card-bg: #f0f0f0;
   --card-hover: #e0e0e0;
+  --border-color: rgba(0, 0, 0, 0.1);
 }
 
 :root:not(.dark) .spotify-playlist-cover {
@@ -490,8 +577,14 @@ const isCurrentPlaying = (songId: number) => {
     padding: 8px;
   }
   
-  .spotify-song-list {
-    grid-template-columns: 1fr;
+  .spotify-song-header-album,
+  .spotify-song-row-album {
+    display: none;
+  }
+  
+  .spotify-song-header-row,
+  .spotify-song-row {
+    grid-template-columns: 40px 1fr 80px;
   }
 }
 </style>

@@ -72,9 +72,6 @@ const handleSend = async () => {
         >
           {{ msg.content }}
         </div>
-        <div v-if="msg.role === 'user'" class="spotify-avatar spotify-avatar-user">
-          <Icon icon="mdi:account" />
-        </div>
       </div>
 
       <div v-if="loading" class="spotify-message spotify-message-assistant">
@@ -213,12 +210,6 @@ const handleSend = async () => {
 
 .spotify-avatar-assistant {
   background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
-}
-
-.spotify-avatar-user {
-  background-color: var(--bg-elevated, #242424);
-  color: var(--text-base, #fff);
-  font-size: 1.25rem;
 }
 
 .spotify-message-bubble {
@@ -415,10 +406,6 @@ const handleSend = async () => {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --border-color: rgba(0, 0, 0, 0.1);
-}
-
-:root:not(.dark) .spotify-avatar-user {
-  background-color: #e0e0e0;
 }
 
 :root:not(.dark) .spotify-input:focus {
