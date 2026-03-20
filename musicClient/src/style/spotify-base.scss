@@ -705,3 +705,107 @@ html.light {
   padding: 0 !important;
   margin: 0 !important;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .spotify-card {
+    padding: $spacing-md;
+    
+    .spotify-card-play-button {
+      width: 40px;
+      height: 40px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .spotify-button-primary {
+    padding: 10px 24px;
+  }
+  
+  .spotify-song-row {
+    grid-template-columns: 48px 1fr;
+    gap: $spacing-md;
+    padding: $spacing-sm;
+    
+    .spotify-song-index,
+    .spotify-song-album,
+    .spotify-song-duration,
+    .spotify-song-actions {
+      display: none;
+    }
+    
+    .spotify-song-info {
+      .spotify-song-cover {
+        width: 48px;
+        height: 48px;
+      }
+    }
+  }
+  
+  .spotify-modal {
+    max-width: 95vw;
+    border-radius: $container-border-radius;
+  }
+  
+  .spotify-dropdown {
+    max-width: calc(100vw - 32px);
+  }
+  
+  .spotify-progress-bar {
+    height: 3px;
+    
+    &:hover {
+      height: 4px;
+    }
+  }
+  
+  .spotify-volume-bar {
+    max-width: 80px;
+  }
+  
+  .spotify-library-card {
+    padding: $spacing-xs;
+    
+    .spotify-library-card-image {
+      width: 40px;
+      height: 40px;
+    }
+  }
+  
+  .spotify-icon-button {
+    padding: $spacing-xs;
+  }
+  
+  .spotify-play-button {
+    width: 40px;
+    height: 40px;
+    
+    &.small {
+      width: 28px;
+      height: 28px;
+    }
+  }
+  
+  .el-select-dropdown__item {
+    padding: 10px 16px !important;
+    font-size: 0.9375rem !important;
+  }
+}
+
+/* Light Theme Mobile */
+@media (max-width: 768px) {
+  html.light {
+    .spotify-card {
+      background-color: #f5f5f5;
+      
+      &:hover {
+        background-color: #e8e8e8;
+      }
+    }
+    
+    .spotify-song-row:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+}

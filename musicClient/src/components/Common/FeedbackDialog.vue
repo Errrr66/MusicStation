@@ -318,4 +318,47 @@ defineExpose({ openDialog })
 :root:not(.dark) .spotify-btn-cancel:hover {
   border-color: #000;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .spotify-feedback-dialog :deep(.el-dialog) {
+    width: 95vw !important;
+    margin: 0 auto;
+  }
+  
+  .spotify-dialog-header {
+    padding: 16px 20px;
+  }
+  
+  .spotify-dialog-title {
+    font-size: 1rem;
+  }
+  
+  .spotify-feedback-dialog :deep(.el-dialog__body) {
+    padding: 0 16px;
+  }
+  
+  .spotify-feedback-dialog :deep(.el-dialog__footer) {
+    padding: 0 16px 16px;
+  }
+  
+  .spotify-dialog-desc {
+    font-size: 0.8125rem;
+  }
+  
+  .spotify-textarea :deep(.el-textarea__inner) {
+    padding: 10px 12px;
+    font-size: 0.875rem;
+  }
+  
+  .spotify-dialog-footer {
+    flex-direction: column;
+  }
+  
+  .spotify-btn-cancel,
+  .spotify-btn-submit {
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>

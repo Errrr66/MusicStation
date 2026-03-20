@@ -470,12 +470,53 @@ const isCurrentPlaying = (songId: number) => {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .spotify-table-header-content {
-    grid-template-columns: 16px 4fr minmax(80px, 1fr);
+  .spotify-table-header {
+    display: none;
+  }
+  
+  .spotify-table-body {
+    padding: 0 8px;
   }
   
   .spotify-table-row {
-    grid-template-columns: 16px 4fr minmax(80px, 1fr);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: auto;
+    padding: 10px 0;
+    border-radius: 8px;
+    position: relative;
+  }
+  
+  .spotify-table-num {
+    display: none;
+  }
+  
+  .spotify-table-title-cell {
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
+  }
+  
+  .spotify-song-cover {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .spotify-song-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .spotify-song-name {
+    font-size: 0.9375rem;
+    display: block;
+  }
+  
+  .spotify-song-artist {
+    font-size: 0.8125rem;
+    display: block;
   }
   
   .spotify-table-album,
@@ -483,8 +524,25 @@ const isCurrentPlaying = (songId: number) => {
     display: none;
   }
   
+  .spotify-table-duration-cell {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
   .spotify-row-actions {
     opacity: 1;
+    gap: 4px;
+  }
+  
+  .spotify-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .spotify-duration {
+    display: none;
   }
 }
 </style>

@@ -874,6 +874,89 @@ const handleDelete = async () => {
   }
 }
 
+@media (max-width: 768px) {
+  .spotify-profile-page {
+    padding: 12px;
+    padding-bottom: 80px;
+  }
+  
+  .spotify-profile-header {
+    padding: 24px 16px;
+  }
+  
+  .spotify-profile-avatar {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .spotify-profile-name {
+    font-size: 1.5rem;
+  }
+  
+  .spotify-profile-stats {
+    gap: 16px;
+  }
+  
+  .spotify-profile-section {
+    padding: 16px;
+  }
+  
+  .spotify-section-title {
+    font-size: 1rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+  
+  .spotify-form-grid {
+    gap: 16px;
+  }
+  
+  .spotify-form-label {
+    font-size: 0.8125rem;
+  }
+  
+  .spotify-btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .spotify-danger-content {
+    text-align: center;
+    align-items: center;
+  }
+  
+  .spotify-danger-info {
+    text-align: center;
+  }
+  
+  .spotify-btn-danger {
+    width: 100%;
+  }
+  
+  .spotify-cropper-container {
+    height: 250px;
+  }
+  
+  .spotify-cropper-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .spotify-cropper-tools {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .spotify-cropper-actions {
+    width: 100%;
+  }
+  
+  .spotify-btn-cancel,
+  .spotify-btn-confirm {
+    flex: 1;
+  }
+}
+
 @media (min-width: 1024px) {
   .spotify-profile-page {
     max-width: 900px;

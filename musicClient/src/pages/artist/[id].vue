@@ -218,21 +218,45 @@ const formatBirth = (birth: string) => {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .spotify-artist-page {
+    padding-bottom: 80px;
+  }
+  
   .spotify-artist-header {
-    padding: 24px 16px;
+    padding: 16px 16px;
+    gap: 16px;
   }
   
   .spotify-artist-avatar {
-    width: 180px;
-    height: 180px;
+    width: 140px;
+    height: 140px;
   }
   
   .spotify-artist-name {
-    font-size: 2rem;
+    font-size: 1.75rem;
+    margin-bottom: 12px;
+  }
+  
+  .spotify-artist-meta {
+    gap: 8px;
+  }
+  
+  .spotify-meta-item {
+    font-size: 0.8125rem;
+  }
+  
+  .spotify-artist-bio {
+    font-size: 0.8125rem;
+    -webkit-line-clamp: 2;
   }
   
   .spotify-artist-songs {
-    padding: 0 16px 16px;
+    padding: 0 12px 16px;
+  }
+  
+  .spotify-songs-title {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
   }
 }
 </style>

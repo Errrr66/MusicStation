@@ -755,5 +755,95 @@ const openQueue = () => {
   .spotify-now-playing {
     border-radius: 0;
   }
+  
+  .spotify-now-playing-nav {
+    padding: 16px;
+  }
+  
+  .spotify-now-playing-header {
+    margin-bottom: 16px;
+  }
+  
+  .spotify-now-playing-toggle {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .spotify-toggle-icon {
+    font-size: 1.25rem;
+  }
+  
+  .spotify-now-playing-content {
+    gap: 24px;
+  }
+  
+  .spotify-now-playing-cover {
+    border-radius: 8px;
+  }
+  
+  .spotify-now-playing-song-title {
+    font-size: 1.125rem;
+  }
+  
+  .spotify-now-playing-song-artist {
+    font-size: 0.875rem;
+  }
+  
+  .spotify-now-playing-like {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .spotify-like-icon {
+    font-size: 1.25rem;
+  }
+  
+  .spotify-now-playing-section {
+    padding: 16px;
+    border-radius: 8px;
+  }
+  
+  .spotify-now-playing-section-title {
+    font-size: 0.9375rem;
+    margin-bottom: 12px;
+  }
+  
+  .spotify-now-playing-artist-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .spotify-now-playing-artist-name {
+    font-size: 0.9375rem;
+  }
+  
+  .spotify-now-playing-artist-bio {
+    font-size: 0.8125rem;
+    -webkit-line-clamp: 3;
+  }
+  
+  .spotify-now-playing-next-cover {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .spotify-now-playing-next-title {
+    font-size: 0.875rem;
+  }
+  
+  .spotify-now-playing-next-artist {
+    font-size: 0.75rem;
+  }
+  
+  .spotify-now-playing-queue-link {
+    font-size: 0.75rem;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+  }
+  
+  .spotify-now-playing-queue-link:hover {
+    background-color: transparent;
+  }
 }
 </style>

@@ -228,4 +228,14 @@ watch(
     display: none;
   }
 }
+
+@media (max-width: 768px) {
+  .spotify-library-page {
+    padding-bottom: 80px;
+  }
+  
+  .spotify-pagination {
+    padding: 16px 0;
+  }
+}
 </style>

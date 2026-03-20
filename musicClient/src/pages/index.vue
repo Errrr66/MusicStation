@@ -565,11 +565,28 @@ const isCurrentPlaying = (songId: number) => {
 
 @media (max-width: 768px) {
   .spotify-home {
-    padding: 16px;
+    padding: 12px;
+    padding-bottom: 80px;
+  }
+  
+  .spotify-home-banner {
+    margin-bottom: 16px;
+  }
+  
+  :deep(.spotify-carousel) {
+    height: 140px !important;
+  }
+  
+  :deep(.spotify-carousel .el-carousel__item) {
+    height: 140px !important;
+  }
+  
+  .spotify-section-title {
+    font-size: 1.25rem;
   }
   
   .spotify-playlist-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
   
@@ -577,14 +594,75 @@ const isCurrentPlaying = (songId: number) => {
     padding: 8px;
   }
   
-  .spotify-song-header-album,
+  .spotify-playlist-cover {
+    margin-bottom: 8px;
+  }
+  
+  .spotify-playlist-play-btn {
+    width: 36px;
+    height: 36px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .spotify-playlist-title {
+    font-size: 0.8125rem;
+  }
+  
+  .spotify-song-header-row {
+    display: none;
+  }
+  
+  .spotify-song-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 4px;
+    border-radius: 8px;
+  }
+  
+  .spotify-song-num {
+    display: none;
+  }
+  
+  .spotify-song-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .spotify-song-row-img {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+  
+  .spotify-song-row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  
+  .spotify-song-row-title {
+    font-size: 0.9375rem;
+    display: block;
+  }
+  
+  .spotify-song-row-artist {
+    font-size: 0.75rem;
+    display: block;
+  }
+  
   .spotify-song-row-album {
     display: none;
   }
   
-  .spotify-song-header-row,
-  .spotify-song-row {
-    grid-template-columns: 40px 1fr 80px;
+  .spotify-song-row-duration {
+    display: none;
   }
 }
 </style>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, onUnmounted } from 'vue'
-import { Message, Lock, Key } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ref, reactive } from 'vue'
+import type { FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { sendEmailCode, resetPassword } from '@/api/system'
 
@@ -9,54 +8,23 @@ const emit = defineEmits(['success', 'switch-tab'])
 
 const loading = ref(false)
 const countdown = ref(0)
-const resetFormRef = ref<FormInstance>()
-let timer: NodeJS.Timeout | null = null
+const resetFormRef = ref()
 
 const resetForm = reactive({
   email: '',
   verificationCode: '',
   newPassword: '',
-  repeatPassword: '',
 })
 
-// 表单验证规则
 const resetRules = reactive<FormRules>({
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
   ],
-  verificationCode: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    {
-      pattern: /^[0-9a-zA-Z]{6}$/,
-      message: '验证码格式：6位字符（大小写字母、数字）',
-      trigger: 'blur',
-    },
-  ],
-  newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    {
-      pattern: /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z\W]{8,18}$/,
-      message: '密码格式：8-18位数字、字母、符号的任意两种组合',
-      trigger: 'blur',
-    },
-  ],
-  repeatPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
-    {
-      validator: (rule: any, value: string, callback: Function) => {
-        if (value !== resetForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur',
-    },
-  ],
+  verificationCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
 })
 
-// 发送验证码
 const handleSendCode = async () => {
   try {
     if (!resetForm.email) {
@@ -67,14 +35,9 @@ const handleSendCode = async () => {
     if (response.code === 0) {
       ElMessage.success('验证码已发送')
       countdown.value = 60
-      timer = setInterval(() => {
+      const timer = setInterval(() => {
         countdown.value--
-        if (countdown.value <= 0) {
-          if (timer) {
-            clearInterval(timer)
-            timer = null
-          }
-        }
+        if (countdown.value <= 0) clearInterval(timer)
       }, 1000)
     } else {
       ElMessage.error(response.message)
@@ -84,10 +47,9 @@ const handleSendCode = async () => {
   }
 }
 
-// 重置密码处理
 const handleReset = async () => {
   if (!resetFormRef.value) return
-  await resetFormRef.value.validate(async (valid, fields) => {
+  await resetFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
@@ -99,148 +61,142 @@ const handleReset = async () => {
           ElMessage.error(response.message)
         }
       } catch (error: any) {
-        ElMessage.error(error.message || '密码重置失败')
+        ElMessage.error(error.message || '重置密码失败')
       } finally {
         loading.value = false
       }
-    } else {
-      console.log('验证失败:', fields)
     }
   })
 }
 
-function switchToLogin() {
-  // 通知父组件切换到登录标签
-  emit('switch-tab', 'login')
-}
-
-// 组件卸载时清除定时器
-onUnmounted(() => {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
-})
+const switchToLogin = () => emit('switch-tab', 'login')
 </script>
 
 <template>
-  <div class="reset-container">
-    <p class="form-subtitle">我们将向您的邮箱发送验证码以重置密码</p>
-
-    <el-form
-      ref="resetFormRef"
-      :model="resetForm"
-      :rules="resetRules"
-      label-width="0"
-      size="large"
-      @keyup.enter="handleReset"
-    >
+  <div class="spotify-form">
+    <el-form ref="resetFormRef" :model="resetForm" :rules="resetRules" label-width="0">
       <el-form-item prop="email">
-        <el-input
-          v-model="resetForm.email"
-          placeholder="邮箱"
-          :prefix-icon="Message"
-        >
-          <template #append>
-            <el-button
-              :disabled="!!countdown || loading"
-              @click="handleSendCode"
-            >
-              {{ countdown ? `${countdown}s后重试` : '获取验证码' }}
-            </el-button>
-          </template>
-        </el-input>
+        <div class="spotify-input-row">
+          <el-input v-model="resetForm.email" placeholder="邮箱" class="spotify-input" />
+          <button type="button" class="spotify-code-btn" :disabled="!!countdown" @click="handleSendCode">
+            {{ countdown ? `${countdown}s` : '验证码' }}
+          </button>
+        </div>
       </el-form-item>
 
-      <el-form-item prop="verificationCode" class="mt-6">
-        <el-input
-          v-model="resetForm.verificationCode"
-          placeholder="验证码"
-          :prefix-icon="Key"
-        />
+      <el-form-item prop="verificationCode">
+        <el-input v-model="resetForm.verificationCode" placeholder="验证码" class="spotify-input" />
       </el-form-item>
 
-      <el-form-item prop="newPassword" class="mt-6">
-        <el-input
-          v-model="resetForm.newPassword"
-          type="password"
-          placeholder="新密码"
-          :prefix-icon="Lock"
-          show-password
-        />
+      <el-form-item prop="newPassword">
+        <el-input v-model="resetForm.newPassword" type="password" placeholder="新密码" show-password class="spotify-input" />
       </el-form-item>
 
-      <el-form-item prop="repeatPassword" class="mt-6">
-        <el-input
-          v-model="resetForm.repeatPassword"
-          type="password"
-          placeholder="确认密码"
-          :prefix-icon="Lock"
-          show-password
-        />
-      </el-form-item>
-
-      <el-form-item class="mt-6">
-        <el-button
-          class="submit-btn"
-          type="primary"
-          :loading="loading"
-          @click="handleReset"
-        >
-          重置密码
-        </el-button>
+      <el-form-item>
+        <button type="button" class="spotify-btn-primary" :disabled="loading" @click="handleReset">重置密码</button>
       </el-form-item>
     </el-form>
 
-    <p class="login-text">
-      记起密码了？
-      <a href="#" @click.prevent="switchToLogin">返回登录</a>
-    </p>
+    <div class="spotify-divider"></div>
+
+    <div class="spotify-form-footer">
+      <span>想起密码了？</span>
+      <a href="#" class="spotify-link-highlight" @click.prevent="switchToLogin">登录</a>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.reset-container {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
-}
+.spotify-form { width: 100%; }
 
-.form-subtitle {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 14px;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 20px;
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: 8px;
-}
-
-.submit-btn {
-  width: 100%;
-  border-radius: 8px;
+.spotify-input :deep(.el-input__wrapper) {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
   height: 40px;
-  font-size: 16px;
+  padding: 0 12px;
+  box-shadow: none;
+  transition: border-color 200ms ease;
 }
 
-.login-text {
-  text-align: center;
-  margin-top: 16px;
-  color: #666;
+.spotify-input :deep(.el-input__wrapper:hover) { background: transparent; border-color: #727272; }
+.spotify-input :deep(.el-input__wrapper.is-focus) { background: transparent; border-color: #fff; }
+.spotify-input :deep(.el-input__inner) { color: #fff; font-size: 14px; }
+.spotify-input :deep(.el-input__inner::placeholder) { color: #747474; }
+
+.spotify-input-row { display: flex; gap: 8px; }
+.spotify-input-row .spotify-input { flex: 1; }
+
+.spotify-code-btn {
+  padding: 0 16px;
+  height: 40px;
+  background-color: #fff;
+  border: none;
+  border-radius: 9999px;
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 33ms ease, background-color 200ms ease;
 }
 
-.login-text a {
-  color: #2a68fa;
-  font-weight: 600;
-  text-decoration: none;
+.spotify-code-btn:hover:not(:disabled) {
+  transform: scale(1.04);
 }
 
-.login-text a:hover {
-  text-decoration: underline;
+.spotify-code-btn:active:not(:disabled) {
+  transform: scale(1);
 }
+
+.spotify-code-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spotify-btn-primary {
+  width: 100%;
+  height: 48px;
+  background-color: #fff;
+  border: none;
+  border-radius: 9999px;
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 33ms ease;
+}
+
+.spotify-btn-primary:hover:not(:disabled) { transform: scale(1.04); }
+.spotify-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spotify-divider { height: 1px; background-color: hsla(0, 0%, 100%, 0.1); margin: 20px 0; }
+.spotify-form-footer { text-align: center; }
+.spotify-form-footer span { font-size: 14px; color: #b3b3b3; }
+.spotify-link-highlight { font-size: 14px; font-weight: 600; color: #fff; text-decoration: none; margin-left: 4px; }
+.spotify-link-highlight:hover { text-decoration: underline; }
+
+/* Light Theme */
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper) {
+  background: transparent;
+  border: 1px solid transparent;
+}
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper:hover) {
+  background: transparent;
+  border-color: #d9d9d9;
+}
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper.is-focus) {
+  background: transparent;
+  border-color: #000;
+}
+:root:not(.dark) .spotify-input :deep(.el-input__inner) { color: #000; }
+:root:not(.dark) .spotify-input :deep(.el-input__inner::placeholder) { color: #6a6a6a; }
+:root:not(.dark) .spotify-code-btn {
+  background-color: #000;
+  color: #fff;
+}
+:root:not(.dark) .spotify-btn-primary { background-color: #000; color: #fff; }
+:root:not(.dark) .spotify-divider { background-color: rgba(0, 0, 0, 0.1); }
+:root:not(.dark) .spotify-form-footer span { color: #6a6a6a; }
+:root:not(.dark) .spotify-link-highlight { color: #000; }
 </style>

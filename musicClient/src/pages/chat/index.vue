@@ -435,6 +435,18 @@ const handleSend = async () => {
 }
 
 @media (max-width: 640px) {
+  .spotify-chat-page {
+    padding-bottom: 80px;
+  }
+  
+  .spotify-chat-header {
+    padding: 12px 16px;
+  }
+  
+  .spotify-chat-subtitle {
+    font-size: 0.8125rem;
+  }
+  
   .spotify-message-bubble {
     max-width: 85%;
   }
@@ -446,6 +458,28 @@ const handleSend = async () => {
 
   .spotify-empty-image img {
     width: 130px;
+  }
+  
+  .spotify-empty-title {
+    font-size: 1rem;
+  }
+  
+  .spotify-chat-input {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .spotify-input-wrapper {
+    padding: 10px 12px 10px 40px;
+  }
+  
+  .spotify-input {
+    font-size: 0.875rem;
+  }
+  
+  .spotify-send-btn {
+    width: 40px;
+    height: 40px;
   }
 }
 </style>

@@ -301,6 +301,10 @@ onMounted(() => {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .spotify-like-page {
+    padding-bottom: 80px;
+  }
+  
   .spotify-like-header {
     flex-direction: column;
     align-items: center;

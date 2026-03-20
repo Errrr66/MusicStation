@@ -4,6 +4,7 @@ import Aside from './components/aside/index.vue'
 import RightAside from './components/aside/RightAside.vue'
 import Main from './components/main/index.vue'
 import Footer from './components/footer/index.vue'
+import MobilePlayer from './components/footer/MobilePlayer.vue'
 // import BG from './components/bg/index.vue'
 import { AudioPlayer } from '@/hooks/useAudioPlayer'
 import { MenuStore } from '@/stores/modules/menu'
@@ -67,6 +68,9 @@ const closeRightAside = () => {
       
       <!-- Playing Bar -->
       <Footer />
+      
+      <!-- Mobile Player -->
+      <MobilePlayer />
     </div>
   </div>
 </template>

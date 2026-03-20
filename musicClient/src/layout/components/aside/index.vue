@@ -73,11 +73,14 @@ const handlePlaylistClick = (id: number) => {
     ]"
   >
     <div class="spotify-sidebar-content">
-      <div v-if="!isMobile" class="spotify-sidebar-header" @click="toggleCollapse">
-        <div class="spotify-sidebar-logo" :class="{ 'spotify-logo-centered': isCollapsed }">
+      <div class="spotify-sidebar-header" @click="!isMobile && toggleCollapse()">
+        <div class="spotify-sidebar-logo" :class="{ 'spotify-logo-centered': isCollapsed && !isMobile }">
           <Icon icon="mdi:library-music" class="spotify-logo-icon" />
-          <span v-if="!isCollapsed" class="spotify-logo-text">音乐库</span>
+          <span v-if="!isCollapsed && !isMobile" class="spotify-logo-text">音乐库</span>
         </div>
+        <button v-if="isMobile" class="spotify-mobile-close" @click="$emit('close')">
+          <Icon icon="mdi:close" />
+        </button>
       </div>
 
       <div class="spotify-sidebar-main">
@@ -242,6 +245,27 @@ const handlePlaylistClick = (id: number) => {
   font-size: 1rem;
   font-weight: 700;
   color: #b3b3b3;
+}
+
+.spotify-mobile-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #b3b3b3;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: auto;
+  transition: color 200ms ease, background-color 200ms ease;
+}
+
+.spotify-mobile-close:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .spotify-sidebar-main {
@@ -564,6 +588,75 @@ const handlePlaylistClick = (id: number) => {
 @media (max-width: 768px) {
   .spotify-sidebar {
     border-radius: 0;
+  }
+  
+  .spotify-sidebar-content {
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .spotify-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    cursor: default;
+  }
+  
+  .spotify-sidebar-header:hover {
+    background-color: transparent;
+  }
+  
+  .spotify-sidebar-main {
+    gap: 4px;
+  }
+  
+  .spotify-nav-item {
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  .spotify-nav-item-icon {
+    font-size: 1.5rem;
+  }
+  
+  .spotify-nav-item-text {
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+  
+  .spotify-nav-title {
+    padding: 8px 12px;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+  }
+  
+  .spotify-sidebar-footer {
+    max-height: 240px;
+    border-radius: 8px;
+  }
+  
+  .spotify-footer-header {
+    padding: 12px 16px;
+  }
+  
+  .spotify-footer-title {
+    font-size: 0.8125rem;
+  }
+  
+  .spotify-playlist-item {
+    padding: 8px;
+    border-radius: 6px;
+  }
+  
+  .spotify-playlist-cover {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+  }
+  
+  .spotify-playlist-name {
+    font-size: 0.8125rem;
   }
 }
 </style>

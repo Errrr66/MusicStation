@@ -751,36 +751,77 @@ const handlePlayAll = async () => {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .spotify-playlist-page {
+    padding-bottom: 80px;
+  }
+  
   .spotify-playlist-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
     padding: 24px 16px;
+    padding-top: 16px;
   }
   
   .spotify-playlist-cover {
-    width: 180px;
-    height: 180px;
+    width: 160px;
+    height: 160px;
+  }
+  
+  .spotify-playlist-info {
+    align-items: center;
   }
   
   .spotify-playlist-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+  
+  .spotify-playlist-description {
+    font-size: 0.8125rem;
   }
   
   .spotify-playlist-creator {
     justify-content: center;
+    margin-bottom: 16px;
   }
   
   .spotify-playlist-actions {
     justify-content: center;
+    gap: 16px;
+  }
+  
+  .spotify-play-btn {
+    height: 40px;
+    padding: 0 24px;
+    font-size: 0.875rem;
+  }
+  
+  .spotify-action-btn {
+    width: 36px;
+    height: 36px;
   }
   
   .spotify-tabs {
-    padding: 0 16px;
+    padding: 0 12px;
+  }
+  
+  .spotify-tab {
+    padding: 10px 12px;
+    font-size: 0.8125rem;
   }
   
   .spotify-playlist-content {
-    padding: 0 16px 16px;
+    padding: 0 12px 16px;
+  }
+  
+  .spotify-comment-item {
+    padding: 12px 0;
+  }
+  
+  .spotify-comment-avatar {
+    width: 32px;
+    height: 32px;
   }
   
   .spotify-comment-actions-row {

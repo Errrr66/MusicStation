@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { Message, Lock } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
+import { ElMessage } from 'element-plus'
+import type { FormRules } from 'element-plus'
 
-const emit = defineEmits(['success', 'switch-tab'])
 const userStore = UserStore()
+const emit = defineEmits(['success', 'switch-tab'])
 
+const loginFormRef = ref()
 const loading = ref(false)
-const loginFormRef = ref<FormInstance>()
 
 const loginForm = reactive({
   email: '',
   password: '',
 })
 
-// 表单验证规则
 const loginRules = reactive<FormRules>({
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -24,15 +22,9 @@ const loginRules = reactive<FormRules>({
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    {
-      pattern: /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z\W]{8,18}$/,
-      message: '密码格式：8-18位数字、字母、符号的任意两种组合',
-      trigger: 'blur',
-    },
   ],
 })
 
-// 登录处理
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   await loginFormRef.value.validate(async (valid) => {
@@ -55,128 +47,242 @@ const handleLogin = async () => {
   })
 }
 
-function switchToRegister() {
-  // 通知父组件切换到注册标签
+const switchToRegister = () => {
   emit('switch-tab', 'register')
 }
 
-function switchToReset() {
-  // 通知父组件切换到重置密码标签
+const switchToReset = () => {
   emit('switch-tab', 'reset')
 }
 </script>
 
 <template>
-  <div class="login-container">
-    <p class="form-subtitle">输入您的邮箱以登录您的账户</p>
-
+  <div class="spotify-form">
     <el-form
       ref="loginFormRef"
       :model="loginForm"
       :rules="loginRules"
       label-width="0"
-      size="large"
       @keyup.enter="handleLogin"
     >
       <el-form-item prop="email">
         <el-input
           v-model="loginForm.email"
           placeholder="邮箱"
-          :prefix-icon="Message"
+          class="spotify-input"
         />
       </el-form-item>
 
-      <el-form-item prop="password" class="mt-6">
+      <el-form-item prop="password">
         <el-input
           v-model="loginForm.password"
           type="password"
           placeholder="密码"
-          :prefix-icon="Lock"
           show-password
+          class="spotify-input"
         />
       </el-form-item>
 
-      <div class="forgot-password">
-        <a href="#" @click.prevent="switchToReset">忘记密码？</a>
+      <div class="spotify-form-options">
+        <label class="spotify-checkbox">
+          <input type="checkbox" />
+          <span>记住我</span>
+        </label>
+        <a href="#" class="spotify-link" @click.prevent="switchToReset">忘记密码？</a>
       </div>
 
-      <el-form-item class="mt-6">
-        <el-button
-          class="submit-btn"
-          type="primary"
-          :loading="loading"
+      <el-form-item>
+        <button
+          type="button"
+          class="spotify-btn-primary"
+          :disabled="loading"
           @click="handleLogin"
         >
           登录
-        </el-button>
+        </button>
       </el-form-item>
     </el-form>
 
-    <p class="signup-text">
-      没有账户？
-      <a href="#" @click.prevent="switchToRegister">注册</a>
-    </p>
+    <div class="spotify-divider"></div>
+
+    <div class="spotify-form-footer">
+      <span>还没有账户？</span>
+      <a href="#" class="spotify-link-highlight" @click.prevent="switchToRegister">注册</a>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.login-container {
+.spotify-form {
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
 }
 
-.form-subtitle {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 14px;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 20px;
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: 8px;
-}
-
-.submit-btn {
-  width: 100%;
-  border-radius: 8px;
+.spotify-input :deep(.el-input__wrapper) {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
   height: 40px;
-  font-size: 16px;
+  padding: 0 12px;
+  box-shadow: none;
+  transition: background-color 200ms ease, border-color 200ms ease;
 }
 
-.signup-text {
-  text-align: center;
-  margin-top: 16px;
-  color: #666;
+.spotify-input :deep(.el-input__wrapper:hover) {
+  background: transparent;
+  border-color: #727272;
 }
 
-.signup-text a {
-  color: #2a68fa;
-  font-weight: 600;
-  text-decoration: none;
+.spotify-input :deep(.el-input__wrapper.is-focus) {
+  background: transparent;
+  border-color: #fff;
 }
 
-.signup-text a:hover {
-  text-decoration: underline;
-}
-
-.forgot-password {
-  text-align: right;
-  margin: -10px 0 10px;
-}
-
-.forgot-password a {
-  color: #666;
+.spotify-input :deep(.el-input__inner) {
+  color: #fff;
   font-size: 14px;
-  text-decoration: none;
 }
 
-.forgot-password a:hover {
-  color: #2a68fa;
+.spotify-input :deep(.el-input__inner::placeholder) {
+  color: #747474;
+}
+
+.spotify-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 16px;
+}
+
+.spotify-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #b3b3b3;
+  cursor: pointer;
+}
+
+.spotify-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #1db954;
+}
+
+.spotify-link {
+  font-size: 13px;
+  color: #b3b3b3;
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.spotify-link:hover {
+  color: #fff;
   text-decoration: underline;
+}
+
+.spotify-btn-primary {
+  width: 100%;
+  height: 48px;
+  background-color: #fff;
+  border: none;
+  border-radius: 9999px;
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 33ms ease, background-color 200ms ease;
+}
+
+.spotify-btn-primary:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+.spotify-btn-primary:active:not(:disabled) {
+  transform: scale(1);
+}
+
+.spotify-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spotify-divider {
+  height: 1px;
+  background-color: hsla(0, 0%, 100%, 0.1);
+  margin: 20px 0;
+}
+
+.spotify-form-footer {
+  text-align: center;
+}
+
+.spotify-form-footer span {
+  font-size: 14px;
+  color: #b3b3b3;
+}
+
+.spotify-link-highlight {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.spotify-link-highlight:hover {
+  text-decoration: underline;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper) {
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper:hover) {
+  background: transparent;
+  border-color: #d9d9d9;
+}
+
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper.is-focus) {
+  background: transparent;
+  border-color: #000;
+}
+
+:root:not(.dark) .spotify-input :deep(.el-input__inner) {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-input :deep(.el-input__inner::placeholder) {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-checkbox {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-link {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-link:hover {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-btn-primary {
+  background-color: #000;
+  color: #fff;
+}
+
+:root:not(.dark) .spotify-divider {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-form-footer span {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-link-highlight {
+  color: #000;
 }
 </style>

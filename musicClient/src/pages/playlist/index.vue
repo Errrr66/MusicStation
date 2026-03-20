@@ -571,6 +571,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .spotify-playlist-page {
+    padding-bottom: 80px;
+  }
+  
   .spotify-playlist-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;

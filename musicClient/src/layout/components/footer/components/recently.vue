@@ -423,4 +423,51 @@ const closeQueue = () => {
 :root:not(.dark) .spotify-queue-delete:hover {
   color: #e91429;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .spotify-queue-drawer :deep(.el-drawer) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .spotify-queue-header {
+    padding: 12px 16px;
+  }
+  
+  .spotify-queue-title {
+    font-size: 1rem;
+  }
+  
+  .spotify-queue-content {
+    padding: 4px;
+  }
+  
+  .spotify-queue-item {
+    padding: 6px;
+    gap: 10px;
+  }
+  
+  .spotify-queue-cover-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .spotify-queue-title-text {
+    font-size: 0.875rem;
+  }
+  
+  .spotify-queue-artist {
+    font-size: 0.75rem;
+  }
+  
+  .spotify-queue-duration {
+    display: none;
+  }
+  
+  .spotify-queue-delete {
+    width: 36px;
+    height: 36px;
+  }
+}
 </style>

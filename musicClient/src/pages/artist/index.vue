@@ -738,6 +738,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .spotify-artist-page {
+    padding-bottom: 80px;
+  }
+  
   .spotify-artist-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
