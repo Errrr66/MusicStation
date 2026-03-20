@@ -60,11 +60,19 @@ const currentLyricIndex = computed(() => {
 // 歌词滚动
 watch(currentLyricIndex, (newIndex) => {
   if (newIndex > -1 && lyricContainerRef.value && activeTab.value === 'lyric') {
-    const feedbackItem = lyricContainerRef.value.querySelector(`p:nth-child(${newIndex + 1})`) as HTMLElement
-    if (feedbackItem) {
-      feedbackItem.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
+    const container = lyricContainerRef.value
+    const lyricItems = container.querySelectorAll('.spotify-lyric-line')
+    const targetItem = lyricItems[newIndex] as HTMLElement
+    
+    if (targetItem && container) {
+      const containerHeight = container.clientHeight
+      const itemTop = targetItem.offsetTop
+      const itemHeight = targetItem.clientHeight
+      const scrollTo = itemTop - containerHeight / 2 + itemHeight / 2
+      
+      container.scrollTo({
+        top: Math.max(0, scrollTo),
+        behavior: 'smooth'
       })
     }
   }
