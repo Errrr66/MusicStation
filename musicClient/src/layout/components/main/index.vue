@@ -1,12 +1,5 @@
 <template>
-  <main
-    class="relative flex-1 overflow-y-auto overflow-x-hidden m-2 ml-2 md:ml-0 md:mr-0 rounded-2xl bg-gray-100 dark:bg-[#121212] shadow-xl"
-  >
-    <!-- Purple Gradient Background -->
-    <div
-      class="absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b from-violet-500/20 to-transparent pointer-events-none"
-    ></div>
-
+  <main class="spotify-main-content">
     <router-view v-slot="{ Component }">
       <keep-alive>
         <component :is="Component" />
@@ -14,3 +7,50 @@
     </router-view>
   </main>
 </template>
+
+<style scoped>
+.spotify-main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-surface, #121212);
+  border-radius: 8px;
+  position: relative;
+  min-width: 0;
+  transition: background-color 200ms ease;
+}
+
+.spotify-main-content::-webkit-scrollbar {
+  width: 12px;
+}
+
+.spotify-main-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spotify-main-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.3));
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.spotify-main-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.5));
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-main-content {
+  --bg-surface: #ffffff;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  .spotify-main-content {
+    border-radius: 0;
+  }
+}
+</style>

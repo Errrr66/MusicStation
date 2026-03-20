@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, watch } from 'vue'
 import { getArtistDetail } from '@/api/system'
 import Table from '@/components/Table.vue'
 import { useArtistStore } from '@/stores/modules/artist'
@@ -31,6 +32,8 @@ const fetchArtistDetail = async () => {
 
     if (res.code === 0 && res.data) {
       const artistData = res.data as ArtistDetailResponse
+      console.log('艺人详情数据:', artistData)
+      console.log('歌曲列表:', artistData.songs)
       artistStore.setArtistInfo({
         artistId: artistData.artistId,
         artistName: artistData.artistName || '未知艺人',
@@ -65,38 +68,171 @@ const formatBirth = (birth: string) => {
 </script>
 
 <template>
-  <div class="container mx-auto py-10 px-5 h-full flex-1 flex flex-col">
-    <!-- 艺人详情 -->
-    <div class="flex flex-col lg:flex-row items-center gap-8">
-      <div class="w-48 h-48 rounded-full overflow-hidden bg-gray-200">
+  <div class="spotify-artist-page">
+    <!-- Artist Header -->
+    <div class="spotify-artist-header">
+      <div class="spotify-artist-avatar">
         <img
           :src="artistInfo?.avatar"
           :alt="artistInfo?.artistName"
-          class="w-full h-full object-cover"
+          class="spotify-artist-avatar-img"
         />
       </div>
-      <div class="text-center lg:text-left flex-1">
-        <h1 class="text-3xl font-semibold text-foreground">
-          {{ artistInfo?.artistName }}
-        </h1>
-        <div class="mt-4 space-y-2 text-sm text-muted-foreground">
-          <p v-if="artistInfo?.birth">
+      <div class="spotify-artist-info">
+        <span class="spotify-artist-type">艺人</span>
+        <h1 class="spotify-artist-name">{{ artistInfo?.artistName }}</h1>
+        <div class="spotify-artist-meta">
+          <span v-if="artistInfo?.birth" class="spotify-meta-item">
             生日：{{ formatBirth(artistInfo.birth) }}
-          </p>
-          <p v-if="artistInfo?.area">地区：{{ artistInfo.area }}</p>
-          <p v-if="artistInfo?.introduction" class="mt-2 line-clamp-4">
-            简介：{{ artistInfo.introduction }}
-          </p>
+          </span>
+          <span v-if="artistInfo?.area" class="spotify-meta-item">
+            地区：{{ artistInfo.area }}
+          </span>
         </div>
+        <p v-if="artistInfo?.introduction" class="spotify-artist-bio">
+          {{ artistInfo.introduction }}
+        </p>
       </div>
     </div>
 
-    <!-- 歌曲列表 -->
-    <div class="mt-12 flex flex-col flex-1">
-      <h2 class="text-2xl font-semibold text-foreground mb-6">所有歌曲</h2>
-      <div class="w-full h-full flex">
+    <!-- Songs Section -->
+    <div class="spotify-artist-songs">
+      <h2 class="spotify-songs-title">所有歌曲</h2>
+      <div class="spotify-songs-table">
         <Table :data="artistInfo?.songs" />
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.spotify-artist-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 300px);
+}
+
+.spotify-artist-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 48px 24px 24px;
+  text-align: center;
+}
+
+.spotify-artist-avatar {
+  width: 232px;
+  height: 232px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+}
+
+.spotify-artist-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spotify-artist-info {
+  max-width: 600px;
+}
+
+.spotify-artist-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-base, #fff);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.spotify-artist-name {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--text-base, #fff);
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+
+.spotify-artist-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.spotify-meta-item {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-artist-bio {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.spotify-artist-songs {
+  flex: 1;
+  min-height: 0;
+  padding: 0 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.spotify-songs-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.spotify-songs-table {
+  flex: 1;
+  min-height: 300px;
+  overflow: hidden;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-artist-page {
+  --bg-surface: #ffffff;
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --gradient-color: #e8f4f8;
+}
+
+:root:not(.dark) .spotify-artist-avatar {
+  box-shadow: 0 4px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .spotify-artist-header {
+    padding: 24px 16px;
+  }
+  
+  .spotify-artist-avatar {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .spotify-artist-name {
+    font-size: 2rem;
+  }
+  
+  .spotify-artist-songs {
+    padding: 0 16px 16px;
+  }
+}
+</style>

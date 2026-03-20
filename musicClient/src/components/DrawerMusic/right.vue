@@ -7,6 +7,7 @@ import { likeComment, addSongComment, getSongDetail, deleteComment } from '@/api
 import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { Icon } from '@iconify/vue'
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
 const userStore = UserStore()
@@ -190,200 +191,473 @@ const handleDelete = async (comment: any) => {
 </script>
 
 <template>
-  <div class="h-full w-full p-4 md:p-6 overflow-hidden md:mr-16 flex flex-col">
-    <!-- 顶部 Tab 切换 -->
-    <div class="flex justify-center gap-6 mb-6 flex-shrink-0">
+  <div class="spotify-lyrics-comments">
+    <!-- Tab Switcher -->
+    <div class="spotify-tabs">
       <button
-          class="text-lg font-bold transition-colors"
-          :class="activeTab === 'lyric' ? 'text-white' : 'text-white/50 hover:text-white'"
-          @click="activeTab = 'lyric'"
+        class="spotify-tab"
+        :class="{ 'spotify-tab-active': activeTab === 'lyric' }"
+        @click="activeTab = 'lyric'"
       >
         歌词
       </button>
       <button
-          class="text-lg font-bold transition-colors"
-          :class="activeTab === 'comment' ? 'text-white' : 'text-white/50 hover:text-white'"
-          @click="activeTab = 'comment'"
+        class="spotify-tab"
+        :class="{ 'spotify-tab-active': activeTab === 'comment' }"
+        @click="activeTab = 'comment'"
       >
         评论
       </button>
     </div>
 
-    <!-- 歌词视图 -->
-    <div v-show="activeTab === 'lyric'" class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar mask-image-gradient min-h-0 w-full" ref="lyricContainerRef">
-      <div v-if="parsedLyrics.length > 0" class="flex flex-col items-center py-40 space-y-3 md:space-y-6 w-full px-4">
+    <!-- Lyrics View -->
+    <div v-show="activeTab === 'lyric'" class="spotify-lyrics-view" ref="lyricContainerRef">
+      <div v-if="parsedLyrics.length > 0" class="spotify-lyrics-content">
         <p
-            v-for="(line, index) in parsedLyrics"
-            :key="index"
-            class="text-center transition-all duration-300 cursor-pointer hover:text-white break-words w-full"
-            :class="[
-            index === currentLyricIndex
-              ? 'text-white text-base md:text-2xl font-bold'
-              : 'text-white/60 text-xs md:text-lg'
-          ]"
-            @click="seek(line.time)"
+          v-for="(line, index) in parsedLyrics"
+          :key="index"
+          class="spotify-lyric-line"
+          :class="{ 'spotify-lyric-active': index === currentLyricIndex }"
+          @click="seek(line.time)"
         >
           {{ line.text }}
         </p>
       </div>
-      <div v-else class="flex flex-col items-center justify-center h-full text-white/50">
+      <div v-else class="spotify-empty">
+        <Icon icon="mdi:music-note-outline" class="text-4xl mb-4 opacity-50" />
         <p>暂无歌词</p>
       </div>
     </div>
 
-    <!-- 评论视图 -->
-    <div v-show="activeTab === 'comment'" class="flex-1 flex flex-col overflow-hidden min-h-0 w-full">
-      <!-- 关键修复：将 v-if 和 v-else 放在同一层级，确保相邻 -->
-      <div v-if="songDetail" class="flex flex-col h-full overflow-hidden relative">
-        <!-- 可滚动区域：歌曲信息 + 评论列表 -->
-        <div class="flex-1 overflow-y-auto overflow-x-hidden pr-2 no-scrollbar pb-4">
-          <!-- 歌曲信息 -->
-          <div class="space-y-2">
-            <h3 class="text-xl font-semibold text-white">歌曲信息</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm text-white/60">
-              <div>
-                <span class="text-white">专辑：</span>
-                {{ songDetail.album }}
-              </div>
-              <div>
-                <span class="text-white">发行时间：</span>
-                {{ formatDate(songDetail.releaseTime) }}
-              </div>
-            </div>
+    <!-- Comments View -->
+    <div v-show="activeTab === 'comment'" class="spotify-comments-view">
+      <div v-if="songDetail" class="spotify-comments-content">
+        <!-- Song Info -->
+        <div class="spotify-song-info">
+          <div class="spotify-info-item">
+            <span class="spotify-info-label">专辑</span>
+            <span class="spotify-info-value">{{ songDetail.album }}</span>
           </div>
-
-          <!-- 评论列表区域 -->
-          <div class="space-y-4 mt-8">
-            <h3 class="text-xl font-semibold text-white">
-              评论（{{ formatNumber(songDetail.comments?.length || 0) }}）
-            </h3>
-
-            <div v-if="comments.length > 0" class="space-y-6 pb-4">
-              <template v-for="comment in comments" :key="comment.commentId">
-                <div class="flex gap-3">
-                  <!-- Avatar -->
-                  <div class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
-                    <img
-                        :src="fixUrl(comment.userAvatar) || coverImg"
-                        alt="avatar"
-                        class="w-full h-full object-cover"
-                    />
-                  </div>
-                  <!-- Content Right -->
-                  <div class="flex-1 min-w-0 flex flex-col">
-                    <!-- Header: User & Like -->
-                    <div class="flex justify-between items-start">
-                      <div class="flex flex-col gap-0.5">
-                         <span class="text-sm text-white/90 font-medium leading-none">{{ comment.username }}</span>
-                         <span class="text-[11px] text-white/50">{{ comment.createTime }}</span>
-                      </div>
-
-                      <div class="flex items-center gap-4">
-                        <button
-                            v-if="comment.username === currentUsername"
-                            class="text-white/60 hover:text-red-500 transition-colors"
-                            @click="handleDelete(comment)"
-                        >
-                          <icon-material-symbols:delete-outline class="text-lg" />
-                        </button>
-                        <button
-                            class="flex items-center gap-1 text-white/60 hover:text-red-500 transition-colors"
-                            @click="handleLike(comment)"
-                        >
-                          <span class="text-xs font-medium">{{ formatNumber(comment.likeCount) || '0' }}</span>
-                          <icon-material-symbols:thumb-up class="text-lg" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Comment Body -->
-                    <p class="text-[15px] text-white/95 mt-2 leading-relaxed break-words font-normal">
-                      {{ comment.content }}
-                    </p>
-                  </div>
-                </div>
-              </template>
-            </div>
-            <div v-else class="text-center py-8 text-white/50">
-              <p>暂无评论，快来抢沙发吧~</p>
-            </div>
+          <div class="spotify-info-item">
+            <span class="spotify-info-label">发行时间</span>
+            <span class="spotify-info-value">{{ formatDate(songDetail.releaseTime) }}</span>
           </div>
         </div>
 
-        <!-- 固定底部的评论输入框 -->
-        <div class="flex-shrink-0 p-3 z-10 w-full bg-white/5 backdrop-blur-xl border border-white/5 rounded-2xl">
-            <div class="flex gap-3 items-end px-3">
-              <el-input
-                  v-model="commentContent"
-                  type="textarea"
-                  :rows="1"
-                  :autosize="{ minRows: 1, maxRows: 3 }"
-                  :maxlength="maxLength"
-                  placeholder="说点什么..."
-                  resize="none"
-                  class="flex-1 !bg-transparent custom-input"
+        <!-- Comments List -->
+        <div class="spotify-comments-list">
+          <h3 class="spotify-comments-title">
+            评论（{{ formatNumber(songDetail.comments?.length || 0) }}）
+          </h3>
+
+          <div v-if="comments.length > 0" class="spotify-comments-items">
+            <div v-for="comment in comments" :key="comment.commentId" class="spotify-comment-item">
+              <img
+                :src="fixUrl(comment.userAvatar) || coverImg"
+                alt="avatar"
+                class="spotify-comment-avatar"
               />
-              <button
-                  @click="handleComment"
-                  :disabled="!commentContent.trim()"
-                  class="px-5 h-9 bg-primary text-primary-foreground rounded-full text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-all flex items-center justify-center shrink-0 mb-0.5 shadow-sm active:scale-95"
-              >
-                发布
-              </button>
+              <div class="spotify-comment-body">
+                <div class="spotify-comment-header">
+                  <span class="spotify-comment-username">{{ comment.username }}</span>
+                  <span class="spotify-comment-time">{{ comment.createTime }}</span>
+                </div>
+                <p class="spotify-comment-text">{{ comment.content }}</p>
+                <div class="spotify-comment-actions">
+                  <button
+                    v-if="comment.username === currentUsername"
+                    class="spotify-comment-action"
+                    @click="handleDelete(comment)"
+                  >
+                    <Icon icon="mdi:delete-outline" />
+                    <span>删除</span>
+                  </button>
+                  <button class="spotify-comment-action" @click="handleLike(comment)">
+                    <Icon icon="mdi:thumb-up-outline" />
+                    <span>{{ formatNumber(comment.likeCount) || '0' }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
+          <div v-else class="spotify-empty spotify-empty-small">
+            <p>暂无评论，快来抢沙发吧~</p>
+          </div>
         </div>
       </div>
-      <div v-else class="flex items-center justify-center h-full">
-        <el-empty description="暂无歌曲信息" />
+      <div v-else class="spotify-empty">
+        <p>暂无歌曲信息</p>
+      </div>
+
+      <!-- Comment Input -->
+      <div class="spotify-comment-input">
+        <div class="spotify-input-wrapper">
+          <Icon icon="mdi:message-outline" class="spotify-input-icon" />
+          <el-input
+            v-model="commentContent"
+            type="textarea"
+            :rows="1"
+            :autosize="{ minRows: 1, maxRows: 3 }"
+            :maxlength="maxLength"
+            placeholder="说点什么..."
+            resize="none"
+            class="spotify-input"
+          />
+          <span class="spotify-char-count">{{ commentContent.length }}/{{ maxLength }}</span>
+        </div>
+        <button
+          @click="handleComment"
+          :disabled="!commentContent.trim()"
+          class="spotify-submit-btn"
+        >
+          <Icon icon="mdi:send" class="spotify-submit-icon" />
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar {
+.spotify-lyrics-comments {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.spotify-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+.spotify-tab {
+  padding: 8px 24px;
+  background: transparent;
+  border: none;
+  border-radius: 500px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.spotify-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.spotify-tab-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.spotify-lyrics-view {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.spotify-lyrics-view::-webkit-scrollbar {
   display: none;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-/* 蒙版效果，上下淡出 */
-.mask-image-gradient {
-  mask-image: linear-gradient(to bottom,
-  transparent 0%,
-  black 15%,
-  black 85%,
-  transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(to bottom,
-  transparent 0%,
-  black 15%,
-  black 85%,
-  transparent 100%
-  );
+
+.spotify-lyrics-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 0;
+  gap: 16px;
 }
 
-.el-button {
-  --el-button-hover-text-color: var(--el-color-primary);
-  --el-button-hover-bg-color: transparent;
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: 24px;
-}
-
-:deep(.el-textarea__inner) {
-  border-radius: 20px !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
-  padding: 8px 16px;
-  color: white !important; /* Force white text */
-}
-
-/* Placeholder styling */
-:deep(.el-textarea__inner::placeholder) {
+.spotify-lyric-line {
+  text-align: center;
   color: rgba(255, 255, 255, 0.5);
+  font-size: 1rem;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: all 300ms ease;
+  padding: 4px 16px;
+  border-radius: 4px;
+}
+
+.spotify-lyric-line:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.spotify-lyric-active {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.spotify-comments-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.spotify-comments-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.spotify-comments-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spotify-comments-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.spotify-song-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.spotify-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spotify-info-label {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spotify-info-value {
+  font-size: 0.875rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.spotify-comments-list {
+  flex: 1;
+}
+
+.spotify-comments-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.spotify-comments-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.spotify-comment-item {
+  display: flex;
+  gap: 12px;
+}
+
+.spotify-comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.spotify-comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.spotify-comment-username {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.spotify-comment-time {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.spotify-comment-text {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.spotify-comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.spotify-comment-item:hover .spotify-comment-actions {
+  opacity: 1;
+}
+
+.spotify-comment-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.spotify-comment-action:hover {
+  color: #fff;
+}
+
+.spotify-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
+}
+
+.spotify-empty-small {
+  height: auto;
+  padding: 32px 0;
+}
+
+.spotify-comment-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  margin-top: 16px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.spotify-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.spotify-input-icon {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.spotify-input {
+  flex: 1;
+}
+
+.spotify-input :deep(.el-textarea__inner) {
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.spotify-input :deep(.el-textarea__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.spotify-input :deep(.el-textarea__inner:focus) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.spotify-char-count {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  min-width: 36px;
+  text-align: right;
+}
+
+.spotify-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: #1db954;
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  cursor: pointer;
+  transition: transform 33ms ease, background-color 200ms ease;
+  flex-shrink: 0;
+}
+
+.spotify-submit-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+  background: #1ed760;
+}
+
+.spotify-submit-btn:disabled {
+  background: #535353;
+  color: #b3b3b3;
+  cursor: not-allowed;
+}
+
+.spotify-submit-icon {
+  font-size: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .spotify-lyrics-comments {
+    padding: 24px;
+  }
+  
+  .spotify-lyric-line {
+    font-size: 1.125rem;
+  }
+  
+  .spotify-lyric-active {
+    font-size: 1.5rem;
+  }
 }
 </style>

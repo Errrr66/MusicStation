@@ -149,118 +149,342 @@ const isCurrentPlaying = (songId: number) => {
 </script>
 
 <template>
-  <el-table
-    :data="data"
-    style="
-      --el-table-border: none;
-      --el-table-border-color: none;
-      --el-table-tr-bg-color: none;
-      --el-table-header-bg-color: none;
-      --el-table-row-hover-bg-color: transparent;
-    "
-    class="!rounded-lg h-auto !w-full transition duration-300"
-  >
-    <el-table-column>
-      <template #header>
-        <div
-          class="grid grid-cols-[auto_4fr_2fr_2rem] md:grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-2 md:gap-6 w-full text-left mt-2"
-        >
-          <div class="ml-3">标题</div>
-          <div class="w-12"></div>
-          <div class="ml-1">歌手</div>
-          <div class="hidden md:block">专辑</div>
-          <div class="text-center md:text-left">喜欢</div>
-          <div class="ml-7 hidden md:block">时长</div>
-          <div class="text-center md:text-left hidden md:block">下载</div>
+  <div class="spotify-song-table">
+    <!-- Table Header -->
+    <div class="spotify-table-header">
+      <div class="spotify-table-header-content">
+        <span class="spotify-table-num">#</span>
+        <span class="spotify-table-title">标题</span>
+        <span class="spotify-table-album">专辑</span>
+        <span class="spotify-table-date">发布日期</span>
+        <span class="spotify-table-duration">
+          <Icon icon="mdi:clock-outline" />
+        </span>
+      </div>
+    </div>
+
+    <!-- Table Body -->
+    <div class="spotify-table-body">
+      <div
+        v-for="(row, index) in data"
+        :key="row.songId"
+        class="spotify-table-row"
+        :class="{ 'spotify-table-row-active': isCurrentPlaying(row.songId) }"
+        @click="handlePlay(row)"
+      >
+        <div class="spotify-table-cell spotify-table-num">
+          <span class="spotify-row-index">{{ index + 1 }}</span>
+          <div class="spotify-row-play">
+            <Icon icon="mdi:play" />
+          </div>
         </div>
-      </template>
-      <template #default="{ row }">
-        <div
-          class="grid grid-cols-[auto_4fr_2fr_2rem] md:grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-2 md:gap-6 w-full group transition duration-300 rounded-2xl p-2"
-          :class="[
-            isCurrentPlaying(row.songId)
-              ? 'bg-[hsl(var(--hover-menu-bg))]'
-              : 'hover:bg-[hsl(var(--hover-menu-bg))]',
-            'cursor-pointer',
-          ]"
-          @click="handlePlay(row)"
-        >
-          <!-- 标题和封面 -->
-          <div class="w-10 h-10 relative">
-            <template v-if="row.coverUrl">
-              <el-image
-                :src="fixUrl(row.coverUrl)"
-                fit="cover"
-                lazy
-                :alt="row.songName"
-                class="w-full h-full rounded-md"
-              />
-              <!-- Play 按钮，使用 group-hover 控制透明度 -->
-              <div
-                class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50 rounded-md"
-              >
-                <icon-tabler:player-play-filled class="text-lg" />
-              </div>
-            </template>
-            <!-- 占位符或默认封面，保持网格结构 -->
-            <div v-else class="w-full h-full rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <icon-tabler:music class="text-gray-400 text-xl" />
+
+        <div class="spotify-table-cell spotify-table-title-cell">
+          <div class="spotify-song-cover">
+            <el-image
+              :src="fixUrl(row.coverUrl) + '?param=50y50'"
+              fit="cover"
+              lazy
+              :alt="row.songName"
+              class="spotify-song-img"
+            >
+              <template #error>
+                <div class="spotify-song-img-placeholder">
+                  <Icon icon="mdi:music-note" />
+                </div>
+              </template>
+            </el-image>
+          </div>
+          <div class="spotify-song-info">
+            <div class="spotify-song-name" :title="row.songName">
+              {{ row.songName }}
+            </div>
+            <div class="spotify-song-artist" :title="row.artistName">
+              {{ row.artistName }}
             </div>
           </div>
+        </div>
 
-          <!-- 歌曲名称 -->
-          <div class="text-left">
-            <div class="flex-1 line-clamp-1">{{ row.songName }}</div>
-          </div>
+        <div class="spotify-table-cell spotify-table-album">
+          <span :title="row.album">{{ row.album }}</span>
+        </div>
 
-          <!-- 歌手 -->
-          <div class="text-left">
-            <div class="line-clamp-1 w-24 md:w-48">{{ row.artistName }}</div>
-          </div>
+        <div class="spotify-table-cell spotify-table-date">
+          <span>{{ row.releaseTime || '-' }}</span>
+        </div>
 
-          <!-- 专辑 -->
-          <div class="text-left hidden md:block">{{ row.album }}</div>
-
-          <!-- 喜欢 -->
-          <div class="flex items-center justify-center md:justify-start ml-1">
-            <el-button text circle @click="handleLike(row, $event)">
-              <icon-mdi:cards-heart-outline
-                v-if="!userStore.isLoggedIn || row.likeStatus === 0"
-                class="text-lg"
+        <div class="spotify-table-cell spotify-table-duration-cell">
+          <div class="spotify-row-actions">
+            <button
+              class="spotify-action-btn"
+              @click="handleLike(row, $event)"
+              :title="row.likeStatus === 1 ? '取消喜欢' : '喜欢'"
+            >
+              <Icon
+                :icon="row.likeStatus === 1 ? 'mdi:cards-heart' : 'mdi:cards-heart-outline'"
+                :class="{ 'spotify-like-active': row.likeStatus === 1 }"
               />
-              <icon-mdi:cards-heart v-else class="text-lg text-red-500" />
-            </el-button>
-          </div>
-
-          <!-- 时长 -->
-          <div class="text-left ml-8 hidden md:block">
-            <span>{{
-              formatMillisecondsToTime(Number(row.duration) * 1000)
-            }}</span>
-          </div>
-
-          <!-- 下载 -->
-          <div class="hidden md:flex items-center justify-center md:justify-start ml-1">
-            <el-button text circle @click.stop="downLoadMusic(row, $event)">
-              <icon-material-symbols:download class="text-lg" />
-            </el-button>
+            </button>
+            <span class="spotify-duration">
+              {{ formatMillisecondsToTime(Number(row.duration) * 1000) }}
+            </span>
+            <button
+              class="spotify-action-btn"
+              @click.stop="downLoadMusic(row, $event)"
+              title="下载"
+            >
+              <Icon icon="mdi:download-outline" />
+            </button>
           </div>
         </div>
-      </template>
-    </el-table-column>
-  </el-table>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-:deep(.el-table__row) {
-  background: transparent !important;
+.spotify-song-table {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-:deep(.el-table__row:hover) td {
-  background: transparent !important;
+.spotify-table-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-surface, #121212);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  padding: 0 16px;
 }
 
-:deep(.el-table__cell) {
-  padding: 0 !important;
+.spotify-table-header-content {
+  display: grid;
+  grid-template-columns: 16px 4fr 2fr 1fr minmax(120px, 1fr);
+  gap: 16px;
+  align-items: center;
+  height: 36px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-subdued, #b3b3b3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.spotify-table-body {
+  padding: 0 16px;
+}
+
+.spotify-table-row {
+  display: grid;
+  grid-template-columns: 16px 4fr 2fr 1fr minmax(120px, 1fr);
+  gap: 16px;
+  align-items: center;
+  height: 56px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-table-row:hover {
+  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-table-row:hover .spotify-row-index {
+  display: none;
+}
+
+.spotify-table-row:hover .spotify-row-play {
+  display: flex;
+}
+
+.spotify-table-row:hover .spotify-row-actions {
+  opacity: 1;
+}
+
+.spotify-table-row-active {
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.2));
+}
+
+.spotify-table-row-active .spotify-song-name {
+  color: var(--text-accent, #1db954);
+}
+
+.spotify-table-row-active .spotify-row-index {
+  color: var(--text-accent, #1db954);
+}
+
+.spotify-table-cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-table-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-row-index {
+  display: flex;
+}
+
+.spotify-row-play {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-base, #fff);
+}
+
+.spotify-table-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.spotify-song-cover {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.spotify-song-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spotify-song-img-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-elevated, #282828);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.spotify-song-name {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-base, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-song-artist {
+  font-size: 0.8125rem;
+  color: var(--text-subdued, #b3b3b3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.spotify-song-artist:hover {
+  color: var(--text-base, #fff);
+  text-decoration: underline;
+}
+
+.spotify-table-album,
+.spotify-table-date {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-table-album:hover,
+.spotify-table-date:hover {
+  color: var(--text-base, #fff);
+  text-decoration: underline;
+}
+
+.spotify-table-duration-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.spotify-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.spotify-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-subdued, #b3b3b3);
+  cursor: pointer;
+  transition: color 200ms ease, transform 33ms ease;
+}
+
+.spotify-action-btn:hover {
+  color: var(--text-base, #fff);
+  transform: scale(1.1);
+}
+
+.spotify-like-active {
+  color: var(--text-accent, #1db954) !important;
+}
+
+.spotify-duration {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-song-table {
+  --bg-surface: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.08);
+  --bg-active: rgba(0, 0, 0, 0.12);
+  --bg-elevated: #f0f0f0;
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --text-accent: #1db954;
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .spotify-table-header-content {
+    grid-template-columns: 16px 4fr minmax(80px, 1fr);
+  }
+  
+  .spotify-table-row {
+    grid-template-columns: 16px 4fr minmax(80px, 1fr);
+  }
+  
+  .spotify-table-album,
+  .spotify-table-date {
+    display: none;
+  }
+  
+  .spotify-row-actions {
+    opacity: 1;
+  }
 }
 </style>

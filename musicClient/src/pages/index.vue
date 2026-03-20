@@ -154,155 +154,344 @@ const isCurrentPlaying = (songId: number) => {
 }
 </script>
 <template>
-  <div class="flex flex-col gap-4 p-2 md:gap-6 md:p-4 w-full overflow-x-hidden">
-    <div class="flex-1">
-      <div class="w-full flex flex-col overflow-hidden mb-8">
-        <!-- banner -->
-        <el-carousel :interval="4000" type="card" height="200px" class="md:h-[260px]">
-          <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
-            <img
-              :src="fixUrl(item.bannerUrl)"
-              class="w-full h-full object-cover rounded-lg"
-            />
-          </el-carousel-item>
-        </el-carousel>
+  <div class="spotify-home">
+    <!-- Banner -->
+    <div class="spotify-home-banner">
+      <el-carousel :interval="4000" type="card" height="200px" class="spotify-carousel">
+        <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
+          <img
+            :src="fixUrl(item.bannerUrl)"
+            class="spotify-banner-img"
+          />
+        </el-carousel-item>
+      </el-carousel>
+    </div>
 
-        <!-- 推荐 -->
-        <div class="mt-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">今日为你推荐</h2>
-            <button
-              @click="router.push('/playlist')"
-              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-black dark:text-white underline-offset-4 hover:underline h-10 px-4 py-2"
-            >
-              <icon-hugeicons:more class="text-lg" />
+    <!-- Recommended Playlists -->
+    <section class="spotify-home-section">
+      <div class="spotify-section-header">
+        <h2 class="spotify-section-title">今日为你推荐</h2>
+        <button @click="router.push('/playlist')" class="spotify-section-link">
+          <icon-hugeicons:more class="text-lg" />
+        </button>
+      </div>
+      <div class="spotify-playlist-grid">
+        <div
+          class="spotify-playlist-card"
+          v-for="i in recommendedPlaylist.slice(0, 6)"
+          :key="i.playlistId"
+          @click="router.push(`/playlist/${i.playlistId}`)"
+        >
+          <div class="spotify-playlist-cover">
+            <img
+              :alt="i.title"
+              loading="lazy"
+              class="spotify-playlist-img"
+              :src="replaceUrlParams(fixUrl(i.coverUrl) ?? coverImg, 'param=350y350')"
+            />
+            <button class="spotify-playlist-play-btn">
+              <Icon icon="mdi:play" class="text-2xl" />
             </button>
           </div>
-          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4">
-            <div
-              class="rounded-2xl transition duration-300 hover:bg-hoverMenuBg bg-card text-card-foreground border-0 shadow-nonec cursor-pointer"
-              v-for="i in recommendedPlaylist.slice(0, 6)"
-              :key="i.playlistId"
-              @click="router.push(`/playlist/${i.playlistId}`)"
-            >
-              <div class="p-0">
-                <div class="aspect-square rounded-t-2xl overflow-hidden">
-                  <img
-                    :alt="i.title"
-                    loading="lazy"
-                    width="200"
-                    height="200"
-                    class="w-full h-full object-cover"
-                    :src="
-                      replaceUrlParams(fixUrl(i.coverUrl) ?? coverImg, 'param=350y350')
-                    "
-                  />
-                  />
-                </div>
-                <div class="flex flex-col p-2">
-                  <h3 class="line-clamp-2 font-medium mb-1 playlist-title text-xs md:text-base">
-                    {{ i.title }}
-                  </h3>
-                </div>
-              </div>
+          <h3 class="spotify-playlist-title">{{ i.title }}</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommended Songs -->
+    <section class="spotify-home-section">
+      <div class="spotify-section-header">
+        <h2 class="spotify-section-title">相似推荐</h2>
+        <button @click="handleRefreshSongs()" class="spotify-section-link">
+          <icon-tabler:refresh class="text-lg" />
+        </button>
+      </div>
+      <div class="spotify-song-list">
+        <div
+          v-for="item in recommendedSongList"
+          :key="item.id"
+          class="spotify-song-item"
+          :class="{ 'spotify-song-item-active': isCurrentPlaying(item.id) }"
+          @click.stop="handlePlaylclick(item)"
+        >
+          <div class="spotify-song-cover">
+            <el-image
+              :alt="item.name"
+              class="spotify-song-img"
+              :src="fixUrl(item.album.picUrl) + '?param=90y90'"
+            />
+            <div class="spotify-song-play">
+              <icon-tabler:player-play-filled class="text-lg" />
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 歌曲 -->
-      <div class="w-full mb-20 md:mb-0">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold mb-4">相似推荐</h2>
-          <button
-            @click="handleRefreshSongs()"
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-black dark:text-white underline-offset-4 hover:underline h-10 px-4 py-2"
-          >
-            <icon-tabler:refresh class="text-lg" />
-          </button>
-        </div>
-        <el-scrollbar class="h-full" overflow-auto>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:gap-x-16">
-            <button
-              v-for="item in recommendedSongList"
-              :key="item.id"
-              class="grid grid-cols-[auto_2fr_1fr] items-center gap-2 md:gap-4 transition duration-300 rounded-2xl w-full group p-2 hover:bg-hoverMenuBg"
-              :class="[
-                isCurrentPlaying(item.id)
-                  ? 'bg-hoverMenuBg'
-                  : '',
-              ]"
-              @click.stop="handlePlaylclick(item)"
-            >
-              <!-- 专辑封面 -->
-              <div class="w-12 h-12 md:w-16 md:h-16 rounded-lg md:rounded-2xl overflow-hidden relative flex-shrink-0">
-                <el-image
-                  :alt="item.name"
-                  width="64"
-                  height="64"
-                  class="w-full h-full object-cover"
-                  :src="fixUrl(item.album.picUrl) + '?param=90y90'"
-                />
-                <!-- Play 按钮，使用 group-hover 控制透明度 -->
-                <div
-                  class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50"
-                >
-                  <icon-tabler:player-play-filled class="text-lg" />
-                </div>
-              </div>
-
-              <div class="truncate text-left ml-1 min-w-0">
-                <!-- 歌曲名称 -->
-                <h3 class="font-medium truncate text-sm md:text-base">{{ item.name }}</h3>
-                <!-- 艺术家 -->
-                <p class="text-xs md:text-sm text-muted-foreground line-clamp-1">
-                  {{ item.artists.map((item) => item.name).join(' ') }}
-                </p>
-              </div>
-
-              <!-- 时长 -->
-              <div class="text-right mr-2 md:mr-5 flex-shrink-0">
-                <p class="text-xs md:text-sm text-muted-foreground line-clamp-1">
-                  {{ formatTime(item.duration) }}
-                </p>
-              </div>
-            </button>
+          <div class="spotify-song-info">
+            <h3 class="spotify-song-title">{{ item.name }}</h3>
+            <p class="spotify-song-artist">
+              {{ item.artists.map((item) => item.name).join(' ') }}
+            </p>
           </div>
-        </el-scrollbar>
+          <div class="spotify-song-duration">
+            {{ formatTime(item.duration) }}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-:deep(.el-carousel__item) {
-  --el-carousel-item-scale: 1.2;
-  /* 默认是 0.83，可以调整 */
+.spotify-home {
+  padding: 20px;
+  overflow-y: auto;
+  height: 100%;
 }
 
-/* 让所有图片撑满 */
-.el-carousel__item img {
+.spotify-home-banner {
+  margin-bottom: 24px;
+}
+
+:deep(.spotify-carousel .el-carousel__item) {
+  --el-carousel-item-scale: 1.2;
+}
+
+.spotify-banner-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 20px;
-  /* 圆角 */
+  border-radius: 8px;
 }
 
-.playlist-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  text-align: left;
-  min-height: 2.5em;
-  /* 固定两行高度 */
-  line-height: 1.25;
-  /* 行高 */
-  overflow: hidden;
-  text-overflow: ellipsis;
+.spotify-home-section {
+  margin-bottom: 32px;
+}
+
+.spotify-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.spotify-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+}
+
+.spotify-section-link {
   display: flex;
   align-items: center;
-  /* 单行时垂直居中 */
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-subdued, #b3b3b3);
+  cursor: pointer;
+  transition: color 200ms ease, background-color 200ms ease;
+}
+
+.spotify-section-link:hover {
+  color: var(--text-base, #fff);
+  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-playlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px;
+}
+
+.spotify-playlist-card {
+  background-color: var(--card-bg, #181818);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-playlist-card:hover {
+  background-color: var(--card-hover, #282828);
+}
+
+.spotify-playlist-card:hover .spotify-playlist-play-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.spotify-playlist-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.spotify-playlist-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spotify-playlist-play-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 48px;
+  height: 48px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 200ms ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.spotify-playlist-play-btn:hover {
+  transform: translateY(0) scale(1.04);
+  background-color: #1ed760;
+}
+
+.spotify-playlist-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.spotify-song-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.spotify-song-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-song-item:hover {
+  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-song-item-active {
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.2));
+}
+
+.spotify-song-cover {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.spotify-song-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spotify-song-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.spotify-song-item:hover .spotify-song-play {
+  opacity: 1;
+}
+
+.spotify-song-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.spotify-song-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-base, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-song-item-active .spotify-song-title {
+  color: var(--text-accent, #1db954);
+}
+
+.spotify-song-artist {
+  font-size: 0.8125rem;
+  color: var(--text-subdued, #b3b3b3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.spotify-song-duration {
+  font-size: 0.8125rem;
+  color: var(--text-subdued, #b3b3b3);
+  flex-shrink: 0;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-home {
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --text-accent: #1db954;
+  --bg-hover: rgba(0, 0, 0, 0.08);
+  --bg-active: rgba(0, 0, 0, 0.12);
+  --card-bg: #f0f0f0;
+  --card-hover: #e0e0e0;
+}
+
+:root:not(.dark) .spotify-playlist-cover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .spotify-home {
+    padding: 16px;
+  }
+  
+  .spotify-playlist-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  
+  .spotify-playlist-card {
+    padding: 8px;
+  }
+  
+  .spotify-song-list {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

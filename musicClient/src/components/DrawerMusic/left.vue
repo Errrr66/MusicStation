@@ -4,8 +4,11 @@ import { Icon } from '@iconify/vue'
 import type { SongDetail } from '@/api/interface'
 import { ref, inject, type Ref } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
-import vinylImg from '@/assets/vinyl.png'
+import { MenuStore } from '@/stores/modules/menu'
 import Recently from '../../layout/components/footer/components/recently.vue'
+import vinylImg from '@/assets/vinyl.png'
+
+const menuStore = MenuStore()
 
 const {
   currentTrack,
@@ -21,7 +24,6 @@ const {
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
 
-// 添加播放模式相关逻辑
 const playModes = {
   order: {
     icon: 'ri:order-play-line',
@@ -55,21 +57,18 @@ const togglePlayMode = () => {
 </script>
 
 <template>
-  <div
-    class="w-full h-full relative inset-0 px-4 flex flex-col items-center justify-center py-4 md:py-0 shrink-0"
-  >
-    <div class="flex flex-1 flex-col gap-4 items-center justify-center w-full">
-      <!-- 封面 -->
-      <div :class="` ${isPlaying ? 'is-playing' : ''}`">
-        <div class="album">
+  <div class="spotify-player-full">
+    <div class="spotify-player-content">
+      <div class="spotify-album-container" :class="{ 'is-playing': isPlaying }">
+        <div class="spotify-album">
           <div
-            class="album-art rounded-md"
+            class="spotify-album-cover"
             :style="{
               backgroundImage: `url(${fixUrl(songDetail?.coverUrl) || fixUrl(currentTrack.cover)})`,
             }"
           ></div>
           <div
-            class="vinyl"
+            class="spotify-vinyl"
             :style="{
               animationPlayState: isPlaying ? 'running' : 'paused',
               backgroundImage: `url(${vinylImg}), url(${fixUrl(songDetail?.coverUrl) || fixUrl(currentTrack.cover)})`,
@@ -77,132 +76,272 @@ const togglePlayMode = () => {
           ></div>
         </div>
       </div>
-      <!-- 标题类 -->
-      <div class="flex flex-col items-center gap-2 mt-10">
-        <h2 class="text-3xl font-bold text-primary-foreground">
+
+      <div class="spotify-song-header">
+        <h2 class="spotify-song-title">
           {{ songDetail?.songName || currentTrack.title }}
         </h2>
-        <p class="text-xl text-inactive">
+        <p class="spotify-song-artist">
           {{ songDetail?.artistName || currentTrack.artist }}
         </p>
       </div>
-      <!-- 控制区 -->
-      <div class="flex gap-2 w-full items-center justify-center mt-8">
-        <div class="flex items-center gap-2 w-11/12 md:w-2/4">
-          <span class="text-xs w-10 text-foreground/50 text-center">{{
-            formatTime(currentTime)
-          }}</span>
+
+      <div class="spotify-progress-section">
+        <span class="spotify-time">{{ formatTime(currentTime) }}</span>
+        <div class="spotify-slider-wrapper">
           <el-slider
             v-model="currentTime"
             :show-tooltip="false"
             @change="seek"
             :max="duration"
-            class="flex-1"
             size="small"
+            class="spotify-slider"
           />
-          <span class="text-xs w-10 text-foreground/50 text-center">{{
-            formatTime(duration)
-          }}</span>
         </div>
+        <span class="spotify-time">{{ formatTime(duration) }}</span>
       </div>
-      <div class="flex items-center justify-between md:justify-center md:gap-14 w-full md:w-2/4 mt-12 px-2 md:px-0">
+
+      <div class="spotify-controls">
         <el-tooltip
           :content="playModes[currentMode].tooltip"
           placement="top"
           effect="dark"
         >
-          <el-button text circle @click="togglePlayMode">
-            <Icon :icon="playModes[currentMode].icon" class="text-2xl" />
-          </el-button>
+          <button class="spotify-control-btn" @click="togglePlayMode">
+            <Icon :icon="playModes[currentMode].icon" />
+          </button>
         </el-tooltip>
-        <el-button text circle class="!p-3" @click="prevTrack">
-          <icon-solar:skip-previous-bold class="text-2xl" />
-        </el-button>
-        <el-button text circle class="!p-3" @click="togglePlayPause">
-          <Icon
-            :icon="
-              isPlaying
-                ? 'ic:round-pause-circle'
-                : 'material-symbols:play-circle'
-            "
-            class="text-7xl"
-            :color="'#2a68fa'"
-          />
-        </el-button>
-        <el-button text circle class="!p-3" @click="nextTrack">
-          <icon-solar:skip-previous-bold class="scale-x-[-1] text-2xl" />
-        </el-button>
-        <el-button text circle class="scale-125 text-primary-foreground">
-          <Recently />
-        </el-button>
+        <button class="spotify-control-btn spotify-control-btn-lg" @click="prevTrack">
+          <Icon icon="mdi:skip-previous" />
+        </button>
+        <button class="spotify-play-btn" @click="togglePlayPause">
+          <Icon :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" />
+        </button>
+        <button class="spotify-control-btn spotify-control-btn-lg" @click="nextTrack">
+          <Icon icon="mdi:skip-next" />
+        </button>
+        <button class="spotify-control-btn" @click="menuStore.setPlaylistOpen(true)">
+          <Icon icon="ri:play-list-2-fill" />
+        </button>
       </div>
     </div>
+    <Recently />
   </div>
 </template>
 
-<style scoped lang="scss">
-.album {
-  box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.65);
+<style scoped>
+.spotify-player-full {
+  width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.spotify-player-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.spotify-album-container {
   position: relative;
   width: 100%;
-  z-index: 10;
+  display: flex;
+  justify-content: center;
+}
+
+.spotify-album {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   border-radius: 8px;
 }
 
-.album-art {
+.spotify-album-cover {
+  position: relative;
+  width: 280px;
+  height: 280px;
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  height: 315px;
-  position: relative;
-  width: 325px;
+  border-radius: 8px;
   z-index: 10;
 }
 
-.vinyl {
-  animation: spin 2s linear infinite;
-  transition: all 500ms;
-  background-position: center, center;
-  background-size:
-    cover,
-    40% auto;
-  background-repeat: no-repeat;
-  border-radius: 100%;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-  height: 300px;
-  left: 5%;
+.spotify-vinyl {
   position: absolute;
   top: 8px;
-  width: 300px;
+  left: 5%;
+  width: 264px;
+  height: 264px;
+  border-radius: 50%;
+  background-position: center, center;
+  background-size: cover, 40% auto;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  animation: spin 3s linear infinite;
   z-index: 5;
-  will-change: transform, left;
+  transition: left 0.5s ease;
+}
 
-  .is-playing & {
-    left: 52%;
-  }
+.is-playing .spotify-vinyl {
+  left: 52%;
 }
 
 @keyframes spin {
   from {
     transform: rotate(0deg);
   }
-
   to {
     transform: rotate(360deg);
   }
 }
 
+.spotify-song-header {
+  text-align: center;
+}
+
+.spotify-song-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.spotify-song-artist {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.spotify-progress-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.spotify-time {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 40px;
+  text-align: center;
+}
+
+.spotify-slider-wrapper {
+  flex: 1;
+}
+
+.spotify-slider :deep(.el-slider__runway) {
+  background-color: rgba(255, 255, 255, 0.2);
+  height: 4px;
+  border-radius: 2px;
+}
+
+.spotify-slider :deep(.el-slider__bar) {
+  background-color: #1db954;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.spotify-slider :deep(.el-slider__button) {
+  width: 12px;
+  height: 12px;
+  border: none;
+  background-color: #fff;
+}
+
+.spotify-slider:hover :deep(.el-slider__bar) {
+  background-color: #1ed760;
+}
+
+.spotify-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.spotify-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 200ms ease, transform 33ms ease;
+}
+
+.spotify-control-btn:hover {
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.spotify-control-btn-lg {
+  font-size: 2rem;
+}
+
+.spotify-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: transform 33ms ease, background-color 200ms ease;
+}
+
+.spotify-play-btn:hover {
+  transform: scale(1.06);
+  background-color: #f0f0f0;
+}
+
 @media (max-width: 768px) {
-  .album-art {
-    width: 70vw;
-    height: 70vw;
-    max-width: 300px;
-    max-height: 300px;
+  .spotify-album {
+    width: 200px;
+    height: 200px;
   }
 
-  .vinyl {
+  .spotify-album-cover {
+    width: 200px;
+    height: 200px;
+  }
+
+  .spotify-vinyl {
     display: none;
+  }
+
+  .spotify-song-title {
+    font-size: 1.25rem;
+  }
+
+  .spotify-song-artist {
+    font-size: 0.875rem;
+  }
+
+  .spotify-controls {
+    gap: 16px;
+  }
+
+  .spotify-play-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.75rem;
   }
 }
 </style>

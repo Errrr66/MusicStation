@@ -33,7 +33,6 @@ const userForm = reactive({
   introduction: userStore.userInfo.introduction || '',
 })
 
-// 表单验证规则
 const userRules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -59,14 +58,12 @@ const userRules = reactive<FormRules>({
   ],
 })
 
-// 检查登录状态
 onMounted(() => {
   if (!userStore.isLoggedIn) {
     authVisible.value = true
   }
 })
 
-// 处理头像上传
 const handleAvatarClick = () => {
   const input = document.createElement('input')
   input.type = 'file'
@@ -89,35 +86,30 @@ const handleAvatarClick = () => {
   input.click()
 }
 
-// 重置裁剪
 const reset = () => {
   if (cropper.value) {
     cropper.value.refresh()
   }
 }
 
-// 缩放
 const changeScale = (num: number) => {
   if (cropper.value) {
     cropper.value.changeScale(num)
   }
 }
 
-// 向左旋转
 const rotateLeft = () => {
   if (cropper.value) {
     cropper.value.rotateLeft()
   }
 }
 
-// 向右旋转
 const rotateRight = () => {
   if (cropper.value) {
     cropper.value.rotateRight()
   }
 }
 
-// 确认裁剪
 const handleCropConfirm = async () => {
   if (!cropper.value) return
   cropper.value.getCropData(async (base64: string) => {
@@ -131,7 +123,6 @@ const handleCropConfirm = async () => {
       const res = await updateUserAvatar(formData)
 
       if (res.code === 0) {
-        // 重新获取用户信息以更新头像URL
         const userInfoResponse = await getUserInfo()
         if (userInfoResponse.code === 0) {
           userStore.setUserInfo(userInfoResponse.data, userStore.userInfo.token)
@@ -151,7 +142,6 @@ const handleCropConfirm = async () => {
   })
 }
 
-// 处理表单提交
 const handleSubmit = async () => {
   if (!userFormRef.value) return
   await userFormRef.value.validate(async (valid) => {
@@ -175,7 +165,6 @@ const handleSubmit = async () => {
   })
 }
 
-// 处理账号注销
 const handleDelete = async () => {
   try {
     await ElMessageBox.confirm(
@@ -207,36 +196,128 @@ const handleDelete = async () => {
 </script>
 
 <template>
-  <div class="user-container">
-    <h2 class="username">个人中心</h2>
-
-    <div class="section">
-      <div class="section-title">头像</div>
-      <div class="user-header">
-        <div class="avatar-wrapper" @click="handleAvatarClick">
-          <el-avatar
-            :src="fixUrl(userStore.userInfo.avatarUrl) || defaultAvatar"
-            :size="100"
-          />
-          <div class="avatar-hover">
-            <icon-ic:outline-photo-camera class="camera-icon" />
-            <span>更新头像</span>
+  <div class="spotify-profile-page">
+    <div class="spotify-profile-header">
+      <div class="spotify-profile-avatar" @click="handleAvatarClick">
+        <el-avatar
+          :src="fixUrl(userStore.userInfo.avatarUrl) || defaultAvatar"
+          :size="180"
+          class="spotify-avatar-img"
+        />
+        <div class="spotify-avatar-hover">
+          <Icon icon="mdi:camera-edit" class="text-3xl" />
+          <span>更换头像</span>
+        </div>
+      </div>
+      <div class="spotify-profile-info">
+        <h1 class="spotify-profile-name">{{ userStore.userInfo.username || '用户' }}</h1>
+        <p class="spotify-profile-email">{{ userStore.userInfo.email || '未设置邮箱' }}</p>
+        <div class="spotify-profile-stats">
+          <div class="spotify-stat-item">
+            <span class="spotify-stat-value">{{ userStore.userInfo.phone ? '已绑定' : '未绑定' }}</span>
+            <span class="spotify-stat-label">手机</span>
+          </div>
+          <div class="spotify-stat-divider"></div>
+          <div class="spotify-stat-item">
+            <span class="spotify-stat-value">{{ userStore.userInfo.introduction ? '已设置' : '未设置' }}</span>
+            <span class="spotify-stat-label">简介</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 头像裁剪弹窗 -->
+    <div class="spotify-profile-content">
+      <div class="spotify-profile-section">
+        <h2 class="spotify-section-title">账户设置</h2>
+        
+        <el-form
+          ref="userFormRef"
+          :model="userForm"
+          :rules="userRules"
+          label-width="0"
+          class="spotify-profile-form"
+        >
+          <div class="spotify-form-grid">
+            <div class="spotify-form-item">
+              <label class="spotify-form-label">用户名</label>
+              <el-form-item prop="username">
+                <el-input v-model="userForm.username" placeholder="请输入用户名" class="spotify-input" />
+              </el-form-item>
+            </div>
+
+            <div class="spotify-form-item">
+              <label class="spotify-form-label">邮箱地址</label>
+              <el-form-item prop="email">
+                <el-input v-model="userForm.email" placeholder="请输入邮箱" class="spotify-input" />
+              </el-form-item>
+            </div>
+
+            <div class="spotify-form-item">
+              <label class="spotify-form-label">联系电话</label>
+              <el-form-item prop="phone">
+                <el-input v-model="userForm.phone" placeholder="请输入联系电话" class="spotify-input" />
+              </el-form-item>
+            </div>
+          </div>
+
+          <div class="spotify-form-full">
+            <label class="spotify-form-label">个人简介</label>
+            <el-form-item prop="introduction">
+              <el-input
+                v-model="userForm.introduction"
+                type="textarea"
+                :rows="4"
+                placeholder="介绍一下自己吧..."
+                maxlength="100"
+                show-word-limit
+                class="spotify-textarea"
+              />
+            </el-form-item>
+          </div>
+
+          <div class="spotify-form-actions">
+            <button
+              type="button"
+              :disabled="loading"
+              @click="handleSubmit"
+              class="spotify-btn-save"
+            >
+              <Icon v-if="loading" icon="eos-icons:loading" class="text-lg" />
+              <span>{{ loading ? '保存中...' : '保存更改' }}</span>
+            </button>
+          </div>
+        </el-form>
+      </div>
+
+      <div class="spotify-profile-section spotify-danger-zone">
+        <h2 class="spotify-section-title">危险区域</h2>
+        <div class="spotify-danger-content">
+          <div class="spotify-danger-info">
+            <h3>注销账号</h3>
+            <p>注销后，您的所有数据将被永久删除且无法恢复。</p>
+          </div>
+          <button
+            type="button"
+            :disabled="loading"
+            @click="handleDelete"
+            class="spotify-btn-danger"
+          >
+            注销账号
+          </button>
+        </div>
+      </div>
+    </div>
+
     <el-dialog
       v-model="cropperVisible"
       title="裁剪头像"
       align-center
       width="90%"
-      class="max-w-[600px]"
+      class="spotify-cropper-dialog"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
     >
-      <div class="cropper-container">
+      <div class="spotify-cropper-container">
         <vue-cropper
           ref="cropper"
           :img="cropperImg"
@@ -256,245 +337,547 @@ const handleDelete = async () => {
         />
       </div>
       <template #footer>
-        <div class="dialog-footer">
-          <div class="flex justify-between items-center w-full">
-            <div class="flex">
-              <el-button size="mini" type="info" @click="reset" class="mr-1"
-                >重置</el-button
-              >
-              <el-button size="mini" plain @click="changeScale(1)" class="mr-1">
-                <icon-ph:magnifying-glass-plus-light class="mr-0.5" />放大
-              </el-button>
-              <el-button
-                size="mini"
-                plain
-                @click="changeScale(-1)"
-                class="mr-1"
-              >
-                <icon-ph:magnifying-glass-minus-light class="mr-0.5" />缩小
-              </el-button>
-              <el-button size="mini" plain @click="rotateLeft" class="mr-1">
-                <icon-grommet-icons:rotate-left class="mr-0.5" />左旋转
-              </el-button>
-              <el-button size="mini" plain @click="rotateRight" class="mr-1">
-                <icon-grommet-icons:rotate-right class="mr-0.5" />右旋转
-              </el-button>
-            </div>
-            <div class="flex">
-              <el-button
-                size="mini"
-                type="warning"
-                plain
-                @click="cropperVisible = false"
-                class="mr-1"
-                >取消</el-button
-              >
-              <el-button size="mini" type="primary" @click="handleCropConfirm"
-                >确认</el-button
-              >
-            </div>
+        <div class="spotify-cropper-footer">
+          <div class="spotify-cropper-tools">
+            <button type="button" class="spotify-tool-btn" @click="reset">
+              <Icon icon="mdi:refresh" />
+            </button>
+            <button type="button" class="spotify-tool-btn" @click="changeScale(1)">
+              <Icon icon="mdi:magnify-plus" />
+            </button>
+            <button type="button" class="spotify-tool-btn" @click="changeScale(-1)">
+              <Icon icon="mdi:magnify-minus" />
+            </button>
+            <button type="button" class="spotify-tool-btn" @click="rotateLeft">
+              <Icon icon="mdi:rotate-left" />
+            </button>
+            <button type="button" class="spotify-tool-btn" @click="rotateRight">
+              <Icon icon="mdi:rotate-right" />
+            </button>
+          </div>
+          <div class="spotify-cropper-actions">
+            <button type="button" class="spotify-btn-cancel" @click="cropperVisible = false">取消</button>
+            <button type="button" class="spotify-btn-confirm" @click="handleCropConfirm">确认</button>
           </div>
         </div>
       </template>
     </el-dialog>
 
-    <el-form
-      ref="userFormRef"
-      :model="userForm"
-      :rules="userRules"
-      label-width="0"
-      size="large"
-      class="user-form"
-    >
-      <div class="section">
-        <div class="section-title">用户名</div>
-        <el-form-item prop="username">
-          <el-input v-model="userForm.username" placeholder="用户名" />
-        </el-form-item>
-      </div>
-
-      <div class="section">
-        <div class="section-title">邮箱</div>
-        <el-form-item prop="email">
-          <el-input v-model="userForm.email" placeholder="邮箱" />
-        </el-form-item>
-      </div>
-
-      <div class="section">
-        <div class="section-title">联系电话</div>
-        <el-form-item prop="phone">
-          <el-input v-model="userForm.phone" placeholder="联系电话" />
-        </el-form-item>
-      </div>
-
-      <div class="section">
-        <div class="section-title">简介</div>
-        <el-form-item prop="introduction">
-          <el-input
-            v-model="userForm.introduction"
-            type="textarea"
-            :rows="4"
-            placeholder="编辑个人简介"
-            maxlength="100"
-            show-word-limit
-          />
-        </el-form-item>
-      </div>
-
-      <el-form-item class="button-group">
-        <div class="flex flex-col md:flex-row justify-between w-full gap-4 md:gap-0">
-          <el-button
-            type="primary"
-            :loading="loading"
-            @click="handleSubmit"
-            class="submit-btn"
-          >
-            更新信息
-          </el-button>
-          <el-button
-            type="danger"
-            :loading="loading"
-            @click="handleDelete"
-            class="submit-btn"
-          >
-            注销账号
-          </el-button>
-        </div>
-      </el-form-item>
-    </el-form>
-
-    <!-- 登录对话框 -->
     <AuthTabs v-model="authVisible" />
   </div>
 </template>
 
 <style scoped>
-.user-container {
-  max-width: 1000px;
-  margin: 10px auto 30px;
-  padding: 20px;
-  background-color: var(--el-bg-color);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+.spotify-profile-page {
+  min-height: 100%;
+  padding: 24px;
+  overflow-y: auto;
 }
 
-@media (min-width: 768px) {
-  .user-container {
-    margin: 30px auto;
-    padding: 30px 40px 15px;
-  }
-}
-
-.user-header {
-  text-align: left;
-  margin-bottom: 20px;
-  display: flex;
-}
-
-.username {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  color: var(--el-text-color-primary);
-  font-weight: normal;
-}
-
-.user-form {
-  max-width: 100%;
-  margin: 0;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 24px;
-}
-/* ... (existing styles) ... */
-
-.submit-btn {
-  border-radius: 8px;
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .submit-btn {
-    width: 140px;
-  }
-}
-
-:deep(.el-textarea__inner) {
-  border-radius: 8px;
-  resize: none;
-  background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
-}
-
-:deep(.el-textarea__inner:hover) {
-  box-shadow: 0 0 0 1px var(--el-border-color-hover) inset !important;
-}
-
-:deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
-}
-
-:deep(.el-input.is-disabled .el-input__wrapper) {
-  background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color-light) inset !important;
-  cursor: not-allowed;
-}
-
-.section {
-  margin-bottom: 24px;
-}
-
-.section-title {
-  margin-bottom: 8px;
-  color: var(--el-text-color-regular);
-  font-size: 14px;
-}
-
-.avatar-wrapper {
-  position: relative;
-  cursor: pointer;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.avatar-hover {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+.spotify-profile-header {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  gap: 24px;
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.spotify-profile-avatar {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.spotify-profile-avatar:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.spotify-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.spotify-avatar-hover {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
   opacity: 0;
-  transition: opacity 0.3s;
-  color: white;
-  font-size: 14px;
+  transition: opacity 200ms ease;
 }
 
-.avatar-hover .camera-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
-}
-
-.avatar-wrapper:hover .avatar-hover {
+.spotify-profile-avatar:hover .spotify-avatar-hover {
   opacity: 1;
 }
 
-.button-group {
-  margin-top: 40px;
+.spotify-profile-info {
+  text-align: center;
 }
 
-.cropper-container {
+.spotify-profile-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+  margin-bottom: 4px;
+}
+
+.spotify-profile-email {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  margin-bottom: 16px;
+}
+
+.spotify-profile-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.spotify-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spotify-stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-base, #fff);
+}
+
+.spotify-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-stat-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.spotify-profile-section {
+  background-color: var(--card-bg, #181818);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.spotify-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-profile-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.spotify-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.spotify-form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spotify-form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-base, #fff);
+}
+
+.spotify-input :deep(.el-input__wrapper) {
+  background-color: var(--bg-elevated, #242424);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 12px 16px;
+  transition: all 200ms ease;
+}
+
+.spotify-input :deep(.el-input) {
+  --el-input-bg-color: var(--bg-elevated, #242424);
+}
+
+.spotify-input :deep(.el-input__inner) {
+  color: var(--text-base, #fff);
+  font-size: 0.9375rem;
+}
+
+.spotify-input :deep(.el-input__inner::placeholder) {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-input :deep(.el-input__wrapper:hover) {
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.2));
+}
+
+.spotify-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #1db954;
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+}
+
+.spotify-form-full {
+  margin-bottom: 24px;
+}
+
+.spotify-textarea :deep(.el-textarea__inner) {
+  background-color: var(--bg-elevated, #242424);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 12px 16px;
+  color: var(--text-base, #fff);
+  font-size: 0.9375rem;
+  resize: none;
+  transition: all 200ms ease;
+}
+
+.spotify-textarea :deep(.el-textarea__inner::placeholder) {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-textarea :deep(.el-textarea__inner:hover) {
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.2));
+}
+
+.spotify-textarea :deep(.el-textarea__inner:focus) {
+  border-color: #1db954;
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+}
+
+.spotify-textarea :deep(.el-input__count) {
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.spotify-btn-save {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 500px;
+  color: #000;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.spotify-btn-save:hover:not(:disabled) {
+  background-color: #1ed760;
+  transform: scale(1.02);
+}
+
+.spotify-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spotify-danger-zone {
+  border: 1px solid rgba(241, 94, 108, 0.3);
+}
+
+.spotify-danger-zone .spotify-section-title {
+  color: #f15e6c;
+}
+
+.spotify-danger-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.spotify-danger-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-base, #fff);
+  margin-bottom: 4px;
+}
+
+.spotify-danger-info p {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-btn-danger {
+  padding: 10px 24px;
+  background-color: transparent;
+  border: 1px solid #f15e6c;
+  border-radius: 500px;
+  color: #f15e6c;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.spotify-btn-danger:hover:not(:disabled) {
+  background-color: rgba(241, 94, 108, 0.1);
+}
+
+.spotify-btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spotify-cropper-dialog :deep(.el-dialog) {
+  background-color: var(--bg-surface, #121212);
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 500px;
+}
+
+.spotify-cropper-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-cropper-dialog :deep(.el-dialog__title) {
+  color: var(--text-base, #fff);
+  font-weight: 700;
+}
+
+.spotify-cropper-dialog :deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+.spotify-cropper-dialog :deep(.el-dialog__footer) {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-cropper-container {
   width: 100%;
-  height: 400px;
+  height: 300px;
+  background-color: #000;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-:deep(.el-dialog__body) {
-  padding-top: 10px;
+.spotify-cropper-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.spotify-cropper-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.spotify-tool-btn {
+  width: 36px;
+  height: 36px;
+  background-color: var(--bg-elevated, #242424);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-base, #fff);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  transition: background-color 200ms ease;
+}
+
+.spotify-tool-btn:hover {
+  background-color: var(--bg-elevated-hover, #2a2a2a);
+}
+
+.spotify-cropper-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.spotify-btn-cancel {
+  padding: 10px 20px;
+  background-color: transparent;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.3));
+  border-radius: 500px;
+  color: var(--text-base, #fff);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.spotify-btn-cancel:hover {
+  border-color: var(--text-base, #fff);
+}
+
+.spotify-btn-confirm {
+  padding: 10px 24px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 500px;
+  color: #000;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.spotify-btn-confirm:hover {
+  background-color: #1ed760;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-profile-page {
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f5f5f5;
+  --bg-elevated-hover: #e8e8e8;
+  --card-bg: #f8f8f8;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) .spotify-profile-header {
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(29, 185, 84, 0.05) 100%);
+}
+
+:root:not(.dark) .spotify-profile-avatar {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:root:not(.dark) .spotify-profile-avatar:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) .spotify-cropper-dialog :deep(.el-dialog) {
+  background-color: #ffffff;
+}
+
+:root:not(.dark) .spotify-tool-btn {
+  background-color: #f5f5f5;
+  color: #000;
+}
+
+:root:not(.dark) .spotify-tool-btn:hover {
+  background-color: #e8e8e8;
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-input {
+  background-color: transparent !important;
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__wrapper) {
+  background-color: #f5f5f5 !important;
+  border-color: transparent;
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__inner) {
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__wrapper:hover) {
+  background-color: #e8e8e8 !important;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__wrapper.is-focus) {
+  background-color: #ffffff !important;
+  border-color: #1db954;
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-textarea :deep(.el-textarea__inner) {
+  background-color: #f5f5f5 !important;
+  border-color: transparent;
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-textarea :deep(.el-textarea__inner:hover) {
+  background-color: #e8e8e8 !important;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+:root:not(.dark) .spotify-profile-page .spotify-textarea :deep(.el-textarea__inner:focus) {
+  background-color: #ffffff !important;
+  border-color: #1db954;
+}
+
+:root:not(.dark) .spotify-btn-cancel {
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #000;
+}
+
+:root:not(.dark) .spotify-btn-cancel:hover {
+  border-color: #000;
+}
+
+@media (min-width: 768px) {
+  .spotify-profile-header {
+    flex-direction: row;
+    padding: 40px;
+  }
+
+  .spotify-profile-info {
+    text-align: left;
+  }
+
+  .spotify-profile-stats {
+    justify-content: flex-start;
+  }
+
+  .spotify-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .spotify-danger-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 1024px) {
+  .spotify-profile-page {
+    max-width: 900px;
+    margin: 0 auto;
+  }
 }
 </style>

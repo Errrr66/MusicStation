@@ -135,116 +135,73 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div
-    class="flex flex-col h-full flex-1 overflow-hidden bg-background px-2 py-2 md:px-4"
-  >
-    <div class="py-2 md:py-4">
-      <div class="flex flex-col md:flex-row gap-2 md:gap-4">
-        <div class="relative flex-grow w-full">
-          <icon-mdi:magnify
-            class="lucide lucide-search absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-          />
-          <input
-            v-model="searchKeyword"
-            @keydown="handleKeyPress"
-            class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-full"
-            placeholder="搜索歌单..."
-            type="search"
-          />
-        </div>
-        <el-select class="w-full md:w-48" v-model="selectedTag" @change="getPlaylists">
-          <el-option
-            v-for="item in playTags"
-            :key="item.name"
-            :label="item.name"
-            :value="item.name"
-          />
-        </el-select>
+  <div class="spotify-playlist-page">
+    <!-- Header -->
+    <div class="spotify-playlist-header">
+      <div class="spotify-search-wrapper">
+        <Icon icon="mdi:magnify" class="spotify-search-icon" />
+        <input
+          v-model="searchKeyword"
+          @keydown="handleKeyPress"
+          class="spotify-search-input"
+          placeholder="搜索歌单..."
+          type="search"
+        />
       </div>
+      <el-select class="spotify-tag-select" v-model="selectedTag" @change="getPlaylists">
+        <el-option
+          v-for="item in playTags"
+          :key="item.name"
+          :label="item.name"
+          :value="item.name"
+        />
+      </el-select>
     </div>
-    <div class="flex-grow flex flex-col overflow-x-hidden cursor-pointer min-h-0">
-      <div class="border-b pb-1">
+
+    <!-- Tabs -->
+    <div class="spotify-tabs">
+      <button
+        v-for="playlist in playlistsList"
+        :key="playlist.value"
+        @click="selectPlaylist(playlist.value)"
+        class="spotify-tab"
+        :class="{ 'spotify-tab-active': selected === playlist.value }"
+      >
+        {{ playlist.name }}
+      </button>
+    </div>
+
+    <!-- Playlist Grid -->
+    <div class="spotify-playlist-content">
+      <div class="spotify-playlist-grid">
         <div
-          class="inline-flex h-10 items-center rounded-lg bg-muted/70 p-1 text-muted-foreground w-full justify-start mb-2 overflow-x-auto no-scrollbar"
+          v-for="playlist in playlists"
+          :key="playlist.id"
+          class="spotify-playlist-card"
+          @click="router.push('/playlist/' + playlist.id)"
         >
-          <button
-            v-for="playlist in playlistsList"
-            :key="playlist.value"
-            @click="selectPlaylist(playlist.value)"
-            :class="{
-              'bg-activeMenuBg text-foreground shadow-sm':
-                selected === playlist.value,
-            }"
-            class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-shrink-0"
-          >
-            {{ playlist.name }}
-          </button>
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto overflow-x-hidden my-2 pb-20 md:pb-0">
-        <div class="grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2 md:gap-6">
-          <div
-            v-for="playlist in playlists"
-            :key="playlist.id"
-            @click="router.push('/playlist/' + playlist.id)"
-            class="rounded-lg hover:bg-background transition duration-300 border bg-card text-card-foreground shadow-sm overflow-hidden hover:shadow-lg"
-          >
-            <div class="flex flex-col space-y-1.5 p-0">
-              <div class="relative">
-                <el-image
-                  lazy
-                  :alt="playlist.name"
-                  class="w-full aspect-square object-cover"
-                  :src="
-                    (playlist.coverImgUrl && (playlist.coverImgUrl.startsWith('http') || playlist.coverImgUrl.startsWith('/minio')))
-                      ? playlist.coverImgUrl + '?param=330y330'
-                      : playlist.coverImgUrl
-                  "
-                />
-                <button
-                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-8 w-8 md:h-10 md:w-10 absolute bottom-1 right-1 md:bottom-2 md:right-2 rounded-full"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide lucide-play h-4 w-4"
-                  >
-                    <polygon points="6 3 20 12 6 21 6 3"></polygon>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div class="px-2 pb-2 md:px-4">
-              <h3
-                class="font-semibold tracking-tight text-sm md:text-base mb-1 md:mb-2 line-clamp-1"
-              >
-                {{ playlist.name }}
-              </h3>
-              <div class="flex items-center text-xs md:text-sm text-muted-foreground">
-                <span
-                  class="relative flex shrink-0 overflow-hidden rounded-full w-4 h-4 md:w-6 md:h-6 mr-1 md:mr-2"
-                >
-                  <el-avatar
-                    class="aspect-square h-full w-full"
-                    :alt="playlist.creator.nickname"
-                    :src="playlist.creator.avatarUrl"
-                  />
-                </span>
-                <span class="truncate">{{ playlist.creator.nickname }}</span>
-              </div>
-            </div>
+          <div class="spotify-playlist-cover">
+            <el-image
+              lazy
+              :alt="playlist.name"
+              class="spotify-playlist-img"
+              :src="
+                (playlist.coverImgUrl && (playlist.coverImgUrl.startsWith('http') || playlist.coverImgUrl.startsWith('/minio')))
+                  ? playlist.coverImgUrl + '?param=330y330'
+                  : playlist.coverImgUrl
+              "
+            />
+            <button class="spotify-playlist-play-btn">
+              <Icon icon="mdi:play" class="text-2xl" />
+            </button>
           </div>
+          <h3 class="spotify-playlist-title">{{ playlist.name }}</h3>
         </div>
       </div>
     </div>
-    <nav class="mx-auto flex w-full justify-center mt-1 md:mt-3 pb-3 md:pb-6">
+
+    <!-- Pagination -->
+    <div class="spotify-pagination">
       <el-pagination
         v-model:page-size="pageSize"
         v-model:currentPage="currentPage"
@@ -252,9 +209,8 @@ onMounted(() => {
         :layout="state.layout.replace('total, sizes, ', '').replace('jumper', '')"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        class="mb-3 hidden md:flex"
+        class="spotify-pagination-desktop"
       />
-      <!-- Mobile Pagination (Simple) -->
       <el-pagination
         v-model:page-size="pageSize"
         v-model:currentPage="currentPage"
@@ -262,10 +218,366 @@ onMounted(() => {
         :total="state.total"
         :pager-count="5"
         @current-change="handleCurrentChange"
-        class="mb-3 md:hidden"
+        class="spotify-pagination-mobile"
         small
-        background
       />
-    </nav>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.spotify-playlist-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.spotify-playlist-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+.spotify-search-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.spotify-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.spotify-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 44px;
+  background-color: var(--bg-elevated, #242424);
+  border: none;
+  border-radius: 500px;
+  color: var(--text-base, #fff);
+  font-size: 0.875rem;
+  transition: box-shadow 200ms ease;
+}
+
+.spotify-search-input::placeholder {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.spotify-tag-select {
+  width: 100%;
+}
+
+.spotify-tag-select :deep(.el-select__wrapper) {
+  background-color: var(--bg-elevated, #242424);
+  border: none;
+  border-radius: 500px;
+  box-shadow: none;
+  padding: 4px 16px;
+  min-height: 40px;
+}
+
+.spotify-tag-select :deep(.el-select__wrapper:hover) {
+  box-shadow: none;
+}
+
+.spotify-tag-select :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.spotify-tag-select :deep(.el-select__placeholder) {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-tag-select :deep(.el-select__selected-item) {
+  color: var(--text-base, #fff);
+}
+
+.spotify-tag-select :deep(.el-select__suffix) {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-tag-select :deep(.el-select__caret) {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.spotify-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.spotify-tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 500px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 200ms ease;
+}
+
+.spotify-tab:hover {
+  color: var(--text-base, #fff);
+}
+
+.spotify-tab-active {
+  background-color: #1db954;
+  color: #000;
+}
+
+.spotify-tab-active:hover {
+  background-color: #1ed760;
+  color: #000;
+}
+
+.spotify-playlist-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.spotify-playlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 24px;
+  padding-bottom: 16px;
+}
+
+.spotify-playlist-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background-color: var(--card-bg, #181818);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-playlist-card:hover {
+  background-color: var(--card-hover, #282828);
+}
+
+.spotify-playlist-card:hover .spotify-playlist-play-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.spotify-playlist-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.spotify-playlist-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.spotify-playlist-play-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 48px;
+  height: 48px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 200ms ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.spotify-playlist-card:hover .spotify-playlist-play-btn:hover {
+  transform: translateY(0) scale(1.04);
+  background-color: #1ed760;
+}
+
+.spotify-playlist-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.spotify-pagination-desktop {
+  display: none;
+}
+
+.spotify-pagination-mobile {
+  display: flex;
+}
+
+/* Pagination Styles */
+.spotify-pagination :deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-hover-color: #1db954;
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-button-color: #b3b3b3;
+  --el-pagination-button-disabled-bg-color: transparent;
+  --el-pagination-button-disabled-color: #535353;
+}
+
+.spotify-pagination :deep(.el-pagination .el-pager li) {
+  background-color: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 4px;
+  margin: 0 2px;
+  transition: all 200ms ease;
+}
+
+.spotify-pagination :deep(.el-pagination .el-pager li:hover) {
+  color: var(--text-base, #fff);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-pagination :deep(.el-pagination .el-pager li.is-active) {
+  background-color: #1db954;
+  color: #000;
+}
+
+.spotify-pagination :deep(.el-pagination .btn-prev),
+.spotify-pagination :deep(.el-pagination .btn-next) {
+  background-color: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  transition: all 200ms ease;
+}
+
+.spotify-pagination :deep(.el-pagination .btn-prev:hover),
+.spotify-pagination :deep(.el-pagination .btn-next:hover) {
+  color: var(--text-base, #fff);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-pagination :deep(.el-pagination .el-pagination__total),
+.spotify-pagination :deep(.el-pagination .el-pagination__jump) {
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 0.875rem;
+}
+
+.spotify-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
+  background-color: var(--bg-elevated, #242424);
+  border: none;
+  border-radius: 4px;
+  box-shadow: none;
+  min-height: 28px;
+}
+
+.spotify-pagination :deep(.el-pagination .el-select .el-select__selected-item) {
+  color: var(--text-base, #fff);
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-playlist-page {
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --bg-elevated: #f0f0f0;
+  --card-bg: #f5f5f5;
+  --card-hover: #e8e8e8;
+}
+
+:root:not(.dark) .spotify-playlist-img {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:root:not(.dark) .spotify-search-input:focus {
+  box-shadow: 0 0 0 2px #000;
+}
+
+:root:not(.dark) .spotify-tag-select :deep(.el-select__wrapper) {
+  background-color: #f0f0f0;
+}
+
+:root:not(.dark) .spotify-tag-select :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 2px #000;
+}
+
+@media (min-width: 768px) {
+  .spotify-playlist-header {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .spotify-search-wrapper {
+    max-width: 400px;
+  }
+  
+  .spotify-tag-select {
+    width: 200px;
+  }
+  
+  .spotify-pagination-desktop {
+    display: flex;
+  }
+  
+  .spotify-pagination-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .spotify-playlist-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .spotify-playlist-card {
+    padding: 8px;
+  }
+}
+</style>

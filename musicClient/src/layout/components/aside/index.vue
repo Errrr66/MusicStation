@@ -23,7 +23,6 @@ const favoriteStore = useFavoriteStore()
 const authVisible = ref(false)
 const isCollapsed = ref(!props.isMobile)
 
-// 处理需要登录的路由
 const handleProtectedRoute = (path: string) => {
   if (!user.isLoggedIn && (path === '/like' || path === '/user')) {
     ElMessage.warning('请先登录')
@@ -36,12 +35,10 @@ const handleProtectedRoute = (path: string) => {
 
 const emit = defineEmits(['close'])
 
-// 切换侧边栏收起/展开
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
-// 监听用户登录状态
 watch(
   () => user.isLoggedIn,
   (newVal) => {
@@ -69,144 +66,504 @@ const handlePlaylistClick = (id: number) => {
 
 <template>
   <aside
-    class="sidebar-card h-[calc(100%-1rem)] overflow-hidden shadow-xl transition-all duration-300 m-2 rounded-2xl dark:bg-[#121212] bg-gray-100"
+    class="spotify-sidebar"
     :class="[
-      isCollapsed ? 'w-[120px]' : 'w-96',
-      isMobile ? 'block !w-full !m-0 !h-full !rounded-none shadow-none' : 'hidden md:block'
+      isCollapsed ? 'spotify-sidebar-collapsed' : 'spotify-sidebar-expanded',
+      isMobile ? 'spotify-sidebar-mobile' : 'spotify-sidebar-desktop'
     ]"
   >
-    <nav
-      class="flex flex-col p-4 space-y-4 flex-1 h-full box-border overflow-hidden"
-    >
-      <div
-        v-if="!isMobile"
-        class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-hoverMenuBg mb-2 text-primary-foreground transition-colors duration-200"
-        :class="isCollapsed ? 'justify-center' : 'justify-end'"
-        @click="toggleCollapse"
-        :title="isCollapsed ? '展开' : '收起'"
-      >
-        <Icon
-          :icon="isCollapsed ? 'ri:menu-unfold-line' : 'ri:menu-fold-line'"
-          class="text-xl"
-        />
-      </div>
-
-      <div
-        v-for="(item, index) in MenuData"
-        :key="index"
-        class="w-full flex flex-col gap-1"
-      >
-        <h3
-          v-if="!isCollapsed && item.title"
-          class="ml-4 text-sm font-semibold text-inactive transition-opacity duration-300"
-        >
-          {{ item.title }}
-        </h3>
-        <div
-          v-for="(item2, index2) in item.children"
-          :key="index2"
-          class="mx-2 rounded-lg transition-all duration-300 py-2 px-2 flex items-center gap-2 text-primary-foreground cursor-pointer"
-          :class="{
-            'bg-activeMenuBg': route.path === item2.router,
-            'hover:bg-hoverMenuBg': route.path !== item2.router,
-            'justify-center': isCollapsed,
-          }"
-          @click="handleMenuClick(item2.router)"
-          :title="isCollapsed ? item2.title : ''"
-        >
-          <Icon :icon="item2.icon" class="flex-shrink-0 text-xl" />
-          <span
-            v-if="!isCollapsed"
-            class="whitespace-nowrap transition-opacity duration-300"
-            >{{ item2.title }}</span
-          >
-          <span
-            v-if="!isCollapsed"
-            class="!ml-auto text-xs text-primary-foreground bg-emphasis border-border p-1 rounded-lg"
-          ></span>
+    <div class="spotify-sidebar-content">
+      <div v-if="!isMobile" class="spotify-sidebar-header" @click="toggleCollapse">
+        <div class="spotify-sidebar-logo" :class="{ 'spotify-logo-centered': isCollapsed }">
+          <Icon icon="mdi:library-music" class="spotify-logo-icon" />
+          <span v-if="!isCollapsed" class="spotify-logo-text">音乐库</span>
         </div>
       </div>
 
-      <!-- 收藏的歌单 -->
-      <div
-        class="w-full flex flex-col gap-1 flex-1 overflow-hidden"
-        v-if="user.isLoggedIn"
-      >
-        <h3
-          v-if="!isCollapsed"
-          class="ml-4 text-sm font-semibold text-inactive transition-opacity duration-300"
+      <div class="spotify-sidebar-main">
+        <div
+          v-for="(section, sIndex) in MenuData"
+          :key="sIndex"
+          class="spotify-nav-section"
         >
-          收藏（{{ favoriteStore.favoritePlaylists.length }}）
-        </h3>
-        <div v-else class="h-6"></div>
+          <div v-if="sIndex > 0 && !isCollapsed" class="spotify-nav-divider"></div>
+          
+          <h4 v-if="!isCollapsed && section.title" class="spotify-nav-title">
+            {{ section.title }}
+          </h4>
 
-        <el-scrollbar>
-          <el-skeleton
-            :loading="favoriteStore.loading"
-            animated
-            :count="3"
-            v-if="favoriteStore.loading"
-          >
-            <template #template>
-              <div class="flex items-center space-x-2 p-2 mx-2">
-                <el-skeleton-item
-                  variant="image"
-                  style="width: 28px; height: 28px"
-                />
-                <el-skeleton-item
-                  v-if="!isCollapsed"
-                  variant="text"
-                  style="width: 130px"
-                />
+          <div class="spotify-nav-items">
+            <div
+              v-for="(item, iIndex) in section.children"
+              :key="iIndex"
+              class="spotify-nav-item"
+              :class="{ 'spotify-nav-item-active': route.path === item.router }"
+              @click="handleMenuClick(item.router)"
+              :title="isCollapsed ? item.title : ''"
+            >
+              <div class="spotify-nav-item-icon-wrapper">
+                <Icon :icon="item.icon" class="spotify-nav-item-icon" />
               </div>
-            </template>
-          </el-skeleton>
+              <span v-if="!isCollapsed" class="spotify-nav-item-text">{{ item.title }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <template v-else>
+      <div v-if="user.isLoggedIn && !isCollapsed" class="spotify-sidebar-footer">
+        <div class="spotify-footer-header">
+          <Icon icon="mdi:folder-heart" class="spotify-footer-icon" />
+          <span class="spotify-footer-title">收藏的歌单</span>
+          <span class="spotify-footer-count">{{ favoriteStore.favoritePlaylists.length }}</span>
+        </div>
+
+        <el-scrollbar class="spotify-footer-scroll">
+          <div v-if="favoriteStore.loading" class="spotify-footer-loading">
+            <Icon icon="eos-icons:loading" class="text-2xl" />
+          </div>
+          <div v-else class="spotify-footer-list">
             <div
               v-for="item in favoriteStore.favoritePlaylists"
               :key="item.id"
-              class="mx-2 my-1 rounded-lg transition-all duration-300 py-2 px-2 flex items-center gap-2 text-primary-foreground cursor-pointer"
-              :class="{
-                'bg-activeMenuBg': route.path === `/playlist/${item.id}`,
-                'hover:bg-hoverMenuBg': route.path !== `/playlist/${item.id}`,
-                'justify-center': isCollapsed,
-              }"
+              class="spotify-playlist-item"
+              :class="{ 'spotify-playlist-active': route.path === `/playlist/${item.id}` }"
               @click="handlePlaylistClick(item.id)"
-              :title="isCollapsed ? item.name : ''"
             >
               <el-image
                 lazy
-                :src="
-                  (item.coverImgUrl && item.coverImgUrl.startsWith('http'))
-                    ? item.coverImgUrl + '?param=50y50'
-                    : (item.coverImgUrl || coverImg)
-                "
-                class="w-10 h-10 rounded-md flex-shrink-0"
+                :src="(item.coverImgUrl && item.coverImgUrl.startsWith('http')) ? item.coverImgUrl + '?param=50y50' : (item.coverImgUrl || coverImg)"
+                class="spotify-playlist-cover"
                 :alt="item.name"
               >
-                <!-- 加载失败或无图片时的占位符 -->
                 <template #error>
-                  <div class="image-slot w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <Icon icon="ri:music-line" class="text-gray-400 text-xl" />
+                  <div class="spotify-playlist-cover-placeholder">
+                    <Icon icon="ri:music-2-line" />
                   </div>
                 </template>
               </el-image>
-              <div
-                v-if="!isCollapsed"
-                class="flex-1 min-w-0 transition-opacity duration-300"
-              >
-                <span class="line-clamp-2 text-sm leading-normal">{{
-                  item.name
-                }}</span>
+              <div class="spotify-playlist-info">
+                <span class="spotify-playlist-name">{{ item.name }}</span>
               </div>
             </div>
-          </template>
+          </div>
         </el-scrollbar>
       </div>
-    </nav>
 
-    <!-- 登录对话框 -->
+      <div v-if="user.isLoggedIn && isCollapsed" class="spotify-sidebar-footer-collapsed">
+        <div class="spotify-footer-divider"></div>
+        <div
+          v-for="(item, index) in favoriteStore.favoritePlaylists.slice(0, 3)"
+          :key="index"
+          class="spotify-mini-playlist"
+          :class="{ 'spotify-playlist-active': route.path === `/playlist/${item.id}` }"
+          @click="handlePlaylistClick(item.id)"
+        >
+          <el-image
+            lazy
+            :src="(item.coverImgUrl && item.coverImgUrl.startsWith('http')) ? item.coverImgUrl + '?param=50y50' : (item.coverImgUrl || coverImg)"
+            class="spotify-mini-cover"
+          >
+            <template #error>
+              <div class="spotify-playlist-cover-placeholder">
+                <Icon icon="ri:music-2-line" />
+              </div>
+            </template>
+          </el-image>
+        </div>
+      </div>
+    </div>
+
     <AuthTabs v-model="authVisible" />
   </aside>
 </template>
+
+<style scoped>
+.spotify-sidebar {
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+  overflow: hidden;
+  transition: width 200ms ease;
+}
+
+.spotify-sidebar-desktop {
+  display: none;
+}
+
+.spotify-sidebar-mobile {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.spotify-sidebar-expanded {
+  width: 280px;
+}
+
+.spotify-sidebar-collapsed {
+  width: 72px;
+}
+
+.spotify-sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  gap: 8px;
+}
+
+.spotify-sidebar-header {
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-sidebar-header:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spotify-logo-centered {
+  justify-content: center;
+  width: 100%;
+}
+
+.spotify-logo-icon {
+  font-size: 1.5rem;
+  color: #b3b3b3;
+}
+
+.spotify-logo-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #b3b3b3;
+}
+
+.spotify-sidebar-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spotify-sidebar-main::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spotify-sidebar-main::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+}
+
+.spotify-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spotify-nav-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 8px 12px;
+}
+
+.spotify-nav-title {
+  padding: 8px 12px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #b3b3b3;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.spotify-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spotify-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-nav-item-active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.spotify-nav-item-active .spotify-nav-item-icon {
+  color: #fff;
+}
+
+.spotify-nav-item-active .spotify-nav-item-text {
+  color: #fff;
+  font-weight: 600;
+}
+
+.spotify-nav-item-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.spotify-nav-item-icon {
+  font-size: 1.5rem;
+  color: #b3b3b3;
+}
+
+.spotify-nav-item-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #b3b3b3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotify-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.spotify-footer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.spotify-footer-icon {
+  font-size: 1.125rem;
+  color: #1db954;
+}
+
+.spotify-footer-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.spotify-footer-count {
+  font-size: 0.75rem;
+  color: #b3b3b3;
+  margin-left: auto;
+}
+
+.spotify-footer-scroll {
+  flex: 1;
+  overflow: hidden;
+}
+
+.spotify-footer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #b3b3b3;
+}
+
+.spotify-footer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+}
+
+.spotify-playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-playlist-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-playlist-active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.spotify-playlist-cover {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-playlist-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #282828;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #b3b3b3;
+  font-size: 1.25rem;
+}
+
+.spotify-playlist-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.spotify-playlist-name {
+  font-size: 0.8125rem;
+  color: #fff;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.spotify-sidebar-footer-collapsed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.spotify-footer-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-mini-playlist {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.spotify-mini-playlist:hover .spotify-mini-cover {
+  transform: scale(1.05);
+}
+
+.spotify-mini-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  transition: transform 200ms ease;
+}
+
+.spotify-sidebar-collapsed .spotify-nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.spotify-sidebar-collapsed .spotify-nav-item-icon {
+  font-size: 1.75rem;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-sidebar {
+  background-color: #f5f5f5;
+}
+
+:root:not(.dark) .spotify-sidebar-header:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .spotify-logo-icon,
+:root:not(.dark) .spotify-logo-text {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-nav-item:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .spotify-nav-item-active {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+:root:not(.dark) .spotify-nav-item-icon,
+:root:not(.dark) .spotify-nav-title,
+:root:not(.dark) .spotify-nav-item-text {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-nav-item-active .spotify-nav-item-icon,
+:root:not(.dark) .spotify-nav-item-active .spotify-nav-item-text {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-nav-divider {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-sidebar-footer {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .spotify-footer-header {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-footer-title,
+:root:not(.dark) .spotify-playlist-name {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-playlist-item:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .spotify-playlist-active {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+:root:not(.dark) .spotify-playlist-cover-placeholder {
+  background-color: #e0e0e0;
+}
+
+:root:not(.dark) .spotify-footer-divider {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .spotify-sidebar-desktop {
+    display: flex;
+  }
+  
+  .spotify-sidebar-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .spotify-sidebar {
+    border-radius: 0;
+  }
+}
+</style>

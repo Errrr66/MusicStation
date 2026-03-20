@@ -2,16 +2,39 @@
 import Left from './components/left.vue'
 import Center from './components/center.vue'
 import Right from './components/right.vue'
+import Recently from './components/recently.vue'
 </script>
 <template>
-  <footer
-    class="border-t flex items-center justify-between shadow-2xl shadow-black h-[100px]"
-  >
-    <!-- 左边：歌曲封面和歌曲名称 -->
+  <footer class="spotify-playing-bar">
     <Left />
-    <!-- 中间：控制区 -->
     <Center />
-    <!-- 右边：历史播放和音量 -->
     <Right />
+    <Recently />
   </footer>
 </template>
+
+<style scoped>
+.spotify-playing-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-playing-bar, #181818);
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  padding: 0 16px;
+  height: 90px;
+  flex-shrink: 0;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-playing-bar {
+  --bg-playing-bar: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .spotify-playing-bar {
+    display: none;
+  }
+}
+</style>

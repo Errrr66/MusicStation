@@ -26,16 +26,13 @@ const handleSend = async () => {
   scrollToBottom()
 
   try {
-    // 确保 API 返回类型匹配
     const res = await sendChatMessage(messages.value)
     if (res.code === 0 && res.data) {
-      // 提取回复文本和音频
       const answerText = typeof res.data === 'string' ? res.data : res.data.answer
       const audioUrl = typeof res.data === 'string' ? '' : res.data.audio
 
       messages.value.push({ role: 'assistant', content: answerText })
 
-      // 播放语音
       if (audioUrl) {
         const audio = new Audio(audioUrl)
         audio.play().catch(e => console.error('Audio play failed', e))
@@ -54,98 +51,414 @@ const handleSend = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full bg-themeBgColor p-4 gap-4 box-border">
-    <div
-      class="text-2xl font-bold text-primary-foreground flex items-center gap-2"
-    >
-      <span>Ciallo～(∠・ω< )⌒★</span>
+  <div class="spotify-chat-page">
+    <div class="spotify-chat-header">
+      <span class="spotify-chat-subtitle">Ciallo～(∠・ω< )⌒★</span>
     </div>
 
-    <div
-      ref="scrollbarRef"
-      class="flex-1 overflow-y-auto rounded-lg bg-black/20 p-4 space-y-4"
-    >
+    <div ref="scrollbarRef" class="spotify-chat-messages">
       <div
         v-for="(msg, index) in messages"
         :key="index"
-        class="flex w-full gap-2 items-start"
-        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+        class="spotify-message"
+        :class="msg.role === 'user' ? 'spotify-message-user' : 'spotify-message-assistant'"
       >
-        <img
-          v-if="msg.role === 'assistant'"
-          src="/congyu.png"
-          class="w-10 h-10 rounded-full object-cover border border-white/10 shadow-sm"
-        />
+        <div v-if="msg.role === 'assistant'" class="spotify-avatar spotify-avatar-assistant">
+          <img src="/congyu.png" alt="AI" />
+        </div>
         <div
-          class="max-w-[80%] rounded-lg p-3 text-sm leading-relaxed whitespace-pre-wrap shadow-md"
-          :class="[
-            msg.role === 'user'
-              ? 'bg-blue-600 text-white rounded-br-none'
-              : 'bg-gray-700 text-gray-100 rounded-bl-none',
-          ]"
+          class="spotify-message-bubble"
+          :class="msg.role === 'user' ? 'spotify-bubble-user' : 'spotify-bubble-assistant'"
         >
           {{ msg.content }}
         </div>
-      </div>
-
-      <div v-if="loading" class="flex justify-start gap-2 items-start">
-        <img
-          src="/thinking.png"
-          class="w-10 h-10 rounded-full object-cover border border-white/10 shadow-sm"
-        />
-        <div
-          class="bg-gray-700 text-gray-100 rounded-lg p-3 rounded-bl-none text-sm flex items-center gap-2 shadow-md"
-        >
-          <Icon icon="eos-icons:bubble-loading" />
-          <span>思考中...</span>
+        <div v-if="msg.role === 'user'" class="spotify-avatar spotify-avatar-user">
+          <Icon icon="mdi:account" />
         </div>
       </div>
 
-      <div
-        v-if="messages.length === 0"
-        class="flex flex-col items-center justify-center h-full text-inactive select-none"
-      >
-        <img
-          src="/congyu.png"
-          class="w-[280px] h-auto object-cover mb-6 opacity-90 hover:scale-105 transition-all duration-500 rounded-xl"
-        />
-        <p class="text-lg font-medium tracking-wide text-black dark:text-white/60">
-          ご主人様、何かご命令はございますか？
-        </p>
+      <div v-if="loading" class="spotify-message spotify-message-assistant">
+        <div class="spotify-avatar spotify-avatar-assistant">
+          <img src="/thinking.png" alt="AI" />
+        </div>
+        <div class="spotify-bubble-assistant spotify-message-bubble spotify-typing">
+          <div class="spotify-typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="spotify-typing-text">思考中...</span>
+        </div>
+      </div>
+
+      <div v-if="messages.length === 0" class="spotify-empty-state">
+        <div class="spotify-empty-image">
+          <img src="/congyu.png" alt="AI Assistant" />
+        </div>
+        <p class="spotify-empty-title">ご主人様、何かご命令はございますか？</p>
       </div>
     </div>
 
-    <div class="flex gap-2">
-      <el-input
-        v-model="inputMessage"
-        placeholder="enter..."
-        @keyup.enter="handleSend"
-        :disabled="loading"
-        class="flex-1"
-      >
-        <template #prefix>
-          <Icon icon="ri:chat-1-line" class="text-gray-400" />
-        </template>
-      </el-input>
-      <el-button
-        type="primary"
-        :loading="loading"
+    <div class="spotify-chat-input">
+      <div class="spotify-input-wrapper">
+        <Icon icon="ri:chat-1-line" class="spotify-input-icon" />
+        <input
+          v-model="inputMessage"
+          placeholder="输入消息..."
+          @keyup.enter="handleSend"
+          :disabled="loading"
+          class="spotify-input"
+        />
+      </div>
+      <button
         @click="handleSend"
-        class="!px-6"
+        :disabled="loading || !inputMessage.trim()"
+        class="spotify-send-btn"
+        :class="{ 'spotify-send-btn-disabled': loading || !inputMessage.trim() }"
       >
-        发送
-      </el-button>
+        <Icon v-if="loading" icon="eos-icons:bubble-loading" class="text-lg" />
+        <Icon v-else icon="mdi:send" class="text-lg" />
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-:deep(.el-input__wrapper) {
-  background-color: rgba(0, 0, 0, 0.2);
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.spotify-chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-surface, #121212);
+  padding: 16px;
+  gap: 16px;
 }
-:deep(.el-input__inner) {
-  color: white;
+
+.spotify-chat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-chat-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+}
+
+.spotify-chat-icon {
+  font-size: 1.75rem;
+  color: #1db954;
+}
+
+.spotify-chat-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  padding-left: 32px;
+}
+
+.spotify-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+  min-height: 0;
+}
+
+.spotify-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: spotify-fade-in 200ms ease-out;
+}
+
+@keyframes spotify-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spotify-message-user {
+  flex-direction: row-reverse;
+}
+
+.spotify-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.spotify-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spotify-avatar-assistant {
+  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+}
+
+.spotify-avatar-user {
+  background-color: var(--bg-elevated, #242424);
+  color: var(--text-base, #fff);
+  font-size: 1.25rem;
+}
+
+.spotify-message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.spotify-bubble-user {
+  background-color: #1db954;
+  color: #000;
+  border-bottom-right-radius: 4px;
+  font-weight: 500;
+}
+
+.spotify-bubble-assistant {
+  background-color: var(--bg-elevated, #242424);
+  color: var(--text-base, #fff);
+  border-bottom-left-radius: 4px;
+}
+
+.spotify-typing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spotify-typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.spotify-typing-dots span {
+  width: 6px;
+  height: 6px;
+  background-color: #1db954;
+  border-radius: 50%;
+  animation: spotify-bounce 1.4s infinite ease-in-out both;
+}
+
+.spotify-typing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.spotify-typing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes spotify-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.spotify-typing-text {
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 0.875rem;
+}
+
+.spotify-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+}
+
+.spotify-empty-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.2) 0%, rgba(30, 215, 96, 0.1) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 300ms ease;
+}
+
+.spotify-empty-image:hover {
+  transform: scale(1.05);
+}
+
+.spotify-empty-image img {
+  width: 180px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.spotify-empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-base, #fff);
+  text-align: center;
+}
+
+.spotify-empty-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-chat-input {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.spotify-input-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.spotify-input {
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  background-color: var(--bg-elevated, #242424);
+  border: none;
+  border-radius: 500px;
+  color: var(--text-base, #fff);
+  font-size: 0.9375rem;
+  transition: box-shadow 200ms ease;
+}
+
+.spotify-input::placeholder {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.spotify-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spotify-send-btn {
+  width: 48px;
+  height: 48px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+}
+
+.spotify-send-btn:hover:not(.spotify-send-btn-disabled) {
+  background-color: #1ed760;
+  transform: scale(1.04);
+}
+
+.spotify-send-btn:active:not(.spotify-send-btn-disabled) {
+  transform: scale(1);
+}
+
+.spotify-send-btn-disabled {
+  background-color: #535353;
+  color: #b3b3b3;
+  cursor: not-allowed;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-chat-page {
+  --bg-surface: #ffffff;
+  --bg-elevated: #f0f0f0;
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-avatar-user {
+  background-color: #e0e0e0;
+}
+
+:root:not(.dark) .spotify-input:focus {
+  box-shadow: 0 0 0 2px #000;
+}
+
+:root:not(.dark) .spotify-empty-image {
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(30, 215, 96, 0.05) 100%);
+}
+
+/* Scrollbar */
+.spotify-chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.spotify-chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spotify-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.spotify-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 640px) {
+  .spotify-message-bubble {
+    max-width: 85%;
+  }
+
+  .spotify-empty-image {
+    width: 150px;
+    height: 150px;
+  }
+
+  .spotify-empty-image img {
+    width: 130px;
+  }
 }
 </style>

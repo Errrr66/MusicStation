@@ -96,27 +96,106 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
 <template>
   <button
     @click="startRecording"
-    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+    class="spotify-recognizer-btn"
     :disabled="recognitionState !== 'idle'"
     :title="recognitionState === 'idle' ? '听歌识曲' : '正在识别...'"
   >
     <Icon
       v-if="recognitionState === 'analyzing'"
       icon="mdi:loading"
-      class="text-xl text-blue-500 animate-spin"
+      class="spotify-recognizer-icon spotify-recognizer-loading"
     />
     <Icon
       v-else
       icon="mdi:microphone"
-      class="text-xl"
-      :class="{ 'text-red-500 animate-pulse': recognitionState === 'recording' }"
+      class="spotify-recognizer-icon"
+      :class="{ 'spotify-recognizer-recording': recognitionState === 'recording' }"
     />
 
-    <span v-if="recognitionState === 'recording'" class="text-sm">正在录音...</span>
-    <span v-else-if="recognitionState === 'analyzing'" class="text-sm">正在识别...</span>
-    <!-- Only show text on larger screens or tooltip -->
+    <span v-if="recognitionState === 'recording'" class="spotify-recognizer-text">正在录音...</span>
+    <span v-else-if="recognitionState === 'analyzing'" class="spotify-recognizer-text">正在识别...</span>
   </button>
 </template>
 
 <style scoped>
+.spotify-recognizer-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-recognizer-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-recognizer-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.spotify-recognizer-icon {
+  font-size: 1.25rem;
+  color: var(--text-subdued, #b3b3b3);
+  transition: color 200ms ease;
+}
+
+.spotify-recognizer-btn:hover:not(:disabled) .spotify-recognizer-icon {
+  color: var(--text-base, #fff);
+}
+
+.spotify-recognizer-loading {
+  color: #3b82f6;
+  animation: spin 1s linear infinite;
+}
+
+.spotify-recognizer-recording {
+  color: #ef4444;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.spotify-recognizer-text {
+  font-size: 0.875rem;
+  color: var(--text-base, #fff);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-recognizer-btn:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .spotify-recognizer-icon {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-recognizer-btn:hover:not(:disabled) .spotify-recognizer-icon {
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-recognizer-text {
+  color: #000000;
+}
 </style>

@@ -103,63 +103,232 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-background flex-1 overflow-y-auto">
-    <div class="flex flex-col items-center md:flex-row md:items-stretch p-6 gap-6">
-      <div class="flex-shrink-0 w-40 h-40 md:w-60 md:h-60">
+  <div class="spotify-like-page">
+    <!-- Header -->
+    <div class="spotify-like-header">
+      <div class="spotify-like-cover">
         <img
           :alt="playlist.name"
-          class="w-full h-full object-cover rounded-lg shadow-lg"
+          class="spotify-like-cover-img"
           :src="fixUrl(playlist?.coverImgUrl) || coverImg"
         />
       </div>
-      <div class="flex flex-col justify-between flex-1 w-full md:w-auto">
-        <div>
-          <h1 class="text-3xl font-bold mb-2">{{ playlist?.name }}</h1>
-          <div
-            class="flex items-center gap-2 text-sm text-muted-foreground mb-4 ml-1"
-          >
-            <span>{{ playlist?.trackCount }} 首歌曲</span>
-          </div>
-          <div
-            class="flex items-center gap-2 text-sm text-muted-foreground"
-            v-if="playlist.tags"
-          >
-            <el-tag
-              v-for="tag in playlist.tags"
-              class="text-sm"
-              effect="dark"
-              :key="tag"
-              >{{ tag }}
-            </el-tag>
-          </div>
+      <div class="spotify-like-info">
+        <span class="spotify-like-type">歌单</span>
+        <h1 class="spotify-like-title">{{ playlist?.name }}</h1>
+        <div class="spotify-like-meta">
+          <span>{{ playlist?.trackCount }} 首歌曲</span>
         </div>
-        <div class="flex items-center justify-between mt-4 flex-wrap gap-4 md:flex-nowrap">
-          <button
-            @click="handlePlayAll"
-            class="text-white inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-lg px-8 w-full md:w-auto"
-          >
-            <icon-solar:play-line-duotone />
-            播放全部
+        <div class="spotify-like-actions">
+          <button @click="handlePlayAll" class="spotify-play-btn">
+            <Icon icon="mdi:play" class="text-xl" />
+            <span>播放</span>
           </button>
-
-          <div class="relative w-full md:w-auto">
-            <icon-akar-icons:search
-              class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-            />
+          <div class="spotify-search-wrapper">
+            <Icon icon="mdi:magnify" class="spotify-search-icon" />
             <input
               v-model="searchKeyword"
               @keyup.enter="handleSearch"
-              class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-full md:w-56"
+              class="spotify-search-input"
               placeholder="搜索"
             />
           </div>
         </div>
       </div>
     </div>
-    <div class="flex-1 min-h-0 pb-20 md:pb-0">
-      <div class="h-full">
-        <Table :data="songs" />
-      </div>
+
+    <!-- Songs Table -->
+    <div class="spotify-like-content">
+      <Table :data="songs" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.spotify-like-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 300px);
+}
+
+.spotify-like-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 24px;
+  padding-top: 48px;
+}
+
+.spotify-like-cover {
+  width: 232px;
+  height: 232px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+}
+
+.spotify-like-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.spotify-like-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 0;
+}
+
+.spotify-like-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-base, #fff);
+  margin-bottom: 8px;
+}
+
+.spotify-like-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--text-base, #fff);
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.spotify-like-meta {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  margin-bottom: 24px;
+}
+
+.spotify-like-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.spotify-play-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 32px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 500px;
+  color: #000;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 33ms ease, background-color 200ms ease;
+}
+
+.spotify-play-btn:hover {
+  transform: scale(1.04);
+  background-color: #1ed760;
+}
+
+.spotify-play-btn:active {
+  transform: scale(1);
+}
+
+.spotify-search-wrapper {
+  position: relative;
+  width: 200px;
+}
+
+.spotify-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.spotify-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 44px;
+  background-color: var(--bg-input, #242424);
+  border: none;
+  border-radius: 500px;
+  color: var(--text-base, #fff);
+  font-size: 0.875rem;
+  line-height: 16px;
+  transition: box-shadow 200ms ease, background-color 200ms ease;
+}
+
+.spotify-search-input::placeholder {
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-search-input:hover {
+  box-shadow: 0 0 0 1px var(--border-hover, #535353);
+}
+
+.spotify-search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--border-focus, #fff);
+}
+
+.spotify-like-content {
+  flex: 1;
+  min-height: 0;
+  padding: 0 24px 24px;
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-like-page {
+  --bg-surface: #ffffff;
+  --bg-input: #f0f0f0;
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --border-hover: #c0c0c0;
+  --border-focus: #000000;
+  --gradient-color: #e8f4f8;
+}
+
+:root:not(.dark) .spotify-like-cover {
+  box-shadow: 0 4px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .spotify-like-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 16px;
+  }
+  
+  .spotify-like-cover {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .spotify-like-title {
+    font-size: 1.75rem;
+  }
+  
+  .spotify-like-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .spotify-search-wrapper {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .spotify-like-content {
+    padding: 0 16px 16px;
+  }
+}
+</style>

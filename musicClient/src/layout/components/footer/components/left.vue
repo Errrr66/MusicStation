@@ -116,43 +116,148 @@ const handleLike = async () => {
 </script>
 
 <template>
-  <div class="flex items-center gap-2 md:gap-4 h-full pl-2 md:pl-4 flex-1 md:flex-none md:w-96 min-w-0">
+  <div class="spotify-playing-bar-left">
     <div
-      class="flex items-center gap-2 cursor-pointer select-none hover:bg-hoverMenuBg transition-colors rounded-lg p-1 min-w-0 flex-1 md:flex-initial overflow-hidden"
+      class="spotify-playing-bar-track"
       @click="showDrawerMusic = !showDrawerMusic"
     >
-      <div class="w-10 h-10 md:w-16 md:h-16 flex-shrink-0">
+      <div class="spotify-playing-bar-cover">
         <img
           :src="currentTrack.cover + '?param=90y90'"
           :alt="currentTrack.title"
-          class="w-full h-full object-cover rounded-lg shadow-md"
+          class="spotify-playing-bar-img"
         />
       </div>
-      <div class="min-w-0 flex-1">
-        <div
-          class="text-sm md:text-base text-primary-foreground line-clamp-1 mb-0.5 mx-1 md:mx-2 font-medium truncate"
-          :title="currentTrack.title"
-        >
+      <div class="spotify-playing-bar-info">
+        <div class="spotify-playing-bar-title" :title="currentTrack.title">
           {{ currentTrack.title }}
         </div>
-        <div class="text-xs text-muted-foreground line-clamp-1 mt-0.5 mx-1 md:mx-2 truncate">
+        <div class="spotify-playing-bar-artist">
           {{ currentTrack.artist }}
         </div>
       </div>
     </div>
 
     <button
-      class="p-2 rounded-full hover:bg-hoverMenuBg transition text-primary-foreground/70 hover:text-primary-foreground flex-shrink-0"
+      class="spotify-playing-bar-like"
       @click.stop="handleLike"
     >
       <Icon
         icon="mdi:cards-heart-outline"
         v-if="currentSongLikeStatus === 0"
-        class="text-xl"
+        class="spotify-like-icon"
       />
-      <Icon icon="mdi:cards-heart" v-else class="text-xl text-red-500" />
+      <Icon icon="mdi:cards-heart" v-else class="spotify-like-icon spotify-like-active" />
     </button>
 
     <DrawerMusic v-model="showDrawerMusic" />
   </div>
 </template>
+
+<style scoped>
+.spotify-playing-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+  width: 30%;
+}
+
+.spotify-playing-bar-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.spotify-playing-bar-track:hover {
+  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-playing-bar-cover {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.spotify-playing-bar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.spotify-playing-bar-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.spotify-playing-bar-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-base, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-playing-bar-artist {
+  font-size: 0.75rem;
+  color: var(--text-subdued, #b3b3b3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.spotify-playing-bar-like {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 33ms ease;
+}
+
+.spotify-playing-bar-like:hover {
+  transform: scale(1.1);
+}
+
+.spotify-playing-bar-like:active {
+  transform: scale(1);
+}
+
+.spotify-like-icon {
+  font-size: 1.25rem;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-playing-bar-like:hover .spotify-like-icon {
+  color: var(--text-base, #fff);
+}
+
+.spotify-like-active {
+  color: var(--text-accent, #1db954);
+}
+
+.spotify-playing-bar-like:hover .spotify-like-active {
+  color: var(--text-accent-hover, #1ed760);
+}
+
+/* Light Theme */
+:root:not(.dark) .spotify-playing-bar-left {
+  --bg-hover: rgba(0, 0, 0, 0.08);
+  --text-base: #000000;
+  --text-subdued: #6a6a6a;
+  --text-accent: #1db954;
+  --text-accent-hover: #1ed760;
+}
+</style>
