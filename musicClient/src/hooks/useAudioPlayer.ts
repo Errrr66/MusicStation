@@ -6,24 +6,31 @@ import { urlV1 } from '@/api'
 import { AudioStore } from '@/stores/modules/audio'
 import { fixUrl } from '@/utils'
 
+interface AudioAnalyser {
+  audioContext: AudioContext
+  analyser: AnalyserNode
+  source: MediaElementAudioSourceNode
+}
+
 interface AudioPlayer {
   isPlaying: Ref<boolean>
   currentTrack: ComputedRef<trackModel>
   currentTime: Ref<number>
   duration: Ref<number>
   volume: Ref<number>
-  playMode: Ref<PlayMode> // added playMode
-  //   currentLyricIndex: Ref<number>
+  playMode: Ref<PlayMode>
   audioElement: Ref<HTMLAudioElement | null>
-  play: () => void
+  play: () => Promise<void>
   pause: () => void
-  nextTrack: () => void
-  prevTrack: () => void
+  nextTrack: () => Promise<void>
+  prevTrack: () => Promise<void>
   seek: (time: number) => void
   togglePlayPause: () => void
   setVolume: (volume: number) => void
-  togglePlayMode: () => void // added togglePlayMode
+  togglePlayMode: () => void
   loadTrack: (index?: number) => Promise<void>
+  initAnalyser: () => AudioAnalyser | null
+  getAnalyser: () => AudioAnalyser | null
 }
 
 export const AudioPlayer = () => {
@@ -31,7 +38,8 @@ export const AudioPlayer = () => {
   const audioElement = ref<HTMLAudioElement | null>(null)
   const isPlaying = ref(false)
   const volume = ref()
-  const playMode = ref<PlayMode>('order') // 默认为顺序播放
+  const playMode = ref<PlayMode>('order')
+  const audioAnalyser = ref<AudioAnalyser | null>(null)
 
   // 当前播放的歌曲
   const currentTrack = computed<trackModel>(() => {
@@ -45,8 +53,16 @@ export const AudioPlayer = () => {
   const currentTime = ref(0)
   const duration = ref(0)
   // 播放音乐
-  const play = () => {
+  const play = async () => {
     if (audioElement.value) {
+      // 初始化分析器（如果尚未初始化）
+      if (!audioAnalyser.value) {
+        initAnalyser()
+      }
+      // 恢复 AudioContext 状态（浏览器要求用户交互后才能播放）
+      if (audioAnalyser.value && audioAnalyser.value.audioContext.state === 'suspended') {
+        await audioAnalyser.value.audioContext.resume()
+      }
       audioElement.value.play()
       isPlaying.value = true
     }
@@ -224,9 +240,52 @@ export const AudioPlayer = () => {
     setPlayMode(modes[nextIndex])
   }
 
+  const initAnalyser = (): AudioAnalyser | null => {
+    if (!audioElement.value) return null
+    
+    if (audioAnalyser.value) {
+      return audioAnalyser.value
+    }
+
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.8
+      analyser.minDecibels = -90
+      analyser.maxDecibels = -10
+
+      const source = ctx.createMediaElementSource(audioElement.value)
+      source.connect(analyser)
+      analyser.connect(ctx.destination)
+
+      // 立即尝试恢复 AudioContext
+      if (ctx.state === 'suspended') {
+        ctx.resume()
+      }
+
+      audioAnalyser.value = {
+        audioContext: ctx,
+        analyser,
+        source
+      }
+
+      return audioAnalyser.value
+    } catch (error) {
+      console.error('Failed to initialize audio analyser:', error)
+      return null
+    }
+  }
+
+  const getAnalyser = (): AudioAnalyser | null => {
+    return audioAnalyser.value
+  }
+
   // 组件挂载时初始化音频元素
   onMounted(() => {
-    audioElement.value = new Audio(currentTrack.value.url)
+    audioElement.value = new Audio()
+    audioElement.value.crossOrigin = 'anonymous'
+    audioElement.value.src = currentTrack.value.url
     volume.value = audioStore.volume || 50
     audioElement.value.volume = volume.value / 100
     // 歌词是否存在
@@ -244,6 +303,12 @@ export const AudioPlayer = () => {
       audioElement.value.removeEventListener('ended', nextTrack)
       audioElement.value.removeEventListener('loadedmetadata', onLoadedMetadata)
     }
+    if (audioAnalyser.value) {
+      audioAnalyser.value.source.disconnect()
+      audioAnalyser.value.analyser.disconnect()
+      audioAnalyser.value.audioContext.close()
+      audioAnalyser.value = null
+    }
   })
 
   const audioPlayer: AudioPlayer = {
@@ -252,8 +317,7 @@ export const AudioPlayer = () => {
     currentTime,
     duration,
     volume,
-    playMode, // added playMode
-    // currentLyricIndex,
+    playMode,
     audioElement,
     play,
     pause,
@@ -262,8 +326,10 @@ export const AudioPlayer = () => {
     seek,
     togglePlayPause,
     setVolume,
-    togglePlayMode, // added togglePlayMode
+    togglePlayMode,
     loadTrack,
+    initAnalyser,
+    getAnalyser,
   }
 
   return audioPlayer

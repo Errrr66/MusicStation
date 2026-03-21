@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import DrawerMusic from '@/components/DrawerMusic/index.vue'
+import AudioVisualizer from '@/components/AudioVisualizer.vue'
 import { Icon } from '@iconify/vue'
 import { UserStore } from '@/stores/modules/user'
 import { AudioStore } from '@/stores/modules/audio'
@@ -37,8 +38,8 @@ const updateAllSongLikeStatus = (songId: number, status: number) => {
   // 更新当前页面的歌曲列表状态
   if (audioStore.currentPageSongs) {
     audioStore.currentPageSongs.forEach((song) => {
-      if (song.songId === songId) {
-        song.likeStatus = status
+      if ((song as any).songId === songId) {
+        ;(song as any).likeStatus = status
       }
     })
   }
@@ -150,6 +151,15 @@ const handleLike = async () => {
       <Icon icon="mdi:cards-heart" v-else class="spotify-like-icon spotify-like-active" />
     </button>
 
+    <AudioVisualizer 
+      :bar-count="24" 
+      :min-height="2" 
+      :max-height="40"
+      :bar-width="3"
+      :gap="2"
+      class="left-visualizer"
+    />
+
     <DrawerMusic v-model="showDrawerMusic" />
   </div>
 </template>
@@ -250,6 +260,11 @@ const handleLike = async () => {
 
 .spotify-playing-bar-like:hover .spotify-like-active {
   color: var(--text-accent-hover, #1ed760);
+}
+
+.left-visualizer {
+  height: 50px;
+  flex-shrink: 0;
 }
 
 /* Light Theme */
