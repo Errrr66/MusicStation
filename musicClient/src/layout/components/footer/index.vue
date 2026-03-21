@@ -18,8 +18,8 @@ import Recently from './components/recently.vue'
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: var(--bg-playing-bar, #181818);
-  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  background-color: #000000;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0 16px;
   height: 90px;
   flex-shrink: 0;
@@ -28,8 +28,8 @@ import Recently from './components/recently.vue'
 
 /* Light Theme */
 :root:not(.dark) .spotify-playing-bar {
-  --bg-playing-bar: #ffffff;
-  --border-color: rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border-top-color: rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {

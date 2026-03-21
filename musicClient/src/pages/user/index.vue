@@ -28,9 +28,9 @@ const authVisible = ref(false)
 const userForm = reactive({
   userId: userStore.userInfo.userId,
   username: userStore.userInfo.username || '',
-  phone: userStore.userInfo.phone || '',
-  email: userStore.userInfo.email || '',
-  introduction: userStore.userInfo.introduction || '',
+  phone: (userStore.userInfo as any).phone || '',
+  email: (userStore.userInfo as any).email || '',
+  introduction: (userStore.userInfo as any).introduction || '',
 })
 
 const userRules = reactive<FormRules>({
@@ -197,114 +197,106 @@ const handleDelete = async () => {
 
 <template>
   <div class="spotify-profile-page">
-    <div class="spotify-profile-header">
-      <div class="spotify-profile-avatar" @click="handleAvatarClick">
-        <el-avatar
-          :src="fixUrl(userStore.userInfo.avatarUrl) || defaultAvatar"
-          :size="180"
-          class="spotify-avatar-img"
-        />
-        <div class="spotify-avatar-hover">
-          <Icon icon="mdi:camera-edit" class="text-3xl" />
-          <span>更换头像</span>
+    <h1 class="spotify-page-title">账户设置</h1>
+    
+    <div class="spotify-profile-card">
+      <div class="spotify-profile-header">
+        <div class="spotify-profile-avatar" @click="handleAvatarClick">
+          <el-avatar
+            :src="fixUrl(userStore.userInfo.avatarUrl) || defaultAvatar"
+            :size="80"
+            class="spotify-avatar-img"
+          />
+          <div class="spotify-avatar-hover">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+              <path fill="currentColor" d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/>
+              <path fill="currentColor" d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+            </svg>
+          </div>
         </div>
-      </div>
-      <div class="spotify-profile-info">
-        <h1 class="spotify-profile-name">{{ userStore.userInfo.username || '用户' }}</h1>
-        <p class="spotify-profile-email">{{ userStore.userInfo.email || '未设置邮箱' }}</p>
-        <div class="spotify-profile-stats">
-          <div class="spotify-stat-item">
-            <span class="spotify-stat-value">{{ userStore.userInfo.phone ? '已绑定' : '未绑定' }}</span>
-            <span class="spotify-stat-label">手机</span>
-          </div>
-          <div class="spotify-stat-divider"></div>
-          <div class="spotify-stat-item">
-            <span class="spotify-stat-value">{{ userStore.userInfo.introduction ? '已设置' : '未设置' }}</span>
-            <span class="spotify-stat-label">简介</span>
-          </div>
+        <div class="spotify-profile-info">
+          <h2 class="spotify-profile-name">{{ userStore.userInfo.username || '用户' }}</h2>
         </div>
       </div>
     </div>
 
-    <div class="spotify-profile-content">
-      <div class="spotify-profile-section">
-        <h2 class="spotify-section-title">账户设置</h2>
-        
-        <el-form
-          ref="userFormRef"
-          :model="userForm"
-          :rules="userRules"
-          label-width="0"
-          class="spotify-profile-form"
-        >
-          <div class="spotify-form-grid">
-            <div class="spotify-form-item">
-              <label class="spotify-form-label">用户名</label>
-              <el-form-item prop="username">
-                <el-input v-model="userForm.username" placeholder="请输入用户名" class="spotify-input" />
-              </el-form-item>
-            </div>
+    <div class="spotify-profile-section">
+      <h3 class="spotify-section-title">个人信息</h3>
+      
+      <el-form
+        ref="userFormRef"
+        :model="userForm"
+        :rules="userRules"
+        label-width="0"
+        class="spotify-profile-form"
+      >
+        <div class="spotify-form-row">
+          <label class="spotify-form-label">用户名</label>
+          <el-form-item prop="username">
+            <el-input v-model="userForm.username" placeholder="请输入用户名" class="spotify-input" />
+          </el-form-item>
+        </div>
 
-            <div class="spotify-form-item">
-              <label class="spotify-form-label">邮箱地址</label>
-              <el-form-item prop="email">
-                <el-input v-model="userForm.email" placeholder="请输入邮箱" class="spotify-input" />
-              </el-form-item>
-            </div>
+        <div class="spotify-form-row">
+          <label class="spotify-form-label">邮箱地址</label>
+          <el-form-item prop="email">
+            <el-input v-model="userForm.email" placeholder="请输入邮箱" class="spotify-input" />
+          </el-form-item>
+        </div>
 
-            <div class="spotify-form-item">
-              <label class="spotify-form-label">联系电话</label>
-              <el-form-item prop="phone">
-                <el-input v-model="userForm.phone" placeholder="请输入联系电话" class="spotify-input" />
-              </el-form-item>
-            </div>
-          </div>
+        <div class="spotify-form-row">
+          <label class="spotify-form-label">联系电话</label>
+          <el-form-item prop="phone">
+            <el-input v-model="userForm.phone" placeholder="请输入联系电话" class="spotify-input" />
+          </el-form-item>
+        </div>
 
-          <div class="spotify-form-full">
-            <label class="spotify-form-label">个人简介</label>
-            <el-form-item prop="introduction">
-              <el-input
-                v-model="userForm.introduction"
-                type="textarea"
-                :rows="4"
-                placeholder="介绍一下自己吧..."
-                maxlength="100"
-                show-word-limit
-                class="spotify-textarea"
-              />
-            </el-form-item>
-          </div>
+        <div class="spotify-form-row">
+          <label class="spotify-form-label">个人简介</label>
+          <el-form-item prop="introduction">
+            <el-input
+              v-model="userForm.introduction"
+              type="textarea"
+              :rows="3"
+              placeholder="介绍一下自己吧..."
+              maxlength="100"
+              show-word-limit
+              class="spotify-textarea"
+            />
+          </el-form-item>
+        </div>
 
-          <div class="spotify-form-actions">
-            <button
-              type="button"
-              :disabled="loading"
-              @click="handleSubmit"
-              class="spotify-btn-save"
-            >
-              <Icon v-if="loading" icon="eos-icons:loading" class="text-lg" />
-              <span>{{ loading ? '保存中...' : '保存更改' }}</span>
-            </button>
-          </div>
-        </el-form>
-      </div>
-
-      <div class="spotify-profile-section spotify-danger-zone">
-        <h2 class="spotify-section-title">危险区域</h2>
-        <div class="spotify-danger-content">
-          <div class="spotify-danger-info">
-            <h3>注销账号</h3>
-            <p>注销后，您的所有数据将被永久删除且无法恢复。</p>
-          </div>
+        <div class="spotify-form-actions">
           <button
             type="button"
             :disabled="loading"
-            @click="handleDelete"
-            class="spotify-btn-danger"
+            @click="handleSubmit"
+            class="spotify-btn-save"
           >
-            注销账号
+            <svg v-if="loading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="animate-spin">
+              <path fill="currentColor" d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/>
+            </svg>
+            <span>{{ loading ? '保存中...' : '保存更改' }}</span>
           </button>
         </div>
+      </el-form>
+    </div>
+
+    <div class="spotify-profile-section spotify-danger-zone">
+      <h3 class="spotify-section-title">危险区域</h3>
+      <div class="spotify-danger-content">
+        <div class="spotify-danger-info">
+          <span>注销账号</span>
+          <p>注销后，您的所有数据将被永久删除且无法恢复。</p>
+        </div>
+        <button
+          type="button"
+          :disabled="loading"
+          @click="handleDelete"
+          class="spotify-btn-danger"
+        >
+          注销账号
+        </button>
       </div>
     </div>
 
@@ -340,19 +332,29 @@ const handleDelete = async () => {
         <div class="spotify-cropper-footer">
           <div class="spotify-cropper-tools">
             <button type="button" class="spotify-tool-btn" @click="reset">
-              <Icon icon="mdi:refresh" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-8 3.58-8 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
             </button>
             <button type="button" class="spotify-tool-btn" @click="changeScale(1)">
-              <Icon icon="mdi:magnify-plus" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
             </button>
             <button type="button" class="spotify-tool-btn" @click="changeScale(-1)">
-              <Icon icon="mdi:magnify-minus" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M19 13H5v-2h14v2z"/>
+              </svg>
             </button>
             <button type="button" class="spotify-tool-btn" @click="rotateLeft">
-              <Icon icon="mdi:rotate-left" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/>
+              </svg>
             </button>
             <button type="button" class="spotify-tool-btn" @click="rotateRight">
-              <Icon icon="mdi:rotate-right" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/>
+              </svg>
             </button>
           </div>
           <div class="spotify-cropper-actions">
@@ -372,33 +374,45 @@ const handleDelete = async () => {
   min-height: 100%;
   padding: 24px;
   overflow-y: auto;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.spotify-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-highlight, #f5f5f7);
+  margin-bottom: 20px;
+}
+
+.spotify-profile-card {
+  background-color: var(--card-bg, #181818);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
 }
 
 .spotify-profile-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 24px;
-  padding: 32px;
-  background: linear-gradient(135deg, rgba(29, 185, 84, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
-  border-radius: 12px;
-  margin-bottom: 24px;
+  gap: 16px;
 }
 
 .spotify-profile-avatar {
   position: relative;
-  width: 180px;
-  height: 180px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+  background-color: #282828;
+  padding: 8px;
 }
 
 .spotify-profile-avatar:hover {
-  transform: scale(1.02);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  transform: scale(1.03);
 }
 
 .spotify-avatar-img {
@@ -409,15 +423,11 @@ const handleDelete = async () => {
 .spotify-avatar-hover {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   color: #fff;
-  font-size: 0.875rem;
-  font-weight: 600;
   opacity: 0;
   transition: opacity 200ms ease;
 }
@@ -427,108 +437,60 @@ const handleDelete = async () => {
 }
 
 .spotify-profile-info {
-  text-align: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .spotify-profile-name {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-base, #fff);
-  margin-bottom: 4px;
-}
-
-.spotify-profile-email {
-  font-size: 0.875rem;
-  color: var(--text-subdued, #b3b3b3);
-  margin-bottom: 16px;
-}
-
-.spotify-profile-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-}
-
-.spotify-stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.spotify-stat-value {
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-base, #fff);
-}
-
-.spotify-stat-label {
-  font-size: 0.75rem;
-  color: var(--text-subdued, #b3b3b3);
-}
-
-.spotify-stat-divider {
-  width: 1px;
-  height: 32px;
-  background: var(--border-color, rgba(255, 255, 255, 0.1));
-}
-
-.spotify-profile-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  margin-bottom: 4px;
 }
 
 .spotify-profile-section {
   background-color: var(--card-bg, #181818);
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
+  margin-bottom: 12px;
 }
 
 .spotify-section-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--text-base, #fff);
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-subdued, #b3b3b3);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .spotify-profile-form :deep(.el-form-item) {
   margin-bottom: 0;
 }
 
-.spotify-form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
+.spotify-form-row {
+  margin-bottom: 16px;
+}
+
+.spotify-form-row:last-of-type {
   margin-bottom: 20px;
 }
 
-.spotify-form-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .spotify-form-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-base, #fff);
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-highlight, #f5f5f7);
+  margin-bottom: 6px;
 }
 
 .spotify-input :deep(.el-input__wrapper) {
   background-color: var(--bg-elevated, #242424);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: none;
-  padding: 12px 16px;
+  padding: 10px 14px;
   transition: all 200ms ease;
-}
-
-.spotify-input :deep(.el-input) {
-  --el-input-bg-color: var(--bg-elevated, #242424);
 }
 
 .spotify-input :deep(.el-input__inner) {
@@ -541,24 +503,20 @@ const handleDelete = async () => {
 }
 
 .spotify-input :deep(.el-input__wrapper:hover) {
-  border-color: var(--border-hover, rgba(255, 255, 255, 0.2));
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.15));
 }
 
 .spotify-input :deep(.el-input__wrapper.is-focus) {
   border-color: #1db954;
-  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
-}
-
-.spotify-form-full {
-  margin-bottom: 24px;
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.15);
 }
 
 .spotify-textarea :deep(.el-textarea__inner) {
   background-color: var(--bg-elevated, #242424);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: none;
-  padding: 12px 16px;
+  padding: 10px 14px;
   color: var(--text-base, #fff);
   font-size: 0.9375rem;
   resize: none;
@@ -570,12 +528,12 @@ const handleDelete = async () => {
 }
 
 .spotify-textarea :deep(.el-textarea__inner:hover) {
-  border-color: var(--border-hover, rgba(255, 255, 255, 0.2));
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.15));
 }
 
 .spotify-textarea :deep(.el-textarea__inner:focus) {
   border-color: #1db954;
-  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.15);
 }
 
 .spotify-textarea :deep(.el-input__count) {
@@ -586,25 +544,26 @@ const handleDelete = async () => {
 .spotify-form-actions {
   display: flex;
   justify-content: flex-end;
+  padding-top: 4px;
 }
 
 .spotify-btn-save {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 32px;
-  background-color: #1db954;
+  gap: 6px;
+  padding: 10px 24px;
+  background-color: #ffffff;
   border: none;
   border-radius: 500px;
   color: #000;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 200ms ease;
 }
 
 .spotify-btn-save:hover:not(:disabled) {
-  background-color: #1ed760;
+  background-color: #e0e0e0;
   transform: scale(1.02);
 }
 
@@ -614,7 +573,7 @@ const handleDelete = async () => {
 }
 
 .spotify-danger-zone {
-  border: 1px solid rgba(241, 94, 108, 0.3);
+  border: 1px solid rgba(241, 94, 108, 0.25);
 }
 
 .spotify-danger-zone .spotify-section-title {
@@ -623,33 +582,35 @@ const handleDelete = async () => {
 
 .spotify-danger-content {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  align-items: flex-start;
 }
 
-.spotify-danger-info h3 {
-  font-size: 1rem;
-  font-weight: 600;
+.spotify-danger-info span {
+  font-size: 0.9375rem;
+  font-weight: 500;
   color: var(--text-base, #fff);
-  margin-bottom: 4px;
+  display: block;
+  margin-bottom: 2px;
 }
 
 .spotify-danger-info p {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
 .spotify-btn-danger {
-  padding: 10px 24px;
+  padding: 8px 20px;
   background-color: transparent;
   border: 1px solid #f15e6c;
   border-radius: 500px;
   color: #f15e6c;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 200ms ease;
+  white-space: nowrap;
 }
 
 .spotify-btn-danger:hover:not(:disabled) {
@@ -665,31 +626,32 @@ const handleDelete = async () => {
   background-color: var(--bg-surface, #121212);
   border-radius: 12px;
   overflow: hidden;
-  max-width: 500px;
+  max-width: 480px;
 }
 
 .spotify-cropper-dialog :deep(.el-dialog__header) {
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
 .spotify-cropper-dialog :deep(.el-dialog__title) {
   color: var(--text-base, #fff);
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .spotify-cropper-dialog :deep(.el-dialog__body) {
-  padding: 24px;
+  padding: 20px;
 }
 
 .spotify-cropper-dialog :deep(.el-dialog__footer) {
-  padding: 16px 24px;
+  padding: 12px 20px;
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
 .spotify-cropper-container {
   width: 100%;
-  height: 300px;
+  height: 280px;
   background-color: #000;
   border-radius: 8px;
   overflow: hidden;
@@ -705,12 +667,12 @@ const handleDelete = async () => {
 
 .spotify-cropper-tools {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .spotify-tool-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background-color: var(--bg-elevated, #242424);
   border: none;
   border-radius: 50%;
@@ -719,7 +681,6 @@ const handleDelete = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.125rem;
   transition: background-color 200ms ease;
 }
 
@@ -729,16 +690,16 @@ const handleDelete = async () => {
 
 .spotify-cropper-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .spotify-btn-cancel {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background-color: transparent;
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.3));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
   border-radius: 500px;
   color: var(--text-base, #fff);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 200ms ease;
@@ -749,12 +710,12 @@ const handleDelete = async () => {
 }
 
 .spotify-btn-confirm {
-  padding: 10px 24px;
+  padding: 8px 20px;
   background-color: #1db954;
   border: none;
   border-radius: 500px;
   color: #000;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 200ms ease;
@@ -766,26 +727,26 @@ const handleDelete = async () => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-profile-page {
-  --text-base: #000000;
-  --text-subdued: #6a6a6a;
+  --text-base: #1d1d1f;
+  --text-subdued: #86868b;
+  --text-highlight: #1d1d1f;
   --bg-surface: #ffffff;
-  --bg-elevated: #f5f5f5;
-  --bg-elevated-hover: #e8e8e8;
-  --card-bg: #f8f8f8;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --border-hover: rgba(0, 0, 0, 0.2);
+  --bg-elevated: #f5f5f7;
+  --bg-elevated-hover: #e8e8ed;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.12);
 }
 
-:root:not(.dark) .spotify-profile-header {
-  background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(29, 185, 84, 0.05) 100%);
+:root:not(.dark) .spotify-profile-card,
+:root:not(.dark) .spotify-profile-section {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 :root:not(.dark) .spotify-profile-avatar {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-:root:not(.dark) .spotify-profile-avatar:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  background-color: #f0f0f0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 :root:not(.dark) .spotify-cropper-dialog :deep(.el-dialog) {
@@ -793,108 +754,88 @@ const handleDelete = async () => {
 }
 
 :root:not(.dark) .spotify-tool-btn {
-  background-color: #f5f5f5;
-  color: #000;
+  background-color: #f5f5f7;
+  color: #1d1d1f;
 }
 
 :root:not(.dark) .spotify-tool-btn:hover {
-  background-color: #e8e8e8;
+  background-color: #e8e8ed;
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-input {
-  background-color: transparent !important;
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper) {
+  background-color: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__wrapper) {
-  background-color: #f5f5f5 !important;
-  border-color: transparent;
+:root:not(.dark) .spotify-input :deep(.el-input__inner) {
+  color: #1d1d1f;
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__inner) {
-  color: #000000;
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper:hover) {
+  background-color: #f0f0f0;
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__wrapper:hover) {
-  background-color: #e8e8e8 !important;
-  border-color: rgba(0, 0, 0, 0.15);
-}
-
-:root:not(.dark) .spotify-profile-page .spotify-input :deep(.el-input__wrapper.is-focus) {
-  background-color: #ffffff !important;
+:root:not(.dark) .spotify-input :deep(.el-input__wrapper.is-focus) {
+  background-color: #f5f5f7;
   border-color: #1db954;
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-textarea :deep(.el-textarea__inner) {
-  background-color: #f5f5f5 !important;
-  border-color: transparent;
-  color: #000000;
+:root:not(.dark) .spotify-textarea :deep(.el-textarea__inner) {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1d1d1f;
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-textarea :deep(.el-textarea__inner:hover) {
-  background-color: #e8e8e8 !important;
-  border-color: rgba(0, 0, 0, 0.15);
+:root:not(.dark) .spotify-textarea :deep(.el-textarea__inner:hover) {
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
-:root:not(.dark) .spotify-profile-page .spotify-textarea :deep(.el-textarea__inner:focus) {
-  background-color: #ffffff !important;
+:root:not(.dark) .spotify-textarea :deep(.el-textarea__inner:focus) {
+  background-color: #ffffff;
   border-color: #1db954;
 }
 
 :root:not(.dark) .spotify-btn-cancel {
-  border-color: rgba(0, 0, 0, 0.2);
-  color: #000;
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1d1d1f;
 }
 
 :root:not(.dark) .spotify-btn-cancel:hover {
-  border-color: #000;
+  border-color: #1d1d1f;
 }
 
-@media (min-width: 768px) {
-  .spotify-profile-header {
-    flex-direction: row;
-    padding: 40px;
-  }
+:root:not(.dark) .spotify-btn-save {
+  background-color: #1d1d1f;
+  color: #ffffff;
+}
 
-  .spotify-profile-info {
-    text-align: left;
-  }
-
-  .spotify-profile-stats {
-    justify-content: flex-start;
-  }
-
-  .spotify-form-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .spotify-danger-content {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+:root:not(.dark) .spotify-btn-save:hover:not(:disabled) {
+  background-color: #333333;
 }
 
 @media (max-width: 768px) {
   .spotify-profile-page {
-    padding: 12px;
+    padding: 16px;
     padding-bottom: 80px;
   }
   
-  .spotify-profile-header {
-    padding: 24px 16px;
+  .spotify-page-title {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+  }
+  
+  .spotify-profile-card {
+    padding: 16px;
   }
   
   .spotify-profile-avatar {
-    width: 120px;
-    height: 120px;
+    width: 64px;
+    height: 64px;
   }
   
   .spotify-profile-name {
-    font-size: 1.5rem;
-  }
-  
-  .spotify-profile-stats {
-    gap: 16px;
+    font-size: 1.125rem;
   }
   
   .spotify-profile-section {
@@ -902,17 +843,16 @@ const handleDelete = async () => {
   }
   
   .spotify-section-title {
-    font-size: 1rem;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    font-size: 0.75rem;
+    margin-bottom: 12px;
   }
   
-  .spotify-form-grid {
-    gap: 16px;
+  .spotify-form-row {
+    margin-bottom: 14px;
   }
   
   .spotify-form-label {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
   }
   
   .spotify-btn-save {
@@ -921,12 +861,14 @@ const handleDelete = async () => {
   }
   
   .spotify-danger-content {
+    flex-direction: column;
+    align-items: stretch;
     text-align: center;
-    align-items: center;
   }
   
   .spotify-danger-info {
     text-align: center;
+    margin-bottom: 8px;
   }
   
   .spotify-btn-danger {
@@ -934,7 +876,7 @@ const handleDelete = async () => {
   }
   
   .spotify-cropper-container {
-    height: 250px;
+    height: 240px;
   }
   
   .spotify-cropper-footer {
@@ -954,13 +896,6 @@ const handleDelete = async () => {
   .spotify-btn-cancel,
   .spotify-btn-confirm {
     flex: 1;
-  }
-}
-
-@media (min-width: 1024px) {
-  .spotify-profile-page {
-    max-width: 900px;
-    margin: 0 auto;
   }
 }
 </style>

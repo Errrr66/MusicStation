@@ -12,6 +12,7 @@ import { usePlaylistStore } from '@/stores/modules/playlist'
 import { useFavoriteStore } from '@/stores/modules/favorite'
 import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
+import { Icon } from '@iconify/vue'
 
 const route = useRoute()
 const audui = AudioStore()
@@ -21,6 +22,52 @@ const userStore = UserStore()
 const playlist = computed(() => playlistStore.playlist)
 const songs = computed(() => playlistStore.songs)
 const { loadTrack, play } = useAudioPlayer()
+
+const dominantColor = ref('#1e3a5f')
+
+const extractDominantColor = (imageUrl: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'Anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        resolve('#1e3a5f')
+        return
+      }
+      canvas.width = 50
+      canvas.height = 50
+      ctx.drawImage(img, 0, 0, 50, 50)
+      const imageData = ctx.getImageData(0, 0, 50, 50).data
+      let r = 0, g = 0, b = 0, count = 0
+      for (let i = 0; i < imageData.length; i += 4) {
+        r += imageData[i]
+        g += imageData[i + 1]
+        b += imageData[i + 2]
+        count++
+      }
+      r = Math.floor(r / count)
+      g = Math.floor(g / count)
+      b = Math.floor(b / count)
+      const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('')
+      resolve(hex)
+    }
+    img.onerror = () => resolve('#1e3a5f')
+    img.src = imageUrl
+  })
+}
+
+watch(
+  () => songs.value,
+  async (newSongs) => {
+    if (newSongs && newSongs.length > 0 && newSongs[0].coverUrl) {
+      const color = await extractDominantColor(newSongs[0].coverUrl + '?param=50y50')
+      dominantColor.value = color
+    }
+  },
+  { immediate: true }
+)
 
 // 添加激活的选项卡变量
 const activeTab = ref('songs')
@@ -246,7 +293,7 @@ const handlePlayAll = async () => {
 }
 </script>
 <template>
-  <div class="spotify-playlist-page">
+  <div class="spotify-playlist-page" :style="{ '--gradient-color': dominantColor }">
     <!-- Playlist Header -->
     <div class="spotify-playlist-header">
       <div class="spotify-playlist-cover">
@@ -282,7 +329,7 @@ const handlePlayAll = async () => {
             <span>播放</span>
           </button>
           <button @click="toggleCollect" class="spotify-action-btn" :class="{ 'spotify-action-active': isCollected }">
-            <Icon :icon="isCollected ? 'mdi:cards-heart' : 'mdi:cards-heart-outline'" class="text-xl" />
+            <Icon :icon="isCollected ? 'mdi:check' : 'mdi:plus'" class="text-xl" />
           </button>
         </div>
       </div>
@@ -388,7 +435,7 @@ const handlePlayAll = async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 300px);
 }
 
@@ -527,7 +574,7 @@ const handlePlayAll = async () => {
   border-radius: 50%;
   color: var(--text-subdued, #b3b3b3);
   cursor: pointer;
-  transition: border-color 200ms ease, color 200ms ease, transform 33ms ease;
+  transition: border-color 200ms ease, color 200ms ease, background-color 200ms ease, transform 33ms ease;
 }
 
 .spotify-action-btn:hover {
@@ -537,12 +584,13 @@ const handlePlayAll = async () => {
 }
 
 .spotify-action-active {
-  color: #1db954;
+  background-color: #1db954;
   border-color: #1db954;
+  color: #000;
 }
 
 .spotify-action-active:hover {
-  color: #1ed760;
+  background-color: #1ed760;
   border-color: #1ed760;
 }
 
@@ -578,6 +626,25 @@ const handlePlayAll = async () => {
   flex: 1;
   min-height: 0;
   padding: 0 24px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.spotify-playlist-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.spotify-playlist-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spotify-playlist-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.spotify-playlist-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .spotify-songs-content {
@@ -737,12 +804,34 @@ const handlePlayAll = async () => {
   --bg-hover: rgba(0, 0, 0, 0.08);
   --text-base: #000000;
   --text-subdued: #6a6a6a;
-  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color: rgba(0, 0, 0, 0.15);
   --gradient-color: #e8f4f8;
 }
 
 :root:not(.dark) .spotify-playlist-cover {
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.15);
+}
+
+:root:not(.dark) .spotify-action-btn {
+  border-color: rgba(0, 0, 0, 0.25);
+  color: #5a5a5a;
+}
+
+:root:not(.dark) .spotify-action-btn:hover {
+  border-color: rgba(0, 0, 0, 0.5);
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-action-active {
+  background-color: #1db954;
+  border-color: #1db954;
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-action-active:hover {
+  background-color: #1ed760;
+  border-color: #1ed760;
+  color: #000000;
 }
 
 :root:not(.dark) .spotify-comment-input :deep(.el-textarea__inner) {

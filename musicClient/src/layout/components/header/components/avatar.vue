@@ -53,17 +53,6 @@ const openFeedbackDialog = () => {
 
     <template #dropdown>
       <div class="spotify-dropdown-menu">
-        <div class="spotify-dropdown-header">
-          <el-avatar
-            :src="fixUrl(user.userInfo.avatarUrl) || defaultAvatar"
-            :size="48"
-            class="spotify-dropdown-avatar"
-          />
-          <div class="spotify-dropdown-user-info">
-            <span class="spotify-dropdown-username">{{ user.userInfo.username }}</span>
-            <span class="spotify-dropdown-email">{{ user.userInfo.email || '未设置邮箱' }}</span>
-          </div>
-        </div>
         <div class="spotify-dropdown-actions">
           <div class="spotify-dropdown-action" @click="router.push('/user')" title="个人中心">
             <Icon icon="mdi:account-outline" class="spotify-dropdown-action-icon" />
@@ -99,16 +88,17 @@ const openFeedbackDialog = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: #3e3e3e;
+  padding: 4px;
   transition: background-color 200ms ease;
   overflow: hidden;
 }
 
 .spotify-avatar-trigger:hover {
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: #4e4e4e;
 }
 
 .spotify-avatar {
@@ -120,46 +110,11 @@ const openFeedbackDialog = () => {
 }
 
 .spotify-dropdown-menu {
-  background-color: #121212;
+  background-color: #000000;
   border-radius: 8px;
   padding: 8px;
   min-width: 200px;
   box-shadow: 0 16px 24px rgba(0, 0, 0, 0.3), 0 6px 8px rgba(0, 0, 0, 0.2);
-}
-
-.spotify-dropdown-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-}
-
-.spotify-dropdown-avatar {
-  flex-shrink: 0;
-}
-
-.spotify-dropdown-user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.spotify-dropdown-username {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: #fff;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.spotify-dropdown-email {
-  font-size: 0.75rem;
-  color: #b3b3b3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .spotify-dropdown-actions {
@@ -167,7 +122,6 @@ const openFeedbackDialog = () => {
   align-items: center;
   justify-content: space-around;
   padding: 8px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .spotify-dropdown-action {
@@ -184,7 +138,7 @@ const openFeedbackDialog = () => {
 
 .spotify-dropdown-action:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: #ffffff;
 }
 
 .spotify-dropdown-action-icon {
@@ -192,12 +146,12 @@ const openFeedbackDialog = () => {
 }
 
 .spotify-dropdown-action-logout {
-  color: #e91429;
+  color: #b3b3b3;
 }
 
 .spotify-dropdown-action-logout:hover {
-  background-color: rgba(233, 20, 41, 0.1);
-  color: #e91429;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .spotify-login-btn {
@@ -221,24 +175,33 @@ const openFeedbackDialog = () => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-avatar-trigger {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: #f0f0f0;
 }
 
 :root:not(.dark) .spotify-avatar-trigger:hover {
-  background-color: #fff;
+  background-color: #e0e0e0;
 }
 
-:root:not(.dark) .spotify-dropdown-actions {
-  border-top-color: rgba(255, 255, 255, 0.1);
+:root:not(.dark) .spotify-dropdown-menu {
+  background-color: #ffffff;
 }
 
 :root:not(.dark) .spotify-dropdown-action {
-  color: #b3b3b3;
+  color: #6a6a6a;
 }
 
 :root:not(.dark) .spotify-dropdown-action:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-dropdown-action-logout {
+  color: #6a6a6a;
+}
+
+:root:not(.dark) .spotify-dropdown-action-logout:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #000000;
 }
 
 :root:not(.dark) .spotify-login-btn {

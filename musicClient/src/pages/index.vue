@@ -16,6 +16,20 @@ const { loadTrack, play } = useAudioPlayer()
 
 const bannerList = ref<{ bannerId: number; bannerUrl: string }[]>([])
 
+const bannerChunks = computed(() => {
+  const chunks = []
+  for (let i = 0; i < bannerList.value.length; i += 2) {
+    chunks.push(bannerList.value.slice(i, i + 2))
+  }
+  return chunks
+})
+
+const bannerTitles = ['今日热门', '新歌首发', '精选推荐', '热门榜单', '流行趋势', '独家放送']
+
+const getBannerTitle = (bannerId: number) => {
+  return bannerTitles[bannerId % bannerTitles.length] || '推荐内容'
+}
+
 // 推荐歌单
 const recommendedPlaylist = ref([])
 // 推荐歌曲
@@ -152,28 +166,144 @@ const isCurrentPlaying = (songId: number) => {
   const currentTrack = audio.trackList[audio.currentSongIndex]
   return currentTrack && Number(currentTrack.id) === songId
 }
+
+const dominantColor = ref('#1e3a5f')
+const scrollProgress = ref(0)
+const showScrollbar = ref(false)
+const homeRef = ref<HTMLElement | null>(null)
+const activeTab = ref<'all' | 'playlist' | 'music'>('all')
+let scrollTimeout: ReturnType<typeof setTimeout> | null = null
+
+const hexToRgb = (hex: string): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (result) {
+    return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+  }
+  return '30, 58, 95'
+}
+
+const extractDominantColor = (imageUrl: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'Anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        resolve('#1e3a5f')
+        return
+      }
+      canvas.width = 50
+      canvas.height = 50
+      ctx.drawImage(img, 0, 0, 50, 50)
+      const imageData = ctx.getImageData(0, 0, 50, 50).data
+      let r = 0, g = 0, b = 0, count = 0
+      for (let i = 0; i < imageData.length; i += 4) {
+        r += imageData[i]
+        g += imageData[i + 1]
+        b += imageData[i + 2]
+        count++
+      }
+      r = Math.floor(r / count)
+      g = Math.floor(g / count)
+      b = Math.floor(b / count)
+      const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('')
+      resolve(hex)
+    }
+    img.onerror = () => resolve('#1e3a5f')
+    img.src = imageUrl
+  })
+}
+
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  const scrollTop = target.scrollTop
+  const maxScroll = 400
+  scrollProgress.value = Math.min(scrollTop / maxScroll, 1)
+  
+  showScrollbar.value = true
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+  scrollTimeout = setTimeout(() => {
+    showScrollbar.value = false
+  }, 1500)
+}
+
+watch(
+  () => audio.trackList[audio.currentSongIndex]?.cover,
+  async (newCover) => {
+    if (newCover) {
+      const color = await extractDominantColor(newCover + '?param=50y50')
+      dominantColor.value = color
+    }
+  },
+  { immediate: true }
+)
 </script>
 <template>
-  <div class="spotify-home">
+  <div class="spotify-home-wrapper" :style="{ '--gradient-color': dominantColor }">
+    <div 
+      class="spotify-gradient-bg"
+      :style="{ opacity: 1 - scrollProgress }"
+    ></div>
+    <div 
+      class="spotify-home-header"
+      :style="{ 
+        backgroundColor: `rgba(${hexToRgb(dominantColor)}, ${scrollProgress})`,
+        backdropFilter: scrollProgress > 0.5 ? 'blur(10px)' : 'none'
+      }"
+    >
+      <div class="spotify-header-tabs">
+        <button 
+          class="spotify-tab-btn" 
+          :class="{ active: activeTab === 'all' }"
+          @click="activeTab = 'all'"
+        >全部</button>
+        <button 
+          class="spotify-tab-btn" 
+          :class="{ active: activeTab === 'playlist' }"
+          @click="activeTab = 'playlist'"
+        >歌单</button>
+        <button 
+          class="spotify-tab-btn" 
+          :class="{ active: activeTab === 'music' }"
+          @click="activeTab = 'music'"
+        >音乐</button>
+      </div>
+    </div>
+    <div 
+      ref="homeRef"
+      class="spotify-home"
+      :class="{ 'show-scrollbar': showScrollbar }"
+      @scroll="handleScroll"
+    >
+    <div class="spotify-home-content">
+    
     <!-- Banner -->
-    <div class="spotify-home-banner">
-      <el-carousel :interval="4000" type="card" height="200px" class="spotify-carousel">
-        <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
-          <img
-            :src="fixUrl(item.bannerUrl)"
-            class="spotify-banner-img"
-          />
+    <div class="spotify-home-banner" v-show="activeTab === 'all'">
+      <h1 class="spotify-page-title">新发现</h1>
+      <el-carousel :interval="4000" height="320px" class="spotify-carousel" arrow="hover">
+        <el-carousel-item v-for="(chunk, index) in bannerChunks" :key="index">
+          <div class="spotify-banner-group">
+            <div class="spotify-banner-item" v-for="item in chunk" :key="item.bannerId">
+              <h3 class="spotify-banner-title">{{ getBannerTitle(item.bannerId) }}</h3>
+              <img :src="fixUrl(item.bannerUrl)" class="spotify-banner-img" />
+            </div>
+          </div>
         </el-carousel-item>
       </el-carousel>
     </div>
 
     <!-- Recommended Playlists -->
-    <section class="spotify-home-section">
+    <section class="spotify-home-section" v-show="activeTab === 'all' || activeTab === 'playlist'">
       <div class="spotify-section-header">
-        <h2 class="spotify-section-title">推荐歌单</h2>
-        <button @click="router.push('/playlist')" class="spotify-section-link">
-          <icon-hugeicons:more class="text-lg" />
-        </button>
+        <a @click="router.push('/playlist')" class="spotify-section-link">
+          <span>歌单已更新</span>
+          <svg class="spotify-section-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+            <path d="M19.817 61.863c1.48 0 2.672-.515 3.702-1.546l24.243-23.63c1.352-1.385 1.996-2.737 2.028-4.443 0-1.674-.644-3.09-2.028-4.443L23.519 4.138c-1.03-.998-2.253-1.513-3.702-1.513-2.994 0-5.409 2.382-5.409 5.344 0 1.481.612 2.833 1.739 3.96l20.99 20.347-20.99 20.283c-1.127 1.126-1.739 2.478-1.739 3.96 0 2.93 2.415 5.344 5.409 5.344Z"></path>
+          </svg>
+        </a>
       </div>
       <div class="spotify-playlist-grid">
         <div
@@ -190,7 +320,9 @@ const isCurrentPlaying = (songId: number) => {
               :src="replaceUrlParams(fixUrl(i.coverUrl) ?? coverImg, 'param=350y350')"
             />
             <button class="spotify-playlist-play-btn">
-              <Icon icon="mdi:play" class="text-2xl" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M8 5v14l11-7z"/>
+              </svg>
             </button>
           </div>
           <h3 class="spotify-playlist-title">{{ i.title }}</h3>
@@ -199,12 +331,14 @@ const isCurrentPlaying = (songId: number) => {
     </section>
 
     <!-- Recommended Songs -->
-    <section class="spotify-home-section">
+    <section class="spotify-home-section" v-show="activeTab === 'all' || activeTab === 'music'">
       <div class="spotify-section-header">
-        <h2 class="spotify-section-title">推荐歌曲</h2>
-        <button @click="handleRefreshSongs()" class="spotify-section-link">
-          <icon-tabler:refresh class="text-lg" />
-        </button>
+        <a @click="handleRefreshSongs()" class="spotify-section-link">
+          <span>正在流行中</span>
+          <svg class="spotify-section-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+            <path d="M19.817 61.863c1.48 0 2.672-.515 3.702-1.546l24.243-23.63c1.352-1.385 1.996-2.737 2.028-4.443 0-1.674-.644-3.09-2.028-4.443L23.519 4.138c-1.03-.998-2.253-1.513-3.702-1.513-2.994 0-5.409 2.382-5.409 5.344 0 1.481.612 2.833 1.739 3.96l20.99 20.347-20.99 20.283c-1.127 1.126-1.739 2.478-1.739 3.96 0 2.93 2.415 5.344 5.409 5.344Z"></path>
+          </svg>
+        </a>
       </div>
       <div class="spotify-song-table">
         <div class="spotify-song-header-row">
@@ -247,27 +381,196 @@ const isCurrentPlaying = (songId: number) => {
         </div>
       </div>
     </section>
+    </div>
   </div>
+</div>
 </template>
 
 <style scoped>
+.spotify-home-wrapper {
+  position: relative;
+  height: 100%;
+  background: var(--bg-surface, #121212);
+}
+
+.spotify-gradient-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400px;
+  background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .spotify-home {
-  padding: 20px;
+  position: relative;
   overflow-y: auto;
   height: 100%;
+  z-index: 2;
+}
+
+.spotify-home::-webkit-scrollbar {
+  width: 12px;
+}
+
+.spotify-home::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spotify-home::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  transition: background 300ms ease;
+}
+
+.spotify-home.show-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.spotify-home::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.spotify-home-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 100;
+  transition: backdrop-filter 200ms ease;
+}
+
+.spotify-header-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.spotify-tab-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.spotify-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.spotify-tab-btn.active {
+  background: #ffffff;
+  color: #000000;
+}
+
+.spotify-home-content {
+  padding: 20px;
+  padding-top: 64px;
+}
+
+.spotify-page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-highlight, #f5f5f7);
+  margin-bottom: 24px;
 }
 
 .spotify-home-banner {
   margin-bottom: 24px;
+  position: relative;
 }
 
-:deep(.spotify-carousel .el-carousel__item) {
-  --el-carousel-item-scale: 1.2;
+.spotify-home-banner .spotify-page-title {
+  margin-bottom: 16px;
+}
+
+.spotify-carousel :deep(.el-carousel__container) {
+  height: 320px;
+}
+
+.spotify-carousel :deep(.el-carousel__item) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.spotify-carousel :deep(.el-carousel__arrow) {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  transition: all 200ms ease;
+}
+
+.spotify-carousel :deep(.el-carousel__arrow:hover) {
+  background-color: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.spotify-carousel :deep(.el-carousel__arrow--left) {
+  left: 16px;
+}
+
+.spotify-carousel :deep(.el-carousel__arrow--right) {
+  right: 16px;
+}
+
+.spotify-carousel :deep(.el-carousel__indicators) {
+  bottom: 12px;
+}
+
+.spotify-carousel :deep(.el-carousel__indicator--horizontal .el-carousel__button) {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: all 200ms ease;
+}
+
+.spotify-carousel :deep(.el-carousel__indicator--horizontal.is-active .el-carousel__button) {
+  background-color: #fff;
+  width: 8px;
+}
+
+.spotify-banner-group {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  padding: 0 4px;
+}
+
+.spotify-banner-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.spotify-banner-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-highlight, #f5f5f7);
+  margin: 0;
+  padding-left: 4px;
+  flex-shrink: 0;
 }
 
 .spotify-banner-img {
   width: 100%;
-  height: 100%;
+  height: 240px;
   object-fit: cover;
   border-radius: 8px;
 }
@@ -277,35 +580,38 @@ const isCurrentPlaying = (songId: number) => {
 }
 
 .spotify-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 16px;
 }
 
-.spotify-section-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-base, #fff);
+.spotify-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-highlight, #f5f5f7);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 200ms ease;
 }
 
-.spotify-section-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  color: var(--text-subdued, #b3b3b3);
-  cursor: pointer;
-  transition: color 200ms ease, background-color 200ms ease;
+.spotify-section-link span {
+  color: inherit;
 }
 
 .spotify-section-link:hover {
   color: var(--text-base, #fff);
-  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.spotify-section-chevron {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  transition: transform 200ms ease;
+}
+
+.spotify-section-link:hover .spotify-section-chevron {
+  transform: translateX(4px);
 }
 
 .spotify-playlist-grid {
@@ -370,6 +676,11 @@ const isCurrentPlaying = (songId: number) => {
 .spotify-playlist-play-btn:hover {
   transform: translateY(0) scale(1.04);
   background-color: #1ed760;
+}
+
+.spotify-playlist-play-btn svg {
+  color: #000;
+  fill: #000;
 }
 
 .spotify-playlist-title {
@@ -551,9 +862,12 @@ const isCurrentPlaying = (songId: number) => {
 :root:not(.dark) .spotify-home {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
+  --text-highlight: #1d1d1f;
   --text-accent: #1db954;
   --bg-hover: rgba(0, 0, 0, 0.08);
   --bg-active: rgba(0, 0, 0, 0.12);
+  --bg-surface: #ffffff;
+  --gradient-color: #e8f4f8;
   --card-bg: #f0f0f0;
   --card-hover: #e0e0e0;
   --border-color: rgba(0, 0, 0, 0.1);
@@ -563,26 +877,88 @@ const isCurrentPlaying = (songId: number) => {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+:root:not(.dark) .spotify-home-header {
+  background-color: transparent;
+}
+
+:root:not(.dark) .spotify-tab-btn {
+  background: rgba(0, 0, 0, 0.1);
+  color: #000000;
+}
+
+:root:not(.dark) .spotify-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) .spotify-tab-btn.active {
+  background: #000000;
+  color: #ffffff;
+}
+
+:root:not(.dark) .spotify-home.show-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) .spotify-home::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
 @media (max-width: 768px) {
   .spotify-home {
     padding: 12px;
     padding-bottom: 80px;
   }
   
+  .spotify-page-title {
+    font-size: 1.375rem;
+    margin-bottom: 16px;
+  }
+  
   .spotify-home-banner {
     margin-bottom: 16px;
   }
   
-  :deep(.spotify-carousel) {
-    height: 140px !important;
+  .spotify-carousel :deep(.el-carousel__container) {
+    height: 200px;
   }
   
-  :deep(.spotify-carousel .el-carousel__item) {
-    height: 140px !important;
+  .spotify-carousel :deep(.el-carousel__item) {
+    height: 200px;
   }
   
-  .spotify-section-title {
-    font-size: 1.25rem;
+  .spotify-carousel :deep(.el-carousel__arrow) {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .spotify-carousel :deep(.el-carousel__arrow--left) {
+    left: 8px;
+  }
+  
+  .spotify-carousel :deep(.el-carousel__arrow--right) {
+    right: 8px;
+  }
+  
+  .spotify-banner-group {
+    gap: 8px;
+    padding: 0;
+  }
+  
+  .spotify-banner-title {
+    font-size: 0.75rem;
+  }
+  
+  .spotify-banner-img {
+    height: 160px;
+  }
+  
+  .spotify-section-link {
+    font-size: 0.875rem;
+  }
+  
+  .spotify-section-chevron {
+    width: 10px;
+    height: 10px;
   }
   
   .spotify-playlist-grid {

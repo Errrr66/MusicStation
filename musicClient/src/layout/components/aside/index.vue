@@ -184,7 +184,7 @@ const handlePlaylistClick = (id: number) => {
 .spotify-sidebar {
   display: flex;
   flex-direction: column;
-  background-color: #000000;
+  background-color: #121212;
   overflow: hidden;
   transition: width 200ms ease;
 }
@@ -511,7 +511,7 @@ const handlePlaylistClick = (id: number) => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-sidebar {
-  background-color: #f5f5f5;
+  background-color: #f0f0f0;
 }
 
 :root:not(.dark) .spotify-sidebar-header:hover {

@@ -1,54 +1,5 @@
 @use './spotify-variables.scss' as *;
 
-@font-face {
-  font-family: 'SpotifyMixUITitle';
-  src: url('https://encore.scdn.co/fonts/SpotifyMixUITitleVariable-8769ccfde3379b7ebcadd9529b49d0cc.woff2') format('woff2');
-  font-weight: 100 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SpotifyMixUITitle';
-  src: url('https://encore.scdn.co/fonts/SpotifyMixUITitle-Bold-37290f1de77f297fcc26d71e9afcf43f.woff2') format('woff2');
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SpotifyMixUITitle';
-  src: url('https://encore.scdn.co/fonts/SpotifyMixUITitle-Extrabold-ba6c73cd7f82c81e49cf2204017803ed.woff2') format('woff2');
-  font-weight: 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SpotifyMixUI';
-  src: url('https://encore.scdn.co/fonts/SpotifyMixUI-Regular-cc3b1de388efa4cbca6c75cebc24585e.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SpotifyMixUI';
-  src: url('https://encore.scdn.co/fonts/SpotifyMixUI-Bold-4264b799009b1db5c491778b1bc8e5b7.woff2') format('woff2');
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'CircularSp';
-  src: url('https://encore.scdn.co/fonts/CircularSp-Book-fe9621e54d2a32e8c3e0c6e0d8a8e0e0.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'CircularSp';
-  src: url('https://encore.scdn.co/fonts/CircularSp-Bold-fe9621e54d2a32e8c3e0c6e0d8a8e0e0.woff2') format('woff2');
-  font-weight: 700;
-  font-display: swap;
-}
-
 html,
 body,
 #app {
@@ -67,6 +18,12 @@ html.light {
   
   .spotify-dark-bg {
     background-color: $background-base !important;
+  }
+
+  .spotify-input {
+    background-color: #f5f5f7;
+    border: none;
+    border-radius: 6px;
   }
 }
 

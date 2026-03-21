@@ -16,6 +16,11 @@ const scrollToBottom = async () => {
   }
 }
 
+const playCiallo = () => {
+  const audio = new Audio('/Ciallo～(∠・ω- )⌒☆.mp3')
+  audio.play().catch(e => console.error('Audio play failed', e))
+}
+
 const handleSend = async () => {
   if (!inputMessage.value.trim()) return
 
@@ -89,7 +94,7 @@ const handleSend = async () => {
       </div>
 
       <div v-if="messages.length === 0" class="spotify-empty-state">
-        <div class="spotify-empty-image">
+        <div class="spotify-empty-image" @click="playCiallo">
           <img src="/congyu.png" alt="AI Assistant" />
         </div>
         <p class="spotify-empty-title">ご主人様、何かご命令はございますか？</p>
@@ -296,6 +301,7 @@ const handleSend = async () => {
   align-items: center;
   justify-content: center;
   transition: transform 300ms ease;
+  cursor: pointer;
 }
 
 .spotify-empty-image:hover {

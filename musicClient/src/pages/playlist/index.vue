@@ -13,6 +13,21 @@ const selected = ref('all')
 // 搜索关键词
 const searchKeyword = ref('')
 
+// 滚动条显示状态
+const showScrollbar = ref(false)
+const contentRef = ref<HTMLElement | null>(null)
+let scrollTimeout: ReturnType<typeof setTimeout> | null = null
+
+const handleScroll = () => {
+  showScrollbar.value = true
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+  scrollTimeout = setTimeout(() => {
+    showScrollbar.value = false
+  }, 1500)
+}
+
 // 歌单类型列表
 const playlistsList = [
   { name: '精选歌单', value: 'all' },
@@ -172,7 +187,12 @@ onMounted(() => {
     </div>
 
     <!-- Playlist Grid -->
-    <div class="spotify-playlist-content">
+    <div 
+      ref="contentRef"
+      class="spotify-playlist-content"
+      :class="{ 'show-scrollbar': showScrollbar }"
+      @scroll="handleScroll"
+    >
       <div class="spotify-playlist-grid">
         <div
           v-for="playlist in playlists"
@@ -360,6 +380,29 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
+  padding-right: 8px;
+}
+
+.spotify-playlist-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.spotify-playlist-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spotify-playlist-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 300ms ease;
+}
+
+.spotify-playlist-content.show-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.spotify-playlist-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .spotify-playlist-grid {
@@ -545,6 +588,14 @@ onMounted(() => {
 
 :root:not(.dark) .spotify-tag-select :deep(.el-select__wrapper.is-focused) {
   box-shadow: 0 0 0 2px #000;
+}
+
+:root:not(.dark) .spotify-playlist-content.show-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) .spotify-playlist-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 @media (min-width: 768px) {

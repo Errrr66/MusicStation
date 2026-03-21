@@ -163,9 +163,10 @@ onMounted(() => {
     >
       <div class="spotify-sidebar-header">
         <h2 class="spotify-sidebar-title">艺人分类</h2>
-        <button @click="handleReset" class="spotify-reset-btn">
-          <Icon icon="mdi:refresh" class="text-lg" />
-          <span>重置</span>
+        <button @click="handleReset" class="spotify-reset-btn" title="重置">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-8 3.58-8 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
         </button>
       </div>
 
@@ -348,17 +349,20 @@ onMounted(() => {
 .spotify-reset-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   background: transparent;
   border: none;
+  border-radius: 50%;
   color: var(--text-subdued, #b3b3b3);
-  font-size: 0.875rem;
   cursor: pointer;
-  transition: color 200ms ease;
+  transition: color 200ms ease, background-color 200ms ease;
 }
 
 .spotify-reset-btn:hover {
   color: var(--text-base, #fff);
+  background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
 .spotify-sidebar-content {

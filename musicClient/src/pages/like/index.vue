@@ -14,6 +14,7 @@ const songs = ref<Song[]>([])
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(1000)
+const dominantColor = ref('#1e3a5f')
 
 const playlist = ref({
   name: '我喜欢的音乐',
@@ -25,6 +26,39 @@ const playlist = ref({
 interface PageResult {
   items: Song[]
   total: number
+}
+
+const extractDominantColor = (imageUrl: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'Anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        resolve('#1e3a5f')
+        return
+      }
+      canvas.width = 50
+      canvas.height = 50
+      ctx.drawImage(img, 0, 0, 50, 50)
+      const imageData = ctx.getImageData(0, 0, 50, 50).data
+      let r = 0, g = 0, b = 0, count = 0
+      for (let i = 0; i < imageData.length; i += 4) {
+        r += imageData[i]
+        g += imageData[i + 1]
+        b += imageData[i + 2]
+        count++
+      }
+      r = Math.floor(r / count)
+      g = Math.floor(g / count)
+      b = Math.floor(b / count)
+      const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('')
+      resolve(hex)
+    }
+    img.onerror = () => resolve('#1e3a5f')
+    img.src = imageUrl
+  })
 }
 
 const getSongs = async () => {
@@ -41,7 +75,14 @@ const getSongs = async () => {
     playlist.value.trackCount = pageData.total
     // 使用第一首歌的封面作为封面图
     if (pageData.items.length > 0) {
-      playlist.value.coverImgUrl = fixUrl(pageData.items[0].coverUrl) || coverImg
+      // 使用最后一首歌（最新加入）的封面作为封面图
+      const lastSong = pageData.items[pageData.items.length - 1]
+      playlist.value.coverImgUrl = fixUrl(lastSong?.coverUrl) || coverImg
+      // 提取最后一首歌的封面颜色
+      if (lastSong && lastSong.coverUrl) {
+        const color = await extractDominantColor(lastSong.coverUrl + '?param=50y50')
+        dominantColor.value = color
+      }
     }
   }
 }
@@ -103,7 +144,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="spotify-like-page">
+  <div class="spotify-like-page" :style="{ '--gradient-color': dominantColor }">
     <!-- Header -->
     <div class="spotify-like-header">
       <div class="spotify-like-cover">

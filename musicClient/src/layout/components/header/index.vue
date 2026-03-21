@@ -304,7 +304,7 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background-color: var(--bg-navbar, #101010);
+  background-color: #000000;
   border-radius: 8px;
   position: relative;
   min-height: 56px;
@@ -335,12 +335,12 @@ watch(
 .spotify-logo {
   width: 32px;
   height: 32px;
-  filter: brightness(0) saturate(100%) invert(51%) sepia(93%) saturate(2062%) hue-rotate(101deg) brightness(97%) contrast(97%);
+  filter: brightness(0) invert(1);
   transition: filter 200ms ease;
 }
 
 .spotify-logo-btn:hover .spotify-logo {
-  filter: brightness(0) saturate(100%) invert(66%) sepia(54%) saturate(4662%) hue-rotate(86deg) brightness(98%) contrast(91%);
+  filter: brightness(0) invert(0.85);
 }
 
 .spotify-logo-text {
@@ -591,7 +591,7 @@ watch(
 
 /* Light Theme */
 :root:not(.dark) .spotify-navbar {
-  --bg-navbar: #ffffff;
+  background-color: #ffffff;
   --bg-input: #f0f0f0;
   --bg-surface: #ffffff;
   --bg-dropdown: #ffffff;
@@ -604,6 +604,14 @@ watch(
 
 :root:not(.dark) .spotify-recognition-dropdown {
   box-shadow: 0 16px 24px rgba(0, 0, 0, 0.15), 0 6px 8px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-logo {
+  filter: brightness(0) invert(0);
+}
+
+:root:not(.dark) .spotify-logo-btn:hover .spotify-logo {
+  filter: brightness(0) invert(0.2);
 }
 
 @media (min-width: 768px) {
