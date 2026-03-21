@@ -37,8 +37,8 @@ const isPlaylistOpen = computed({
 
 const currentTrackId = computed(() => audioStore.currentSong?.id)
 
-const handleTrackClick = (track: trackModel, index: number) => {
-  loadTrack(index)
+const handleTrackClick = async (track: trackModel, index: number) => {
+  await loadTrack(index)
   play()
 }
 

@@ -23,7 +23,7 @@ interface AudioPlayer {
   togglePlayPause: () => void
   setVolume: (volume: number) => void
   togglePlayMode: () => void // added togglePlayMode
-  loadTrack: () => Promise<void>
+  loadTrack: (index?: number) => Promise<void>
 }
 
 export const AudioPlayer = () => {
@@ -133,7 +133,11 @@ export const AudioPlayer = () => {
   }
 
   // 加载当前歌曲
-  const loadTrack = async () => {
+  const loadTrack = async (index?: number) => {
+    // 如果传入了索引，先更新当前歌曲索引
+    if (index !== undefined) {
+      audioStore.currentSongIndex = index
+    }
     // 检查歌曲 URL
     await checkUrl()
     // 歌词是否存在
