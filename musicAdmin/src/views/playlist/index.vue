@@ -42,7 +42,7 @@ const {
 </script>
 
 <template>
-  <div :class="['flex', 'justify-between', deviceDetection() && 'flex-wrap']">
+  <div :class="['matrix-page', 'flex', 'justify-between', deviceDetection() && 'flex-wrap']">
     <div
       :class="[deviceDetection() ? ['w-full', 'mt-2'] : 'w-[calc(100%-0px)]']"
     >
@@ -50,9 +50,9 @@ const {
         ref="formRef"
         :inline="true"
         :model="form"
-        class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px] overflow-auto"
+        class="matrix-search-form"
       >
-        <el-form-item label="歌单：" prop="title">
+        <el-form-item label="歌单" prop="title">
           <el-input
             v-model="form.title"
             placeholder="请输入歌单"
@@ -60,7 +60,7 @@ const {
             class="!w-[180px]"
           />
         </el-form-item>
-        <el-form-item label="风格：" prop="style">
+        <el-form-item label="风格" prop="style">
           <el-select
             v-model="form.style"
             placeholder="请选择"
@@ -115,15 +115,10 @@ const {
           <div
             v-if="selectedNum > 0"
             v-motion-fade
-            class="bg-[var(--el-fill-color-light)] w-full h-[46px] mb-2 pl-4 flex items-center"
+            class="matrix-selection-bar"
           >
-            <div class="flex-auto">
-              <span
-                style="font-size: var(--el-font-size-base)"
-                class="text-[rgba(42,46,54,0.5)] dark:text-[rgba(220,220,242,0.5)]"
-              >
-                已选 {{ selectedNum }} 项
-              </span>
+            <div class="flex-auto selection-text">
+              已选 <span class="count">{{ selectedNum }}</span> 项
               <el-button type="primary" text @click="onSelectionCancel">
                 取消选择
               </el-button>
@@ -149,8 +144,8 @@ const {
             :columns="dynamicColumns"
             :pagination="{ ...pagination, size }"
             :header-cell-style="{
-              background: 'var(--el-fill-color-light)',
-              color: 'var(--el-text-color-primary)'
+              background: 'var(--matrix-bg-light)',
+              color: 'var(--matrix-color)'
             }"
             @selection-change="handleSelectionChange"
             @page-size-change="handleSizeChange"
@@ -224,15 +219,5 @@ const {
 
 :deep(.el-button:focus-visible) {
   outline: none;
-}
-
-.main-content {
-  margin: 24px 24px 0 !important;
-}
-
-.search-form {
-  :deep(.el-form-item) {
-    margin-bottom: 12px;
-  }
 }
 </style>

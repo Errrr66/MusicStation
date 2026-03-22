@@ -5,57 +5,94 @@ import EnterOutlined from "@/assets/svg/enter_outlined.svg?component";
 import ArrowUpLine from "@iconify-icons/ri/arrow-up-line";
 import ArrowDownLine from "@iconify-icons/ri/arrow-down-line";
 
-withDefaults(defineProps<{ total: number }>(), {
-  total: 0
-});
-
 const { device } = useNav();
+
+defineProps<{
+  total?: number;
+}>();
 </script>
 
 <template>
-  <div class="search-footer text-[#333] dark:text-white">
+  <div class="search-footer matrix-footer">
     <span class="search-footer-item">
-      <EnterOutlined class="icon" />
-      确认
+      <EnterOutlined />
+      <span class="item-text">确认</span>
     </span>
     <span class="search-footer-item">
-      <IconifyIconOffline :icon="ArrowUpLine" class="icon" />
-      <IconifyIconOffline :icon="ArrowDownLine" class="icon" />
-      切换
+      <IconifyIconOffline :icon="ArrowUpLine" class="icon-sm" />
+      <IconifyIconOffline :icon="ArrowDownLine" class="icon-sm" />
+      <span class="item-text">切换</span>
     </span>
     <span class="search-footer-item">
-      <MdiKeyboardEsc class="icon" />
-      关闭
+      <MdiKeyboardEsc />
+      <span class="item-text">关闭</span>
     </span>
-    <p v-if="device !== 'mobile' && total > 0" class="search-footer-total">
-      {{ `共 ${total} 项` }}
-    </p>
+    <span v-if="total != null" class="search-footer-total">
+      <span class="total-bracket">[</span>
+      <span class="total-count">{{ total }}</span>
+      <span class="total-text">项</span>
+      <span class="total-bracket">]</span>
+    </span>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.search-footer {
+.matrix-footer {
   display: flex;
+  align-items: center;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--matrix-color-dim);
 
   .search-footer-item {
     display: flex;
     align-items: center;
-    margin-right: 14px;
-  }
+    margin-right: 16px;
+    padding: 4px 8px;
+    background: var(--matrix-bg-light);
+    border: 1px solid var(--matrix-border);
+    transition: all 0.2s ease;
 
-  .icon {
-    padding: 2px;
-    margin-right: 3px;
-    font-size: 20px;
-    box-shadow:
-      inset 0 -2px #cdcde6,
-      inset 0 0 1px 1px #fff,
-      0 1px 2px 1px #1e235a66;
+    &:hover {
+      border-color: var(--matrix-color);
+      background: var(--matrix-bg-hover);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+      color: var(--matrix-color);
+    }
+
+    .icon-sm {
+      width: 14px;
+      height: 14px;
+    }
+
+    .item-text {
+      letter-spacing: 0.5px;
+    }
   }
 
   .search-footer-total {
-    position: absolute;
-    right: 20px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .total-bracket {
+      color: var(--matrix-color-dim);
+    }
+
+    .total-count {
+      color: var(--matrix-color);
+      font-weight: 600;
+    }
+
+    .total-text {
+      color: var(--matrix-color-dim);
+    }
   }
 }
 </style>

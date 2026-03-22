@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import "animate.css";
-// 引入 src/components/ReIcon/src/offlineIcon.ts 文件中所有使用addIcon添加过的本地图标
 import "@/components/ReIcon/src/offlineIcon";
 import { setType } from "./types";
 import { useLayout } from "./hooks/useLayout";
@@ -24,10 +23,8 @@ import {
 } from "@pureadmin/utils";
 
 import LayTag from "./components/lay-tag/index.vue";
-import LayNavbar from "./components/lay-navbar/index.vue";
 import LayContent from "./components/lay-content/index.vue";
 import LaySetting from "./components/lay-setting/index.vue";
-import NavVertical from "./components/lay-sidebar/NavVertical.vue";
 import NavHorizontal from "./components/lay-sidebar/NavHorizontal.vue";
 import BackTopIcon from "@/assets/svg/back_top.svg?component";
 
@@ -83,35 +80,12 @@ function toggle(device: string, bool: boolean) {
   useAppStoreHook().toggleSideBar(bool, "resize");
 }
 
-// 判断是否可自动关闭菜单栏
-let isAutoCloseSidebar = true;
-
 useResizeObserver(appWrapperRef, entries => {
   if (isMobile) return;
   const entry = entries[0];
   const [{ inlineSize: width, blockSize: height }] = entry.borderBoxSize;
   useAppStoreHook().setViewportSize({ width, height });
-  width <= 760 ? setTheme("vertical") : setTheme(useAppStoreHook().layout);
-  /** width app-wrapper类容器宽度
-   * 0 < width <= 760 隐藏侧边栏
-   * 760 < width <= 990 折叠侧边栏
-   * width > 990 展开侧边栏
-   */
-  if (width > 0 && width <= 760) {
-    toggle("mobile", false);
-    isAutoCloseSidebar = true;
-  } else if (width > 760 && width <= 990) {
-    if (isAutoCloseSidebar) {
-      toggle("desktop", false);
-      isAutoCloseSidebar = false;
-    }
-  } else if (width > 990 && !set.sidebar.isClickCollapse) {
-    toggle("desktop", true);
-    isAutoCloseSidebar = true;
-  } else {
-    toggle("desktop", false);
-    isAutoCloseSidebar = false;
-  }
+  setTheme("horizontal");
 });
 
 onMounted(() => {
@@ -132,7 +106,7 @@ const LayHeader = defineComponent({
       {
         class: { "fixed-header": set.fixedHeader },
         style: [
-          set.hideTabs && layout.value.includes("horizontal")
+          set.hideTabs
             ? isDark.value
               ? "box-shadow: 0 1px 4px #0d0d0d"
               : "box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08)"
@@ -140,16 +114,7 @@ const LayHeader = defineComponent({
         ]
       },
       {
-        default: () => [
-          !pureSetting.hiddenSideBar &&
-          (layout.value.includes("vertical") || layout.value.includes("mix"))
-            ? h(LayNavbar)
-            : null,
-          !pureSetting.hiddenSideBar && layout.value.includes("horizontal")
-            ? h(NavHorizontal)
-            : null,
-          h(LayTag)
-        ]
+        default: () => [h(NavHorizontal), h(LayTag)]
       }
     );
   }
@@ -159,21 +124,6 @@ const LayHeader = defineComponent({
 <template>
   <div ref="appWrapperRef" :class="['app-wrapper', set.classes]">
     <div
-      v-show="
-        set.device === 'mobile' &&
-        set.sidebar.opened &&
-        layout.includes('vertical')
-      "
-      class="app-mask"
-      @click="useAppStoreHook().toggleSideBar()"
-    />
-    <NavVertical
-      v-show="
-        !pureSetting.hiddenSideBar &&
-        (layout.includes('vertical') || layout.includes('mix'))
-      "
-    />
-    <div
       :class="[
         'main-container',
         pureSetting.hiddenSideBar ? 'main-hidden' : ''
@@ -181,7 +131,6 @@ const LayHeader = defineComponent({
     >
       <div v-if="set.fixedHeader">
         <LayHeader />
-        <!-- 主体内容 -->
         <LayContent :fixed-header="set.fixedHeader" />
       </div>
       <el-scrollbar v-else>
@@ -192,11 +141,9 @@ const LayHeader = defineComponent({
           <BackTopIcon />
         </el-backtop>
         <LayHeader />
-        <!-- 主体内容 -->
         <LayContent :fixed-header="set.fixedHeader" />
       </el-scrollbar>
     </div>
-    <!-- 系统设置 -->
     <LaySetting />
   </div>
 </template>

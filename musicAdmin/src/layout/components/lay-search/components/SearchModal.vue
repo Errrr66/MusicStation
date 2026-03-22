@@ -14,7 +14,6 @@ import { cloneDeep, isAllEmpty, storageLocal } from "@pureadmin/utils";
 import SearchIcon from "@iconify-icons/ri/search-line";
 
 interface Props {
-  /** 弹窗显隐 */
   value: boolean;
 }
 
@@ -45,7 +44,6 @@ const handleSearch = useDebounceFn(search, 300);
 const historyNum = getConfig().MenuSearchHistory;
 const inputRef = ref<HTMLInputElement | null>(null);
 
-/** 菜单树形结构 */
 const menusData = computed(() => {
   return cloneDeep(usePermissionStoreHook().wholeMenus);
 });
@@ -89,20 +87,21 @@ function setStorageItem(key, value) {
   storageLocal().setItem(key, value);
 }
 
-/** 将菜单树形结构扁平化为一维数组，用于菜单查询 */
 function flatTree(arr) {
   const res = [];
   function deep(arr) {
     arr.forEach(item => {
-      res.push(item);
-      item.children && deep(item.children);
+      if (item.children && item.children.length > 0) {
+        deep(item.children);
+      } else if (item.meta?.title && item.path) {
+        res.push(item);
+      }
     });
   }
   deep(arr);
   return res;
 }
 
-/** 查询 */
 function search() {
   const flatMenusData = flatTree(menusData.value);
   resultOptions.value = flatMenusData.filter(menu =>
@@ -124,7 +123,6 @@ function search() {
 
 function handleClose() {
   show.value = false;
-  /** 延时处理防止用户看到某些操作 */
   setTimeout(() => {
     resultOptions.value = [];
     historyPath.value = "";
@@ -138,7 +136,6 @@ function scrollTo(index) {
   scrollbarRef.value.setScrollTop(scrollTop);
 }
 
-/** 获取当前选项和路径 */
 function getCurrentOptionsAndPath() {
   const isResultOptions = resultOptions.value.length > 0;
   const options = isResultOptions ? resultOptions.value : historyOptions.value;
@@ -146,7 +143,6 @@ function getCurrentOptionsAndPath() {
   return { options, currentPath, isResultOptions };
 }
 
-/** 更新路径并滚动到指定项 */
 function updatePathAndScroll(newIndex, isResultOptions) {
   if (isResultOptions) {
     activePath.value = resultOptions.value[newIndex].path;
@@ -156,7 +152,6 @@ function updatePathAndScroll(newIndex, isResultOptions) {
   scrollTo(newIndex);
 }
 
-/** key up */
 function handleUp() {
   const { options, currentPath, isResultOptions } = getCurrentOptionsAndPath();
   if (options.length === 0) return;
@@ -165,7 +160,6 @@ function handleUp() {
   updatePathAndScroll(prevIndex, isResultOptions);
 }
 
-/** key down */
 function handleDown() {
   const { options, currentPath, isResultOptions } = getCurrentOptionsAndPath();
   if (options.length === 0) return;
@@ -174,7 +168,6 @@ function handleDown() {
   updatePathAndScroll(nextIndex, isResultOptions);
 }
 
-/** key enter */
 function handleEnter() {
   const { options, currentPath, isResultOptions } = getCurrentOptionsAndPath();
   if (options.length === 0 || currentPath === "") return;
@@ -189,7 +182,6 @@ function handleEnter() {
   handleClose();
 }
 
-/** 删除历史记录 */
 function handleDelete(item) {
   const key = item.type === HISTORY_TYPE ? LOCALEHISTORYKEY : LOCALECOLLECTKEY;
   let list = getStorageItem(key);
@@ -198,7 +190,6 @@ function handleDelete(item) {
   getHistory();
 }
 
-/** 收藏历史记录 */
 function handleCollect(item) {
   let searchHistoryList = getStorageItem(LOCALEHISTORYKEY);
   let searchCollectList = getStorageItem(LOCALECOLLECTKEY);
@@ -213,7 +204,6 @@ function handleCollect(item) {
   getHistory();
 }
 
-/** 存储搜索记录 */
 function saveHistory() {
   const { path, meta } = resultOptions.value.find(
     item => item.path === activePath.value
@@ -230,7 +220,6 @@ function saveHistory() {
   }
 }
 
-/** 更新存储的搜索记录 */
 function updateHistory() {
   let searchHistoryList = getStorageItem(LOCALEHISTORYKEY);
   const historyIndex = searchHistoryList.findIndex(
@@ -243,7 +232,6 @@ function updateHistory() {
   }
 }
 
-/** 获取本地历史记录 */
 function getHistory() {
   const searchHistoryList = getStorageItem(LOCALEHISTORYKEY);
   const searchCollectList = getStorageItem(LOCALECOLLECTKEY);
@@ -251,7 +239,6 @@ function getHistory() {
   historyPath.value = historyOptions.value[0]?.path;
 }
 
-/** 拖拽改变收藏顺序 */
 function handleDrag(item: dragItem) {
   const searchCollectList = getStorageItem(LOCALECOLLECTKEY);
   const [reorderedItem] = searchCollectList.splice(item.oldIndex, 1);
@@ -273,35 +260,43 @@ onKeyStroke("ArrowDown", handleDown);
   <el-dialog
     v-model="show"
     top="5vh"
-    class="pure-search-dialog"
+    class="pure-search-dialog matrix-search-dialog"
     :show-close="false"
     :width="device === 'mobile' ? '80vw' : '40vw'"
     :before-close="handleClose"
-    :style="{
-      borderRadius: '6px'
-    }"
     append-to-body
     @opened="inputRef.focus()"
     @closed="inputRef.blur()"
   >
-    <el-input
-      ref="inputRef"
-      v-model="keyword"
-      size="large"
-      clearable
-      placeholder="搜索菜单（支持拼音搜索）"
-      @input="handleSearch"
-    >
-      <template #prefix>
-        <IconifyIconOffline
-          :icon="SearchIcon"
-          class="text-primary w-[24px] h-[24px]"
-        />
-      </template>
-    </el-input>
+    <div class="search-header">
+      <div class="header-line"></div>
+    </div>
+    <div class="search-input-wrapper">
+      <div class="input-indicator">
+        <span class="indicator-bracket">></span>
+      </div>
+      <el-input
+        ref="inputRef"
+        v-model="keyword"
+        size="large"
+        clearable
+        placeholder="搜索菜单（支持拼音搜索）"
+        @input="handleSearch"
+      >
+        <template #prefix>
+          <IconifyIconOffline
+            :icon="SearchIcon"
+            class="search-icon"
+          />
+        </template>
+      </el-input>
+    </div>
     <div class="search-content">
-      <el-scrollbar ref="scrollbarRef" max-height="calc(90vh - 140px)">
-        <el-empty v-if="showEmpty" description="暂无搜索结果" />
+      <el-scrollbar ref="scrollbarRef" max-height="calc(90vh - 200px)">
+        <div v-if="showEmpty" class="empty-container">
+          <div class="empty-icon">[ ]</div>
+          <div class="empty-text">暂无搜索结果</div>
+        </div>
         <SearchHistory
           v-if="showSearchHistory"
           ref="historyRef"
@@ -324,11 +319,170 @@ onKeyStroke("ArrowDown", handleDown);
     <template #footer>
       <SearchFooter :total="resultOptions.length" />
     </template>
+    <div class="dialog-corner top-left"></div>
+    <div class="dialog-corner top-right"></div>
+    <div class="dialog-corner bottom-left"></div>
+    <div class="dialog-corner bottom-right"></div>
   </el-dialog>
 </template>
 
 <style lang="scss" scoped>
-.search-content {
-  margin-top: 12px;
+.matrix-search-dialog {
+  :deep(.el-dialog) {
+    background: var(--matrix-bg);
+    border: 1px solid var(--matrix-border);
+    border-radius: 0;
+    box-shadow: 0 0 30px var(--matrix-shadow);
+  }
+
+  :deep(.el-dialog__header) {
+    display: none;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 0;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 12px 16px;
+    border-top: 1px solid var(--matrix-border);
+  }
+
+  .search-header {
+    padding: 12px 16px 0;
+
+    .header-line {
+      height: 2px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--matrix-color) 0,
+        var(--matrix-color) 4px,
+        transparent 4px,
+        transparent 8px
+      );
+      opacity: 0.4;
+    }
+  }
+
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 12px;
+
+    .input-indicator {
+      .indicator-bracket {
+        color: var(--matrix-color);
+        font-family: 'SF Mono', 'Consolas', monospace;
+        font-size: 18px;
+        font-weight: 600;
+        animation: blink 1s infinite;
+      }
+    }
+
+    :deep(.el-input) {
+      flex: 1;
+
+      .el-input__wrapper {
+        background: var(--matrix-bg-light);
+        border: 1px solid var(--matrix-border);
+        border-radius: 0;
+        box-shadow: none;
+
+        &:hover,
+        &:focus {
+          border-color: var(--matrix-color);
+          box-shadow: 0 0 10px var(--matrix-shadow);
+        }
+      }
+
+      .el-input__inner {
+        color: var(--matrix-text);
+        font-family: 'SF Mono', 'Consolas', monospace;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+
+        &::placeholder {
+          color: var(--matrix-color-dim);
+        }
+      }
+
+      .el-input__prefix {
+        color: var(--matrix-color);
+      }
+    }
+
+    .search-icon {
+      color: var(--matrix-color);
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .search-content {
+    padding: 0 16px 16px;
+  }
+
+  .empty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: var(--matrix-color-dim);
+
+    .empty-icon {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 32px;
+      margin-bottom: 12px;
+      animation: blink 1.5s infinite;
+    }
+
+    .empty-text {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+  }
+
+  .dialog-corner {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--matrix-color);
+
+    &.top-left {
+      top: -1px;
+      left: -1px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    &.top-right {
+      top: -1px;
+      right: -1px;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    &.bottom-left {
+      bottom: -1px;
+      left: -1px;
+      border-right: none;
+      border-top: none;
+    }
+
+    &.bottom-right {
+      bottom: -1px;
+      right: -1px;
+      border-left: none;
+      border-top: none;
+    }
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
 }
 </style>

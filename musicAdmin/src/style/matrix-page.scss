@@ -1,0 +1,487 @@
+/* Matrix 全局主题样式 */
+
+/* 确保变量存在 */
+:root {
+  --matrix-color: #ff6b35;
+  --matrix-bg: rgba(15, 10, 8, 0.95);
+  --matrix-border: rgba(255, 107, 53, 0.4);
+  --matrix-text: rgba(255, 107, 53, 0.9);
+  --matrix-text-dim: rgba(255, 107, 53, 0.5);
+  --matrix-color-dim: rgba(255, 107, 53, 0.5);
+  --matrix-bg-light: rgba(255, 107, 53, 0.05);
+  --matrix-bg-hover: rgba(255, 107, 53, 0.1);
+  --matrix-shadow: rgba(255, 107, 53, 0.2);
+  --matrix-input-bg: rgba(30, 24, 36, 0.8);
+  --matrix-card-bg: rgba(20, 16, 24, 0.9);
+}
+
+/* Matrix 页面容器 */
+.matrix-page {
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace !important;
+}
+
+/* ==================== 全局 Element Plus 组件样式 ==================== */
+
+/* 输入框 - 全局 */
+.el-input__wrapper {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-input__wrapper:hover {
+  border-color: var(--matrix-color) !important;
+  box-shadow: 0 0 10px var(--matrix-shadow) !important;
+}
+
+.el-input__wrapper.is-focus {
+  border-color: var(--matrix-color) !important;
+  box-shadow: 0 0 15px var(--matrix-shadow) !important;
+}
+
+.el-input__inner {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-input__inner::placeholder {
+  color: var(--matrix-color-dim) !important;
+}
+
+/* 选择框 - 全局 */
+.el-select__wrapper {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.el-select__wrapper:hover,
+.el-select__wrapper.is-focus {
+  border-color: var(--matrix-color) !important;
+  box-shadow: 0 0 10px var(--matrix-shadow) !important;
+}
+
+.el-select__placeholder {
+  color: var(--matrix-color-dim) !important;
+}
+
+.el-select__selected-item {
+  color: var(--matrix-text) !important;
+}
+
+/* 按钮 - 全局 */
+.el-button {
+  border-radius: 0 !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-button--primary {
+  background: var(--matrix-color) !important;
+  border-color: var(--matrix-color) !important;
+  color: #fff !important;
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 0 15px var(--matrix-shadow) !important;
+  transform: translateY(-1px) !important;
+}
+
+.el-button--default {
+  background: transparent !important;
+  border: 1px solid var(--matrix-border) !important;
+  color: var(--matrix-text) !important;
+}
+
+.el-button--default:hover {
+  border-color: var(--matrix-color) !important;
+  color: var(--matrix-color) !important;
+  box-shadow: 0 0 10px var(--matrix-shadow) !important;
+}
+
+.el-button.is-link {
+  color: var(--matrix-color) !important;
+}
+
+.el-button.is-link:hover {
+  color: var(--matrix-text) !important;
+  background: var(--matrix-bg-light) !important;
+}
+
+/* 表格 - 全局 */
+.el-table {
+  background: transparent !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+  border-radius: 0 !important;
+}
+
+.el-table::before {
+  display: none !important;
+}
+
+.el-table th.el-table__cell {
+  background: var(--matrix-bg-light) !important;
+  border-bottom: 2px solid var(--matrix-color) !important;
+  color: var(--matrix-color) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+.el-table td.el-table__cell {
+  border-bottom: 1px solid var(--matrix-border) !important;
+  color: var(--matrix-text) !important;
+}
+
+.el-table tr:hover td.el-table__cell {
+  background: var(--matrix-bg-hover) !important;
+}
+
+.el-table .el-checkbox__inner {
+  background: var(--matrix-input-bg) !important;
+  border-color: var(--matrix-border) !important;
+  border-radius: 0 !important;
+}
+
+.el-table .el-checkbox__input.is-checked .el-checkbox__inner {
+  background: var(--matrix-color) !important;
+  border-color: var(--matrix-color) !important;
+}
+
+/* 分页 - 全局 */
+.el-pagination {
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-pagination__total {
+  color: var(--matrix-text) !important;
+}
+
+.el-pagination .btn-prev,
+.el-pagination .btn-next {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  color: var(--matrix-text) !important;
+}
+
+.el-pagination .btn-prev:hover:not(:disabled),
+.el-pagination .btn-next:hover:not(:disabled) {
+  border-color: var(--matrix-color) !important;
+  color: var(--matrix-color) !important;
+  box-shadow: 0 0 8px var(--matrix-shadow) !important;
+}
+
+.el-pager li {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+  margin: 0 4px !important;
+}
+
+.el-pager li:hover {
+  border-color: var(--matrix-color) !important;
+  color: var(--matrix-color) !important;
+}
+
+.el-pager li.is-active {
+  background: var(--matrix-color) !important;
+  border-color: var(--matrix-color) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 15px var(--matrix-shadow) !important;
+}
+
+.el-pagination__sizes .el-select__wrapper {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+}
+
+.el-pagination__jump {
+  color: var(--matrix-text) !important;
+}
+
+.el-pagination__editor .el-input__wrapper {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+}
+
+.el-pagination__editor .el-input__inner {
+  color: var(--matrix-color) !important;
+  font-weight: 600 !important;
+}
+
+/* 开关 - 全局 */
+.el-switch__core {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+}
+
+.el-switch.is-checked .el-switch__core {
+  background: var(--matrix-color) !important;
+  border-color: var(--matrix-color) !important;
+  box-shadow: 0 0 10px var(--matrix-shadow) !important;
+}
+
+/* 标签 - 全局 */
+.el-tag {
+  background: var(--matrix-bg-light) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-tag--success {
+  background: rgba(38, 206, 131, 0.1) !important;
+  border-color: rgba(38, 206, 131, 0.3) !important;
+  color: #26ce83 !important;
+}
+
+.el-tag--danger {
+  background: rgba(255, 107, 107, 0.1) !important;
+  border-color: rgba(255, 107, 107, 0.3) !important;
+  color: #ff6b6b !important;
+}
+
+.el-tag--warning {
+  background: rgba(245, 166, 35, 0.1) !important;
+  border-color: rgba(245, 166, 35, 0.3) !important;
+  color: #f5a623 !important;
+}
+
+/* 下拉菜单 - 全局 */
+.el-dropdown-menu {
+  background: var(--matrix-card-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+}
+
+.el-dropdown-menu__item {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-dropdown-menu__item:hover {
+  background: var(--matrix-bg-hover) !important;
+  color: var(--matrix-color) !important;
+}
+
+/* 选择下拉 - 全局 */
+.el-select-dropdown {
+  background: var(--matrix-card-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+}
+
+.el-select-dropdown__item {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-select-dropdown__item:hover {
+  background: var(--matrix-bg-hover) !important;
+  color: var(--matrix-color) !important;
+}
+
+.el-select-dropdown__item.is-selected {
+  background: var(--matrix-bg-light) !important;
+  color: var(--matrix-color) !important;
+  font-weight: 600 !important;
+}
+
+/* 弹窗 - 全局 */
+.el-dialog {
+  background: var(--matrix-card-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 30px var(--matrix-shadow) !important;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid var(--matrix-border) !important;
+}
+
+.el-dialog__title {
+  color: var(--matrix-color) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-dialog__body {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-dialog__footer {
+  border-top: 1px solid var(--matrix-border) !important;
+}
+
+/* 确认框 - 全局 */
+.el-popconfirm__main {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-popconfirm__action .el-button--primary {
+  background: var(--matrix-color) !important;
+  border-color: var(--matrix-color) !important;
+}
+
+/* 文本域 - 全局 */
+.el-textarea__inner {
+  background: var(--matrix-input-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+.el-textarea__inner:focus {
+  border-color: var(--matrix-color) !important;
+  box-shadow: 0 0 15px var(--matrix-shadow) !important;
+}
+
+/* 单选框 - 全局 */
+.el-radio__inner {
+  background: var(--matrix-input-bg) !important;
+  border-color: var(--matrix-border) !important;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background: var(--matrix-color) !important;
+  border-color: var(--matrix-color) !important;
+}
+
+.el-radio__label {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+/* 加载 - 全局 */
+.el-loading-mask {
+  background: rgba(10, 8, 12, 0.8) !important;
+}
+
+.el-loading-spinner .circular {
+  stroke: var(--matrix-color) !important;
+}
+
+.el-loading-spinner .el-loading-text {
+  color: var(--matrix-color) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+}
+
+/* ==================== Matrix 页面特定样式 ==================== */
+
+/* 搜索表单 */
+.matrix-page .matrix-search-form {
+  background: var(--matrix-card-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  padding: 16px 20px !important;
+  margin-bottom: 16px !important;
+  border-radius: 0 !important;
+  position: relative !important;
+}
+
+.matrix-page .matrix-search-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--matrix-color) 0,
+    var(--matrix-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  animation: scan-line 3s linear infinite;
+}
+
+/* 表单标签 */
+.matrix-page .matrix-search-form .el-form-item__label {
+  color: var(--matrix-text) !important;
+  font-family: 'SF Mono', 'Consolas', monospace !important;
+  font-size: 13px !important;
+}
+
+.matrix-page .matrix-search-form .el-form-item__label::before {
+  content: '[' !important;
+  color: var(--matrix-color-dim) !important;
+  margin-right: 4px !important;
+}
+
+/* 表格工具栏 */
+.matrix-page .matrix-table-bar {
+  background: var(--matrix-card-bg) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-radius: 0 !important;
+  position: relative !important;
+}
+
+.matrix-page .matrix-table-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--matrix-color) 0,
+    var(--matrix-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  animation: scan-line 3s linear infinite;
+}
+
+/* 选择栏 */
+.matrix-page .matrix-selection-bar {
+  background: var(--matrix-bg-light) !important;
+  border: 1px solid var(--matrix-border) !important;
+  border-left: 3px solid var(--matrix-color) !important;
+  border-radius: 0 !important;
+  position: relative !important;
+}
+
+.matrix-page .matrix-selection-bar::before {
+  content: '>';
+  position: absolute;
+  left: 8px;
+  color: var(--matrix-color);
+  animation: blink 1s infinite;
+}
+
+.matrix-page .matrix-selection-bar .selection-text {
+  color: var(--matrix-text) !important;
+  margin-left: 16px !important;
+}
+
+.matrix-page .matrix-selection-bar .count {
+  color: var(--matrix-color) !important;
+  font-weight: 600 !important;
+}
+
+/* 动画 */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+@keyframes scan-line {
+  0% { background-position: 0 0; }
+  100% { background-position: 8px 0; }
+}

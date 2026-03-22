@@ -16,7 +16,7 @@ defineOptions({
 
 const formRef = ref<FormInstance>();
 const form = reactive({
-  bannerStatus: null // 使用 null 以便 clearable 生效
+  bannerStatus: null
 });
 
 const tableRef = ref();
@@ -35,16 +35,15 @@ const {
   handleUpload
 } = useBanner(form, tableRef);
 
-/** 重置表单 */
 const resetForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   formEl.resetFields();
-  onSearch(); // 重置后重新搜索
+  onSearch();
 };
 </script>
 
 <template>
-  <div :class="['flex', 'justify-between', deviceDetection() && 'flex-wrap']">
+  <div :class="['matrix-page', 'flex', 'justify-between', deviceDetection() && 'flex-wrap']">
     <div
       :class="[deviceDetection() ? ['w-full', 'mt-2'] : 'w-[calc(100%-0px)]']"
     >
@@ -52,9 +51,9 @@ const resetForm = (formEl: FormInstance | undefined) => {
         ref="formRef"
         :inline="true"
         :model="form"
-        class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px] overflow-auto"
+        class="matrix-search-form"
       >
-        <el-form-item label="状态：" prop="bannerStatus">
+        <el-form-item label="状态" prop="bannerStatus">
           <el-select
             v-model="form.bannerStatus"
             placeholder="请选择"
@@ -94,15 +93,10 @@ const resetForm = (formEl: FormInstance | undefined) => {
           <div
             v-if="selectedNum > 0"
             v-motion-fade
-            class="bg-[var(--el-fill-color-light)] w-full h-[46px] mb-2 pl-4 flex items-center"
+            class="matrix-selection-bar"
           >
-            <div class="flex-auto">
-              <span
-                style="font-size: var(--el-font-size-base)"
-                class="text-[rgba(42,46,54,0.5)] dark:text-[rgba(220,220,242,0.5)]"
-              >
-                已选 {{ selectedNum }} 项
-              </span>
+            <div class="flex-auto selection-text">
+              已选 <span class="count">{{ selectedNum }}</span> 项
             </div>
             <el-popconfirm title="是否确认删除?" @confirm="onBatchDelete">
               <template #reference>
@@ -126,8 +120,8 @@ const resetForm = (formEl: FormInstance | undefined) => {
             :columns="dynamicColumns"
             :pagination="{ ...pagination, size }"
             :header-cell-style="{
-              background: 'var(--el-fill-color-light)',
-              color: 'var(--el-text-color-primary)'
+              background: 'var(--matrix-bg-light)',
+              color: 'var(--matrix-color)'
             }"
             @page-size-change="handleSizeChange"
             @page-current-change="handleCurrentChange"
@@ -171,15 +165,5 @@ const resetForm = (formEl: FormInstance | undefined) => {
 <style scoped lang="scss">
 :deep(.el-dropdown-menu__item i) {
   margin: 0;
-}
-
-.main-content {
-  margin: 24px 24px 0 !important;
-}
-
-.search-form {
-  :deep(.el-form-item) {
-    margin-bottom: 12px;
-  }
 }
 </style>

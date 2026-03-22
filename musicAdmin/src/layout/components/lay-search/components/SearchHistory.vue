@@ -2,7 +2,6 @@
 import Sortable from "sortablejs";
 import SearchHistoryItem from "./SearchHistoryItem.vue";
 import type { optionsItem, dragItem, Props } from "../types";
-import { useEpThemeStoreHook } from "@/store/modules/epTheme";
 import { useResizeObserver, isArray, delay } from "@pureadmin/utils";
 import { ref, watch, nextTick, computed, getCurrentInstance } from "vue";
 
@@ -25,18 +24,19 @@ const props = withDefaults(defineProps<Props>(), {});
 
 const itemStyle = computed(() => {
   return item => {
+    const isActive = item?.path === active.value;
     return {
-      background:
-        item?.path === active.value ? useEpThemeStoreHook().epThemeColor : "",
-      color: item.path === active.value ? "#fff" : "",
-      fontSize: item.path === active.value ? "16px" : "14px"
+      background: isActive ? "var(--matrix-color)" : "",
+      color: isActive ? "#fff" : "var(--matrix-text)",
+      fontSize: isActive ? "16px" : "14px",
+      border: isActive ? "1px solid var(--matrix-color)" : "1px solid var(--matrix-border)"
     };
   };
 });
 
 const titleStyle = computed(() => {
   return {
-    color: useEpThemeStoreHook().epThemeColor,
+    color: "var(--matrix-color)",
     fontWeight: 500
   };
 });
@@ -182,6 +182,7 @@ defineExpose({ handleScroll });
 <style lang="scss" scoped>
 .history {
   padding-bottom: 12px;
+  font-family: 'SF Mono', 'Consolas', monospace;
 
   &-item {
     display: flex;
@@ -190,9 +191,14 @@ defineExpose({ handleScroll });
     padding: 14px;
     margin: 8px auto 10px;
     cursor: pointer;
-    border: 0.1px solid #ccc;
-    border-radius: 4px;
-    transition: font-size 0.16s;
+    border-radius: 0;
+    background: var(--matrix-bg-light);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--matrix-bg-hover);
+      border-color: var(--matrix-color);
+    }
   }
 }
 </style>

@@ -1,5 +1,4 @@
 import Sortable from "sortablejs";
-import { useEpThemeStoreHook } from "@/store/modules/epTheme";
 import {
   type PropType,
   ref,
@@ -75,18 +74,16 @@ export default defineComponent({
       return s => {
         return {
           background:
-            s === size.value ? useEpThemeStoreHook().epThemeColor : "",
-          color: s === size.value ? "#fff" : "var(--el-text-color-primary)"
+            s === size.value ? "var(--matrix-color)" : "",
+          color: s === size.value ? "#fff" : "var(--matrix-text)"
         };
       };
     });
 
     const iconClass = computed(() => {
       return [
-        "text-black",
-        "dark:text-white",
         "duration-100",
-        "hover:!text-primary",
+        "hover:!opacity-70",
         "cursor-pointer",
         "outline-none"
       ];
@@ -100,8 +97,7 @@ export default defineComponent({
         "px-[11px]",
         "border-b-[1px]",
         "border-solid",
-        "border-[#dcdfe6]",
-        "dark:border-[#303030]"
+        "border-[var(--matrix-border)]"
       ];
     });
 
@@ -253,20 +249,22 @@ export default defineComponent({
             "w-[99/100]",
             "px-2",
             "pb-2",
-            "bg-bg_color",
+            "matrix-table-bar",
             isFullscreen.value
               ? ["!w-full", "!h-full", "z-[2002]", "fixed", "inset-0"]
-              : "mt-2",
-            "rounded-[var(--el-border-radius-base)]"
+              : "mt-2"
           ]}
         >
-          <div class="flex justify-between w-full h-[60px] p-4">
+          <div class="flex justify-between w-full h-[60px] p-4 border-b border-[var(--matrix-border)]">
             {slots?.title ? (
               slots.title()
             ) : (
-              <p class="font-bold truncate">{props.title}</p>
+              <p class="font-bold truncate text-[var(--matrix-color)]" style="font-family: 'SF Mono', Consolas, monospace; letter-spacing: 1px;">
+                <span style="animation: blink 1s infinite; margin-right: 8px;">&gt;</span>
+                {props.title}
+              </p>
             )}
-            <div class="flex items-center justify-around">
+            <div class="flex items-center justify-around" style="color: var(--matrix-text);">
               {slots?.buttons ? (
                 <div class="flex mr-4">{slots.buttons()}</div>
               ) : null}
@@ -275,14 +273,15 @@ export default defineComponent({
                   <ExpandIcon
                     class={["w-[16px]", iconClass.value]}
                     style={{
-                      transform: isExpandAll.value ? "none" : "rotate(-90deg)"
+                      transform: isExpandAll.value ? "none" : "rotate(-90deg)",
+                      color: "var(--matrix-text)"
                     }}
                     v-tippy={rendTippyProps(
                       isExpandAll.value ? "折叠" : "展开"
                     )}
                     onClick={() => onExpand()}
                   />
-                  <el-divider direction="vertical" />
+                  <el-divider direction="vertical" style="border-color: var(--matrix-border)" />
                 </>
               ) : null}
               <RefreshIcon
@@ -291,27 +290,28 @@ export default defineComponent({
                   iconClass.value,
                   loading.value ? "animate-spin" : ""
                 ]}
+                style="color: var(--matrix-text)"
                 v-tippy={rendTippyProps("刷新")}
                 onClick={() => onReFresh()}
               />
-              <el-divider direction="vertical" />
+              <el-divider direction="vertical" style="border-color: var(--matrix-border)" />
               <el-dropdown
                 v-slots={dropdown}
                 trigger="click"
                 v-tippy={rendTippyProps("密度")}
               >
-                <CollapseIcon class={["w-[16px]", iconClass.value]} />
+                <CollapseIcon class={["w-[16px]", iconClass.value]} style="color: var(--matrix-text)" />
               </el-dropdown>
-              <el-divider direction="vertical" />
+              <el-divider direction="vertical" style="border-color: var(--matrix-border)" />
 
               <el-popover
                 v-slots={reference}
                 placement="bottom-start"
-                popper-style={{ padding: 0 }}
+                popper-style={{ padding: 0, background: 'var(--matrix-card-bg)', border: '1px solid var(--matrix-border)' }}
                 width="200"
                 trigger="click"
               >
-                <div class={[topClass.value]}>
+                <div class={[topClass.value]} style="background: var(--matrix-bg-light);">
                   <el-checkbox
                     class="!-mr-1"
                     label="列展示"
@@ -319,7 +319,7 @@ export default defineComponent({
                     indeterminate={isIndeterminate.value}
                     onChange={value => handleCheckAllChange(value)}
                   />
-                  <el-button type="primary" link onClick={() => onReset()}>
+                  <el-button type="primary" link onClick={() => onReset()} style="color: var(--matrix-color)">
                     重置
                   </el-button>
                 </div>
@@ -346,6 +346,7 @@ export default defineComponent({
                                     ? "!cursor-no-drop"
                                     : "!cursor-grab"
                                 ]}
+                                style="color: var(--matrix-color-dim)"
                                 onMouseenter={(event: {
                                   preventDefault: () => void;
                                 }) => rowDrop(event)}
@@ -360,7 +361,8 @@ export default defineComponent({
                               >
                                 <span
                                   title={item}
-                                  class="inline-block w-[120px] truncate hover:text-text_color_primary"
+                                  class="inline-block w-[120px] truncate"
+                                  style="color: var(--matrix-text); font-family: 'SF Mono', Consolas, monospace;"
                                 >
                                   {item}
                                 </span>
@@ -373,10 +375,11 @@ export default defineComponent({
                   </el-scrollbar>
                 </div>
               </el-popover>
-              <el-divider direction="vertical" />
+              <el-divider direction="vertical" style="border-color: var(--matrix-border)" />
 
               <iconifyIconOffline
                 class={["w-[16px]", iconClass.value]}
+                style="color: var(--matrix-text)"
                 icon={isFullscreen.value ? ExitFullscreen : Fullscreen}
                 v-tippy={isFullscreen.value ? "退出全屏" : "全屏"}
                 onClick={() => onFullscreen()}

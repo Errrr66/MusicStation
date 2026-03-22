@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Props } from "../types";
 import { useResizeObserver } from "@pureadmin/utils";
-import { useEpThemeStoreHook } from "@/store/modules/epTheme";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { ref, computed, getCurrentInstance, onMounted } from "vue";
 import EnterOutlined from "@/assets/svg/enter_outlined.svg?component";
@@ -19,11 +18,12 @@ const props = withDefaults(defineProps<Props>(), {});
 
 const itemStyle = computed(() => {
   return item => {
+    const isActive = item?.path === active.value;
     return {
-      background:
-        item?.path === active.value ? useEpThemeStoreHook().epThemeColor : "",
-      color: item.path === active.value ? "#fff" : "",
-      fontSize: item.path === active.value ? "16px" : "14px"
+      background: isActive ? "var(--matrix-color)" : "",
+      color: isActive ? "#fff" : "var(--matrix-text)",
+      fontSize: isActive ? "16px" : "14px",
+      border: isActive ? "1px solid var(--matrix-color)" : "1px solid var(--matrix-border)"
     };
   };
 });
@@ -99,9 +99,15 @@ defineExpose({ handleScroll });
     padding: 14px;
     margin-top: 8px;
     cursor: pointer;
-    border: 0.1px solid #ccc;
-    border-radius: 4px;
-    transition: font-size 0.16s;
+    border-radius: 0;
+    background: var(--matrix-bg-light);
+    transition: all 0.2s ease;
+    font-family: 'SF Mono', 'Consolas', monospace;
+
+    &:hover {
+      background: var(--matrix-bg-hover);
+      border-color: var(--matrix-color);
+    }
 
     &-title {
       display: flex;

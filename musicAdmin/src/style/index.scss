@@ -3,6 +3,7 @@
 @use "element-plus";
 @use "sidebar";
 @use "dark";
+@use "matrix-page";
 
 /* 自定义全局 CssVar */
 :root {
@@ -33,13 +34,34 @@
 }
 
 /* 灰色模式 */
-.html-grey {
-  filter: grayscale(100%);
+html.html-grey {
+  filter: grayscale(100%) !important;
 }
 
 /* 色弱模式 */
-.html-weakness {
-  filter: invert(80%);
+html.html-weakness {
+  filter: invert(80%) !important;
+}
+
+/* 整体颜色反转滤镜（图片除外） */
+html.color-invert {
+  filter: invert(1) hue-rotate(180deg) !important;
+
+  /* 图片、视频、canvas、svg、背景图 反转回来 */
+  img,
+  video,
+  canvas,
+  svg:not(.iconify),
+  .el-image img,
+  .el-avatar img {
+    filter: invert(1) hue-rotate(180deg) !important;
+  }
+
+  /* 背景图片也需要反转回来 */
+  [style*="background-image: url"],
+  [style*="background-image:url"] {
+    filter: invert(1) hue-rotate(180deg) !important;
+  }
 }
 
 /* 顶部搜索栏边框倒角 */

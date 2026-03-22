@@ -299,3 +299,93 @@
 .el-tree-node__content {
   border-radius: var(--el-border-radius-base);
 }
+
+/* Matrix 页面覆盖 - 方角设计 */
+.matrix-page {
+  .el-input__wrapper {
+    border-radius: 0 !important;
+  }
+
+  .el-button {
+    border-radius: 0 !important;
+  }
+
+  .el-button.is-circle {
+    border-radius: 50% !important;
+  }
+
+  .el-dropdown-menu {
+    border-radius: 0 !important;
+  }
+
+  .el-dialog {
+    border-radius: 0 !important;
+  }
+
+  .el-pagination .btn-prev,
+  .el-pagination .btn-next,
+  .el-pager li {
+    border-radius: 0 !important;
+  }
+
+  .el-select__wrapper {
+    border-radius: 0 !important;
+  }
+
+  .el-tag {
+    border-radius: 0 !important;
+  }
+
+  .el-alert {
+    border-radius: 0 !important;
+  }
+
+  .el-notification {
+    border-radius: 0 !important;
+  }
+
+  .el-message-box {
+    border-radius: 0 !important;
+  }
+
+  .el-popover.el-popper {
+    border-radius: 0 !important;
+  }
+
+  .el-popper.is-dark,
+  .el-popper.is-light {
+    border-radius: 0 !important;
+  }
+
+  .el-picker-panel {
+    border-radius: 0 !important;
+  }
+
+  .el-textarea__inner {
+    border-radius: 0 !important;
+  }
+
+  .el-tabs--card > .el-tabs__header .el-tabs__item {
+    border-radius: 0 !important;
+  }
+
+  .el-tabs--border-card {
+    border-radius: 0 !important;
+  }
+
+  .el-checkbox__inner {
+    border-radius: 0 !important;
+  }
+
+  .el-tree-node__content {
+    border-radius: 0 !important;
+  }
+
+  .el-table {
+    border-radius: 0 !important;
+  }
+
+  .el-card {
+    border-radius: 0 !important;
+  }
+}
