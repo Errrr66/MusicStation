@@ -82,7 +82,7 @@ const volumeIcon = computed(() => {
           :value="volume"
           max="100"
           step="1"
-          @input="setVolume($event.target.value)"
+          @input="setVolume(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
     </div>

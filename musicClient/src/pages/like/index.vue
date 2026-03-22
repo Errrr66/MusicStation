@@ -118,7 +118,7 @@ watch(
   (newSongs) => {
     if (newSongs && newSongs.length > 0) {
       // 检查是否有歌曲的收藏状态变为0（取消收藏）
-      const hasUnlikedSong = newSongs.some((song) => song.likeStatus === 0)
+      const hasUnlikedSong = newSongs.some((song: any) => song.likeStatus === 0)
       if (hasUnlikedSong) {
         getSongs() // 重新获取收藏列表
       }

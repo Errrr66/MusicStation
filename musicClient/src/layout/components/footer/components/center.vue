@@ -97,7 +97,7 @@ const modeTitle = computed(() => {
           :value="currentTime"
           :max="duration"
           step="1"
-          @input="seek($event.target.value)"
+          @input="seek(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <span class="spotify-time">{{ formatTime(duration) }}</span>
