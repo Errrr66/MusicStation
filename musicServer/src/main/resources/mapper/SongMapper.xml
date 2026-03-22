@@ -60,7 +60,7 @@
         a.name AS artistName
         FROM tb_song s
         LEFT JOIN tb_artist a ON s.artist_id = a.id
-        LEFT JOIN tb_user_favorite u ON s.id = u.song_id
+        LEFT JOIN tb_user_favorite u ON s.id = u.song_id AND u.user_id = #{userId} AND u.type = 0
         WHERE
         <if test="songIds != null and songIds.size() > 0">
             s.id IN

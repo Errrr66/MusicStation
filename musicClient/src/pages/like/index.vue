@@ -73,14 +73,13 @@ const getSongs = async () => {
     const pageData = res.data as PageResult
     songs.value = pageData.items
     playlist.value.trackCount = pageData.total
-    // 使用第一首歌的封面作为封面图
+    // 使用第一首歌（最新加入）的封面作为封面图
     if (pageData.items.length > 0) {
-      // 使用最后一首歌（最新加入）的封面作为封面图
-      const lastSong = pageData.items[pageData.items.length - 1]
-      playlist.value.coverImgUrl = fixUrl(lastSong?.coverUrl) || coverImg
-      // 提取最后一首歌的封面颜色
-      if (lastSong && lastSong.coverUrl) {
-        const color = await extractDominantColor(lastSong.coverUrl + '?param=50y50')
+      const firstSong = pageData.items[0]
+      playlist.value.coverImgUrl = fixUrl(firstSong?.coverUrl) || coverImg
+      // 提取第一首歌的封面颜色
+      if (firstSong && firstSong.coverUrl) {
+        const color = await extractDominantColor(firstSong.coverUrl + '?param=50y50')
         dominantColor.value = color
       }
     }

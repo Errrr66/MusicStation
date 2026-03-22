@@ -72,6 +72,7 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
         IPage<SongVO> songPage = songMapper.getSongsByIds(
                 page,
                 favoriteSongIds,
+                userId,
                 songDTO.getSongName(),
                 songDTO.getArtistName(),
                 songDTO.getAlbum()
