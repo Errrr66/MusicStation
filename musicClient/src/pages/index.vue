@@ -16,10 +16,17 @@ const { loadTrack, play } = useAudioPlayer()
 
 const bannerList = ref<{ bannerId: number; bannerUrl: string }[]>([])
 
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
 const bannerChunks = computed(() => {
   const chunks = []
-  for (let i = 0; i < bannerList.value.length; i += 2) {
-    chunks.push(bannerList.value.slice(i, i + 2))
+  const itemsPerSlide = isMobile.value ? 1 : 2
+  for (let i = 0; i < bannerList.value.length; i += itemsPerSlide) {
+    chunks.push(bannerList.value.slice(i, i + itemsPerSlide))
   }
   return chunks
 })
@@ -92,10 +99,14 @@ const getRecommendedData = async () => {
 }
 
 onMounted(async () => {
-  // 获取轮播图数据
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   fetchBannerData()
-  // 初始化时获取推荐数据
   getRecommendedData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 
 const handleRefreshSongs = async () => {
@@ -942,6 +953,10 @@ watch(
   .spotify-banner-group {
     gap: 8px;
     padding: 0;
+  }
+  
+  .spotify-banner-item {
+    width: 100%;
   }
   
   .spotify-banner-title {

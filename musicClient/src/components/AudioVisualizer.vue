@@ -90,6 +90,12 @@ const getBarColor = (volume: number) => {
   return props.color
 }
 
+const getBarClass = (volume: number) => {
+  return {
+    'visualizer-bar-active': volume > 0.5
+  }
+}
+
 watch(isPlaying, (playing) => {
   if (playing) {
     startVisualization()
@@ -119,10 +125,10 @@ onUnmounted(() => {
         v-for="(volume, index) in frequencyBands"
         :key="index"
         class="visualizer-bar"
+        :class="getBarClass(volume)"
         :style="{
           ...barStyle,
-          height: getBarHeight(volume),
-          backgroundColor: getBarColor(volume)
+          height: getBarHeight(volume)
         }"
       />
     </div>
@@ -146,7 +152,12 @@ onUnmounted(() => {
 }
 
 .visualizer-bar {
+  background-color: var(--visualizer-bar-color, rgba(255, 255, 255, 0.3));
   transition: height 0.05s ease-out, background-color 0.15s ease;
   min-height: 4px;
+}
+
+.visualizer-bar-active {
+  background-color: var(--visualizer-bar-active-color, #1db954);
 }
 </style>

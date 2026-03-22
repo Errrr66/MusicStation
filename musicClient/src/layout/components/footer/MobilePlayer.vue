@@ -8,10 +8,25 @@ import { AudioStore } from '@/stores/modules/audio'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
 
-const { currentTrack, isPlaying, togglePlayPause, nextTrack } = useAudioPlayer()
+const { currentTrack, isPlaying, togglePlayPause, nextTrack, prevTrack, currentTime, duration, playMode, togglePlayMode } = useAudioPlayer()
 const showDrawerMusic = ref(false)
 const userStore = UserStore()
 const audioStore = AudioStore()
+
+const progressPercent = computed(() => {
+  if (duration.value === 0) return 0
+  return (currentTime.value / duration.value) * 100
+})
+
+const modeIcon = computed(() => {
+  const map = {
+    order: 'ri:order-play-line',
+    shuffle: 'ri:shuffle-line',
+    loop: 'ri:repeat-2-line',
+    single: 'ri:repeat-one-line'
+  }
+  return map[playMode.value]
+})
 
 const currentSongLikeStatus = computed(() => {
   const currentTrack = audioStore.trackList[audioStore.currentSongIndex]
@@ -51,7 +66,7 @@ const handleLike = async () => {
 <template>
   <div class="spotify-mobile-player">
     <div class="spotify-mobile-player-progress">
-      <div class="spotify-mobile-player-progress-bar"></div>
+      <div class="spotify-mobile-player-progress-bar" :style="{ width: progressPercent + '%' }"></div>
     </div>
     
     <div class="spotify-mobile-player-content" @click="showDrawerMusic = true">
@@ -69,17 +84,23 @@ const handleLike = async () => {
       </div>
       
       <div class="spotify-mobile-player-actions" @click.stop>
-        <button class="spotify-mobile-player-btn" @click="handleLike">
-          <Icon
-            :icon="currentSongLikeStatus === 0 ? 'mdi:cards-heart-outline' : 'mdi:cards-heart'"
-            :class="{ 'spotify-like-active': currentSongLikeStatus !== 0 }"
-          />
+        <button class="spotify-mobile-player-btn spotify-mobile-player-btn-sm" @click="togglePlayMode" :title="playMode">
+          <Icon :icon="modeIcon" />
+        </button>
+        <button class="spotify-mobile-player-btn" @click="prevTrack">
+          <Icon icon="mdi:skip-previous" />
         </button>
         <button class="spotify-mobile-player-btn spotify-mobile-player-btn-play" @click="togglePlayPause">
           <Icon :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" />
         </button>
         <button class="spotify-mobile-player-btn" @click="nextTrack">
           <Icon icon="mdi:skip-next" />
+        </button>
+        <button class="spotify-mobile-player-btn spotify-mobile-player-btn-sm" @click="handleLike">
+          <Icon
+            :icon="currentSongLikeStatus === 0 ? 'mdi:cards-heart-outline' : 'mdi:cards-heart'"
+            :class="{ 'spotify-like-active': currentSongLikeStatus !== 0 }"
+          />
         </button>
       </div>
     </div>
@@ -109,7 +130,6 @@ const handleLike = async () => {
 .spotify-mobile-player-progress-bar {
   height: 100%;
   background-color: #1db954;
-  width: 30%;
 }
 
 .spotify-mobile-player-content {
@@ -187,6 +207,12 @@ const handleLike = async () => {
 
 .spotify-mobile-player-btn-play {
   font-size: 1.75rem;
+}
+
+.spotify-mobile-player-btn-sm {
+  width: 36px;
+  height: 36px;
+  font-size: 1.25rem;
 }
 
 .spotify-like-active {

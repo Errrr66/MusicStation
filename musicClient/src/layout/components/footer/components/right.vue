@@ -1,43 +1,14 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import { MenuStore } from '@/stores/modules/menu'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { computed } from 'vue'
 
-const menuStore = MenuStore()
-const { volume, setVolume, playMode, togglePlayMode } = useAudioPlayer()
+const { volume, setVolume } = useAudioPlayer()
 
 const isMuted = computed(() => volume.value === 0)
 
 const toggleVolume = () => {
   setVolume(isMuted.value ? 0.5 : 0)
-}
-
-const openQueue = () => {
-  menuStore.setPlaylistOpen(true)
-}
-
-const playModes = {
-  order: {
-    icon: 'ri:order-play-line',
-    next: 'shuffle',
-    tooltip: '顺序播放',
-  },
-  shuffle: {
-    icon: 'ri:shuffle-line',
-    next: 'loop',
-    tooltip: '随机播放',
-  },
-  loop: {
-    icon: 'ri:repeat-2-line',
-    next: 'single',
-    tooltip: '列表循环',
-  },
-  single: {
-    icon: 'ri:repeat-one-line',
-    next: 'order',
-    tooltip: '单曲循环',
-  },
 }
 
 const volumeIcon = computed(() => {
@@ -49,17 +20,6 @@ const volumeIcon = computed(() => {
 </script>
 <template>
   <div class="spotify-playing-bar-right">
-    <!-- Play Mode -->
-    <button
-      class="spotify-extra-btn"
-      :class="{ 'spotify-extra-btn-active': playMode !== 'order' }"
-      @click="togglePlayMode"
-      :title="playModes[playMode].tooltip"
-    >
-      <Icon :icon="playModes[playMode].icon" class="spotify-extra-icon" />
-    </button>
-
-    <!-- Volume Control -->
     <div class="spotify-volume-control">
       <button
         class="spotify-extra-btn"
@@ -86,15 +46,6 @@ const volumeIcon = computed(() => {
         />
       </div>
     </div>
-
-    <!-- Queue Button -->
-    <button
-      class="spotify-extra-btn"
-      @click="openQueue"
-      title="播放队列"
-    >
-      <Icon icon="ri:play-list-2-fill" class="spotify-extra-icon" />
-    </button>
   </div>
 </template>
 
@@ -131,14 +82,6 @@ const volumeIcon = computed(() => {
   transform: scale(1);
 }
 
-.spotify-extra-btn-active {
-  color: var(--text-accent, #1db954);
-}
-
-.spotify-extra-btn-active:hover {
-  color: var(--text-accent-hover, #1ed760);
-}
-
 .spotify-extra-icon {
   font-size: 1rem;
 }
@@ -151,17 +94,17 @@ const volumeIcon = computed(() => {
 
 .spotify-volume-wrapper {
   position: relative;
-  width: 93px;
-  height: 12px;
+  width: 120px;
+  height: 24px;
   display: flex;
   align-items: center;
 }
 
 .spotify-volume-bar {
   width: 100%;
-  height: 4px;
+  height: 6px;
   background-color: var(--volume-bg, #4d4d4d);
-  border-radius: 2px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
@@ -210,8 +153,6 @@ const volumeIcon = computed(() => {
 :root:not(.dark) .spotify-playing-bar-right {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
-  --text-accent: #1db954;
-  --text-accent-hover: #1ed760;
   --volume-bg: #c0c0c0;
   --volume-fill: #000000;
   --volume-hover: #1db954;

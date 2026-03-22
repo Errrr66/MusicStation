@@ -25,6 +25,42 @@ html.light {
     border: none;
     border-radius: 6px;
   }
+
+  .spotify-progress-bar {
+    background-color: #c0c0c0;
+    
+    .spotify-progress-fill {
+      background-color: #000000;
+    }
+    
+    &:hover .spotify-progress-fill {
+      background-color: $spotify-green;
+    }
+    
+    .spotify-progress-handle {
+      background-color: #000000;
+    }
+  }
+
+  .spotify-volume-bar {
+    background-color: #c0c0c0;
+    
+    .spotify-volume-fill {
+      background-color: #000000;
+    }
+    
+    &:hover .spotify-volume-fill {
+      background-color: $spotify-green;
+    }
+  }
+
+  .visualizer-bar {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .visualizer-bar-active {
+    background-color: $spotify-green;
+  }
 }
 
 .dark {

@@ -152,11 +152,11 @@ const handleLike = async () => {
     </button>
 
     <AudioVisualizer 
-      :bar-count="24" 
+      :bar-count="18" 
       :min-height="2" 
       :max-height="40"
-      :bar-width="3"
-      :gap="2"
+      :bar-width="4"
+      :gap="4"
       class="left-visualizer"
     />
 

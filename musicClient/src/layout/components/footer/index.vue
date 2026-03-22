@@ -3,12 +3,48 @@ import Left from './components/left.vue'
 import Center from './components/center.vue'
 import Right from './components/right.vue'
 import Recently from './components/recently.vue'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { formatTime } from '@/utils'
+import { computed } from 'vue'
+
+const {
+  currentTime,
+  duration,
+  seek,
+} = useAudioPlayer()
+
+const progressPercent = computed(() => {
+  if (duration.value === 0) return 0
+  return (currentTime.value / duration.value) * 100
+})
+
+const handleClick = (e: MouseEvent) => {
+  const target = e.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const percent = (e.clientX - rect.left) / rect.width
+  const newTime = percent * duration.value
+  seek(newTime)
+}
 </script>
 <template>
   <footer class="spotify-playing-bar">
-    <Left />
-    <Center />
-    <Right />
+    <div 
+      class="spotify-progress-top"
+      @click="handleClick"
+    >
+      <div class="spotify-progress-top-fill" :style="{ width: progressPercent + '%' }">
+        <div class="spotify-progress-top-handle">
+          <div class="spotify-progress-tooltip">
+            {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spotify-playing-bar-content">
+      <Left />
+      <Center />
+      <Right />
+    </div>
     <Recently />
   </footer>
 </template>
@@ -16,24 +52,155 @@ import Recently from './components/recently.vue'
 <style scoped>
 .spotify-playing-bar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   background-color: #000000;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0 16px;
-  height: 90px;
   flex-shrink: 0;
-  transition: background-color 200ms ease, border-color 200ms ease;
+  transition: background-color 200ms ease;
+  position: relative;
+  height: 90px;
 }
 
-/* Light Theme */
+.spotify-playing-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  padding-top: 12px;
+  height: 90px;
+}
+
+.spotify-progress-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spotify-progress-top-fill {
+  height: 4px;
+  background-color: #fff;
+  border-radius: 2px;
+  position: relative;
+  transition: background-color 200ms ease, height 200ms ease;
+}
+
+.spotify-progress-top:hover .spotify-progress-top-fill {
+  background-color: #1db954;
+  height: 6px;
+}
+
+.spotify-progress-top-handle {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-color: #fff;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.spotify-progress-top:hover .spotify-progress-top-handle {
+  opacity: 1;
+}
+
+.spotify-progress-tooltip {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #000;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.spotify-progress-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #000;
+}
+
+.spotify-progress-top:hover .spotify-progress-tooltip {
+  opacity: 1;
+}
+
+:root:not(.dark) .spotify-progress-tooltip {
+  background-color: #fff;
+  color: #000;
+}
+
+:root:not(.dark) .spotify-progress-tooltip::after {
+  border-top-color: #fff;
+}
+
 :root:not(.dark) .spotify-playing-bar {
   background-color: #ffffff;
-  border-top-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-progress-top {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-progress-top-fill {
+  background-color: #000000;
+}
+
+:root:not(.dark) .spotify-progress-top:hover .spotify-progress-top-fill {
+  background-color: #1db954;
+}
+
+:root:not(.dark) .spotify-progress-top-handle {
+  background-color: #000000;
 }
 
 @media (max-width: 768px) {
   .spotify-playing-bar {
+    height: auto;
+  }
+  
+  .spotify-playing-bar-content {
+    display: none;
+  }
+  
+  .spotify-progress-top {
+    position: relative;
+    height: 4px;
+  }
+  
+  .spotify-progress-top-fill {
+    height: 4px;
+  }
+  
+  .spotify-progress-top:hover .spotify-progress-top-fill {
+    height: 4px;
+  }
+  
+  .spotify-progress-top-handle {
+    display: none;
+  }
+  
+  .spotify-progress-tooltip {
     display: none;
   }
 }

@@ -655,6 +655,99 @@ const handleDelete = async (comment: any) => {
   font-size: 1.25rem;
 }
 
+/* Light Theme */
+:root:not(.dark) .spotify-tab {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .spotify-tab:hover {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+:root:not(.dark) .spotify-tab-active {
+  background: rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+:root:not(.dark) .spotify-lyric-line {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .spotify-lyric-line:hover {
+  color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .spotify-lyric-active {
+  color: #000;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) .spotify-song-info {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .spotify-info-label {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .spotify-info-value {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-comments-title {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-comment-username {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-comment-time {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+:root:not(.dark) .spotify-comment-text {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+:root:not(.dark) .spotify-comment-action {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .spotify-comment-action:hover {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-empty {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .spotify-comment-input {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .spotify-input-icon {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .spotify-input :deep(.el-textarea__inner) {
+  color: #000;
+}
+
+:root:not(.dark) .spotify-input :deep(.el-textarea__inner::placeholder) {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+:root:not(.dark) .spotify-input :deep(.el-textarea__inner:focus) {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+:root:not(.dark) .spotify-char-count {
+  color: rgba(0, 0, 0, 0.4);
+}
+
 @media (min-width: 768px) {
   .spotify-lyrics-comments {
     padding: 24px;
