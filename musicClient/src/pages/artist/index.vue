@@ -685,8 +685,8 @@ onMounted(() => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-artist-sidebar {
-  --bg-surface: #ffffff;
-  --bg-elevated: #f0f0f0;
+  --bg-surface: #f0f0f0;
+  --bg-elevated: #e8e8e8;
   --bg-hover: rgba(0, 0, 0, 0.08);
   --text-base: #000000;
   --text-subdued: #6a6a6a;
@@ -696,8 +696,8 @@ onMounted(() => {
 :root:not(.dark) .spotify-artist-main {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
-  --card-bg: #f5f5f5;
-  --card-hover: #e8e8e8;
+  --card-bg: #e8e8e8;
+  --card-hover: #d8d8d8;
   --bg-hover: rgba(0, 0, 0, 0.08);
 }
 

@@ -877,10 +877,10 @@ watch(
   --text-accent: #1db954;
   --bg-hover: rgba(0, 0, 0, 0.08);
   --bg-active: rgba(0, 0, 0, 0.12);
-  --bg-surface: #ffffff;
+  --bg-surface: #f0f0f0;
   --gradient-color: #e8f4f8;
-  --card-bg: #f0f0f0;
-  --card-hover: #e0e0e0;
+  --card-bg: #e8e8e8;
+  --card-hover: #d8d8d8;
   --border-color: rgba(0, 0, 0, 0.1);
 }
 

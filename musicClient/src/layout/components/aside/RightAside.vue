@@ -710,7 +710,7 @@ const openQueue = () => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-now-playing {
-  --bg-surface: #ffffff;
+  --bg-surface: #f0f0f0;
   --bg-elevated: rgba(0, 0, 0, 0.05);
   --bg-hover: rgba(0, 0, 0, 0.08);
   --text-base: #000000;

@@ -121,7 +121,7 @@ const closeRightAside = () => {
 /* Light Theme */
 :root:not(.dark) .spotify-app-container {
   --bg-base: #f5f5f5;
-  --bg-surface: #ffffff;
+  --bg-surface: #f0f0f0;
 }
 
 @media (max-width: 768px) {

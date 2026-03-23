@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { sendChatMessage, type ChatMessage } from '@/api/chat'
 import { ElMessage } from 'element-plus'
 import { Icon } from '@iconify/vue'
+import Matrix from '@/components/Matrix/index.vue'
+import { imageToColorFrame, createAnimatedFrames, type ColorFrame, type AnimationType } from '@/utils/matrix'
 
 const messages = ref<ChatMessage[]>([])
 const inputMessage = ref('')
 const loading = ref(false)
 const scrollbarRef = ref<HTMLElement | null>(null)
+const matrixFrames = ref<ColorFrame[]>([])
+const matrixLoading = ref(true)
+const colorFrameRef = ref<ColorFrame | null>(null)
+
+const animationModes: AnimationType[] = ['float', 'sparkle', 'sparkle', 'float']
+const currentModeIndex = ref(0)
+const modeTimerId = ref<number | undefined>(undefined)
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -16,10 +25,33 @@ const scrollToBottom = async () => {
   }
 }
 
-const playCiallo = () => {
-  const audio = new Audio('/Ciallo～(∠・ω- )⌒☆.mp3')
-  audio.play().catch(e => console.error('Audio play failed', e))
+function updateAnimationMode() {
+  if (!colorFrameRef.value) return
+  currentModeIndex.value = (currentModeIndex.value + 1) % animationModes.length
+  matrixFrames.value = createAnimatedFrames(colorFrameRef.value, animationModes[currentModeIndex.value], 12)
 }
+
+onMounted(async () => {
+  try {
+    const colorFrame = await imageToColorFrame('/thinking.png', 90, 108)
+    colorFrameRef.value = colorFrame
+    matrixFrames.value = createAnimatedFrames(colorFrame, animationModes[0], 12)
+    
+    modeTimerId.value = window.setInterval(() => {
+      updateAnimationMode()
+    }, 5000)
+  } catch (error) {
+    console.error('Failed to load matrix frame:', error)
+  } finally {
+    matrixLoading.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (modeTimerId.value) {
+    clearInterval(modeTimerId.value)
+  }
+})
 
 const handleSend = async () => {
   if (!inputMessage.value.trim()) return
@@ -94,10 +126,20 @@ const handleSend = async () => {
       </div>
 
       <div v-if="messages.length === 0" class="spotify-empty-state">
-        <div class="spotify-empty-image" @click="playCiallo">
-          <img src="/congyu.png" alt="AI Assistant" />
+        <div v-if="matrixLoading" class="spotify-matrix-loading">
+          <img src="/congyu.png" alt="AI Assistant" class="spotify-matrix-fallback" />
         </div>
-        <p class="spotify-empty-title">ご主人様、何かご命令はございますか？</p>
+        <Matrix
+          v-else-if="matrixFrames.length > 0"
+          :rows="90"
+          :cols="108"
+          :color-frames="matrixFrames"
+          :size="2"
+          :gap="0"
+          :brightness="1.0"
+          :fps="12"
+          loop
+        />
       </div>
     </div>
 
@@ -287,44 +329,17 @@ const handleSend = async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 32px;
 }
 
-.spotify-empty-image {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: linear-gradient(135deg, rgba(29, 185, 84, 0.2) 0%, rgba(30, 215, 96, 0.1) 100%);
+.spotify-matrix-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 300ms ease;
-  cursor: pointer;
 }
 
-.spotify-empty-image:hover {
-  transform: scale(1.05);
-}
-
-.spotify-empty-image img {
-  width: 180px;
-  height: auto;
-  object-fit: cover;
+.spotify-matrix-fallback {
+  max-width: 200px;
   border-radius: 16px;
-}
-
-.spotify-empty-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--text-base, #fff);
-  text-align: center;
-}
-
-.spotify-empty-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-subdued, #b3b3b3);
 }
 
 .spotify-chat-input {
@@ -407,8 +422,8 @@ const handleSend = async () => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-chat-page {
-  --bg-surface: #ffffff;
-  --bg-elevated: #f0f0f0;
+  --bg-surface: #f0f0f0;
+  --bg-elevated: #e8e8e8;
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --border-color: rgba(0, 0, 0, 0.1);
@@ -455,19 +470,6 @@ const handleSend = async () => {
   
   .spotify-message-bubble {
     max-width: 85%;
-  }
-
-  .spotify-empty-image {
-    width: 150px;
-    height: 150px;
-  }
-
-  .spotify-empty-image img {
-    width: 130px;
-  }
-  
-  .spotify-empty-title {
-    font-size: 1rem;
   }
   
   .spotify-chat-input {

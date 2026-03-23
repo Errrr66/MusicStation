@@ -730,17 +730,17 @@ const handleDelete = async () => {
   --text-base: #1d1d1f;
   --text-subdued: #86868b;
   --text-highlight: #1d1d1f;
-  --bg-surface: #ffffff;
-  --bg-elevated: #f5f5f7;
-  --bg-elevated-hover: #e8e8ed;
-  --card-bg: #ffffff;
+  --bg-surface: #f0f0f0;
+  --bg-elevated: #e8e8e8;
+  --bg-elevated-hover: #d8d8d8;
+  --card-bg: #f0f0f0;
   --border-color: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(0, 0, 0, 0.12);
 }
 
 :root:not(.dark) .spotify-profile-card,
 :root:not(.dark) .spotify-profile-section {
-  background-color: #ffffff;
+  background-color: #f0f0f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 

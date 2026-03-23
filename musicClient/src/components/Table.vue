@@ -458,10 +458,10 @@ const isCurrentPlaying = (songId: number) => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-song-table {
-  --bg-surface: #ffffff;
+  --bg-surface: #f0f0f0;
   --bg-hover: rgba(0, 0, 0, 0.08);
   --bg-active: rgba(0, 0, 0, 0.12);
-  --bg-elevated: #f0f0f0;
+  --bg-elevated: #e8e8e8;
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --text-accent: #1db954;

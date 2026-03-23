@@ -799,8 +799,8 @@ const handlePlayAll = async () => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-playlist-page {
-  --bg-surface: #ffffff;
-  --bg-elevated: #f0f0f0;
+  --bg-surface: #f0f0f0;
+  --bg-elevated: #e8e8e8;
   --bg-hover: rgba(0, 0, 0, 0.08);
   --text-base: #000000;
   --text-subdued: #6a6a6a;

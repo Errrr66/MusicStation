@@ -326,8 +326,8 @@ onMounted(() => {
 
 /* Light Theme */
 :root:not(.dark) .spotify-like-page {
-  --bg-surface: #ffffff;
-  --bg-input: #f0f0f0;
+  --bg-surface: #f0f0f0;
+  --bg-input: #e8e8e8;
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --border-hover: #c0c0c0;

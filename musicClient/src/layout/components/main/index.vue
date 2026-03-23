@@ -43,7 +43,7 @@
 
 /* Light Theme */
 :root:not(.dark) .spotify-main-content {
-  --bg-surface: #ffffff;
+  --bg-surface: #f0f0f0;
   --scrollbar-thumb: rgba(0, 0, 0, 0.3);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.5);
 }
