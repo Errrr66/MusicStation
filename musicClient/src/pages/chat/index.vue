@@ -14,7 +14,7 @@ const matrixFrames = ref<ColorFrame[]>([])
 const matrixLoading = ref(true)
 const colorFrameRef = ref<ColorFrame | null>(null)
 
-const animationModes: AnimationType[] = ['float', 'sparkle', 'sparkle', 'float']
+const animationModes: AnimationType[] = ['float', 'sparkle', 'wave', 'scan']
 const currentModeIndex = ref(0)
 const modeTimerId = ref<number | undefined>(undefined)
 
@@ -33,7 +33,7 @@ function updateAnimationMode() {
 
 onMounted(async () => {
   try {
-    const colorFrame = await imageToColorFrame('/thinking.png', 90, 108)
+    const colorFrame = await imageToColorFrame('/thinking.png', 45, 54)
     colorFrameRef.value = colorFrame
     matrixFrames.value = createAnimatedFrames(colorFrame, animationModes[0], 12)
     
@@ -131,11 +131,11 @@ const handleSend = async () => {
         </div>
         <Matrix
           v-else-if="matrixFrames.length > 0"
-          :rows="90"
-          :cols="108"
+          :rows="45"
+          :cols="54"
           :color-frames="matrixFrames"
-          :size="2"
-          :gap="0"
+          :size="4"
+          :gap="1"
           :brightness="1.0"
           :fps="12"
           loop

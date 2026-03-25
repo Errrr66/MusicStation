@@ -22,8 +22,8 @@ const props = withDefaults(defineProps<Props>(), {
   fps: 12,
   autoplay: true,
   loop: true,
-  size: 10,
-  gap: 2,
+  size: 4,
+  gap: 1,
   brightness: 1,
   flipInterval: 5000,
 })
@@ -39,6 +39,8 @@ const flipTimerId = shallowRef<number | undefined>(undefined)
 
 const canvasWidth = computed(() => props.cols * (props.size + props.gap) - props.gap)
 const canvasHeight = computed(() => props.rows * (props.size + props.gap) - props.gap)
+
+const pixelCache = shallowRef<ImageData | null>(null)
 
 function getCurrentFrame(): ColorFrame | Frame | null {
   if (props.colorPattern) return props.colorPattern
@@ -63,15 +65,27 @@ function render() {
   const canvas = canvasRef.value
   if (!canvas) return
 
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const width = canvas.width
+  const height = canvas.height
+
+  if (!pixelCache.value || pixelCache.value.width !== width || pixelCache.value.height !== height) {
+    pixelCache.value = ctx.createImageData(width, height)
+  }
+
+  const imageData = pixelCache.value
+  const data = imageData.data
+
+  data.fill(0)
 
   const frame = getCurrentFrame()
   if (!frame) return
 
   const colorMode = isColorFrame(frame)
+  const cellSize = props.size
+  const gap = props.gap
 
   for (let y = 0; y < props.rows; y++) {
     for (let x = 0; x < props.cols; x++) {
@@ -96,16 +110,27 @@ function render() {
       if (brightness < 0.05) continue
 
       const renderX = isFlipped.value ? props.cols - 1 - x : x
-      const px = renderX * (props.size + props.gap)
-      const py = y * (props.size + props.gap)
-      const radius = (props.size / 2) * 0.85
+      const startX = renderX * (cellSize + gap)
+      const startY = y * (cellSize + gap)
 
-      ctx.beginPath()
-      ctx.arc(px + props.size / 2, py + props.size / 2, radius, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(${Math.round(r * brightness)},${Math.round(g * brightness)},${Math.round(b * brightness)},${brightness})`
-      ctx.fill()
+      const br = Math.round(r * brightness)
+      const bg = Math.round(g * brightness)
+      const bb = Math.round(b * brightness)
+      const alpha = Math.round(brightness * 255)
+
+      for (let py = 0; py < cellSize; py++) {
+        for (let px = 0; px < cellSize; px++) {
+          const idx = ((startY + py) * width + (startX + px)) * 4
+          data[idx] = br
+          data[idx + 1] = bg
+          data[idx + 2] = bb
+          data[idx + 3] = alpha
+        }
+      }
     }
   }
+
+  ctx.putImageData(imageData, 0, 0)
 }
 
 function animate(currentTime: number) {
@@ -208,29 +233,15 @@ defineExpose({
 </script>
 
 <template>
-  <div class="matrix-wrapper">
-    <canvas
-      ref="canvasRef"
-      :width="canvasWidth"
-      :height="canvasHeight"
-      class="matrix-canvas"
-    />
-  </div>
+  <canvas
+    ref="canvasRef"
+    :width="canvasWidth"
+    :height="canvasHeight"
+    class="matrix-canvas"
+  />
 </template>
 
 <style scoped>
-.matrix-wrapper {
-  background-color: rgba(0, 0, 0, 0.85);
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-:root:not(.dark) .matrix-wrapper {
-  background-color: rgba(0, 0, 0, 0.95);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
 .matrix-canvas {
   display: block;
 }
