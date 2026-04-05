@@ -405,13 +405,76 @@ const toggleLiveVoice = () => {
   speechRecognition.value.start()
 }
 
+const normalizeText = (value?: string) =>
+  (value || '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[\(（\[].*?[\)）\]]/g, '')
+    .trim()
+
+const findLocalExactSong = async (song: AgentSongCard): Promise<Song | null> => {
+  const keyword = (song.songName || '').trim()
+  if (!keyword) {
+    return null
+  }
+
+  try {
+    const res = await getAllSongs({
+      songName: keyword,
+      pageNum: 1,
+      pageSize: 50,
+    })
+
+    const items = (res.code === 0 && res.data?.items ? (res.data.items as Song[]) : [])
+    if (!items.length) {
+      return null
+    }
+
+    const targetTitle = normalizeText(song.songName)
+    const targetArtist = normalizeText(song.artistName)
+
+    const strictMatch = items.find((item) => {
+      const itemTitle = normalizeText(item.songName)
+      const itemArtist = normalizeText(item.artistName)
+      const titleMatch = itemTitle === targetTitle || itemTitle.includes(targetTitle) || targetTitle.includes(itemTitle)
+      const artistMatch = !targetArtist || itemArtist === targetArtist || itemArtist.includes(targetArtist)
+      return titleMatch && artistMatch
+    })
+
+    return strictMatch || null
+  } catch {
+    return null
+  }
+}
+
 const playAgentSong = async (song: AgentSongCard) => {
-  if (!song.audioUrl) {
-    ElMessage.warning('这首歌暂无可播放音频')
+  // 1) 优先匹配本地同名同歌手，播放完整本地音频
+  const local = await findLocalExactSong(song)
+  if (local?.audioUrl) {
+    const localTrack = {
+      id: String(local.songId),
+      title: local.songName,
+      artist: local.artistName,
+      album: local.album || '',
+      cover: local.coverUrl || defaultAlbum,
+      url: local.audioUrl,
+      duration: Number(local.duration) || 0,
+      likeStatus: local.likeStatus || 0,
+    }
+    audioStore.addTracks(localTrack)
+    await loadTrack()
+    await play()
+    ElMessage.success('已优先播放本地完整音频')
     return
   }
 
-  const track = {
+  // 2) 本地未命中则回退外部地址（通常仅试听片段）
+  if (!song.audioUrl) {
+    ElMessage.warning('未匹配到本地完整音频，且外部歌曲暂无可播放地址')
+    return
+  }
+
+  const externalTrack = {
     id: String(song.songId ?? `${song.songName}-${song.artistName}`),
     title: song.songName,
     artist: song.artistName,
@@ -422,9 +485,10 @@ const playAgentSong = async (song: AgentSongCard) => {
     likeStatus: 0,
   }
 
-  audioStore.addTracks(track)
+  audioStore.addTracks(externalTrack)
   await loadTrack()
   await play()
+  ElMessage.info('未匹配到本地完整音频，当前仅可试听片段')
 }
 
 const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) => {
