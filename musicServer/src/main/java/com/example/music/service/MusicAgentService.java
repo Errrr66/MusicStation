@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class MusicAgentService {
@@ -138,7 +141,90 @@ public class MusicAgentService {
                 Result<List<SongVO>> songResult = songService.getRecommendedSongs(request);
                 Result<List<PlaylistVO>> playlistResult = playlistService.getRecommendedPlaylists(request);
                 String preferKeyword = extractRecommendKeyword(userInput);
+                String playlistArtistConstraint = extractPlaylistArtistConstraint(userInput);
+                String singerConstraint = !isBlank(playlistArtistConstraint)
+                        ? playlistArtistConstraint
+                        : extractSingerConstraintForRecommend(userInput);
                 List<AgentChatResponseVO.AgentSongCardVO> localSongs;
+
+                // 若用户明确提到歌手名，严格仅返回该歌手在本地曲库中的歌曲，不混入其他歌手
+                if (!isBlank(singerConstraint)) {
+                    List<SongVO> candidateSongs = songMapper.searchSongsByKeyword(singerConstraint, Math.max(limit * 6, 80));
+                    List<SongVO> strictSingerSongs = candidateSongs == null
+                            ? List.of()
+                            : candidateSongs.stream()
+                            .filter(song -> matchesSingerStrict(song.getArtistName(), singerConstraint))
+                            .toList();
+
+                    songs = toSongCards(strictSingerSongs, "local", "严格按指定歌手本地曲库推荐", limit);
+                    trace.add(toolOk("recommend_singer_local_strict", "按歌手严格命中本地曲库 " + songs.size() + " 首: " + singerConstraint));
+
+                    AgentChatResponseVO.AgentPlaylistCardVO singerPlaylist = AgentChatResponseVO.AgentPlaylistCardVO.builder()
+                            .playlistId(null)
+                            .title("AI歌单 · " + singerConstraint)
+                            .coverUrl(songs.isEmpty() ? null : songs.get(0).getCoverUrl())
+                            .source("ai-agent")
+                            .reason(songs.isEmpty() ? "本地曲库暂未命中该歌手歌曲" : "严格按指定歌手整合本地歌曲")
+                            .songCount(songs.size())
+                            .tracks(songs)
+                            .build();
+                    playlists = List.of(singerPlaylist);
+
+                    trace.add(toolOk("smart_recommendation", "已按指定歌手完成本地严格推荐，歌曲 " + songs.size() + " 首"));
+                    toolSummary = "已按你指定的歌手严格整合本地曲库推荐，未混入其他歌手。";
+                    archive.put("recommendSongCount", songs.size());
+                    archive.put("recommendPlaylistCount", playlists.size());
+                    archive.put("recommendKeyword", singerConstraint);
+                    archive.put("recommendMode", "singer_local_strict");
+                    break;
+                }
+
+                // 当用户明确要求“某歌手的歌单”时，优先按歌手构建本地歌单并约束歌曲来源
+                if (!isBlank(playlistArtistConstraint)) {
+                    List<SongVO> candidateSongs = songMapper.searchSongsByKeyword(playlistArtistConstraint, Math.max(limit * 5, 60));
+                    List<SongVO> artistSongs = candidateSongs == null
+                            ? List.of()
+                            : candidateSongs.stream()
+                            .filter(song -> song.getArtistName() != null
+                                    && song.getArtistName().toLowerCase(Locale.ROOT).contains(playlistArtistConstraint.toLowerCase(Locale.ROOT)))
+                            .toList();
+
+                    localSongs = toSongCards(artistSongs, "local", "按指定歌手命中本地曲库", limit);
+                    trace.add(toolOk("recommend_artist_playlist_local", "按歌手本地命中 " + localSongs.size() + " 首: " + playlistArtistConstraint));
+
+                    // 本地不足时按同歌手补全外网，避免混入无关歌曲
+                    if (localSongs.size() < limit) {
+                        WebSearchResult webResult = searchWebSongs(playlistArtistConstraint, limit - localSongs.size());
+                        List<AgentChatResponseVO.AgentSongCardVO> filteredWebSongs = webResult.songs().stream()
+                                .filter(song -> song.getArtistName() != null
+                                        && song.getArtistName().toLowerCase(Locale.ROOT).contains(playlistArtistConstraint.toLowerCase(Locale.ROOT)))
+                                .toList();
+                        songs = mergeSongs(localSongs, filteredWebSongs, limit);
+                        trace.add(webResult.degraded()
+                                ? toolFail("recommend_artist_playlist_web_fill", webResult.summary())
+                                : toolOk("recommend_artist_playlist_web_fill", "按歌手补全外网 " + filteredWebSongs.size() + " 首"));
+                    } else {
+                        songs = localSongs;
+                    }
+
+                    AgentChatResponseVO.AgentPlaylistCardVO artistPlaylist = AgentChatResponseVO.AgentPlaylistCardVO.builder()
+                            .playlistId(null)
+                            .title("AI歌单 · " + playlistArtistConstraint)
+                            .coverUrl(songs.isEmpty() ? null : songs.get(0).getCoverUrl())
+                            .source("ai-agent")
+                            .reason("按指定歌手生成，优先整合本地曲库")
+                            .songCount(songs.size())
+                            .tracks(songs)
+                            .build();
+                    playlists = List.of(artistPlaylist);
+
+                    trace.add(toolOk("smart_recommendation", "已按指定歌手生成歌单，歌曲 " + songs.size() + " 首"));
+                    toolSummary = "已按指定歌手优先整合本地歌曲并生成歌单。";
+                    archive.put("recommendSongCount", songs.size());
+                    archive.put("recommendPlaylistCount", playlists.size());
+                    archive.put("recommendKeyword", playlistArtistConstraint);
+                    break;
+                }
 
                 // 如果用户明确提到了歌手/关键词，优先用本地曲库按关键词检索
                 if (!isBlank(preferKeyword)) {
@@ -171,6 +257,16 @@ public class MusicAgentService {
                 }
 
                 playlists = toPlaylistCards(playlistResult.getData(), "recommend", "与你近期偏好相近", 5);
+
+                AgentChatResponseVO.AgentPlaylistCardVO nowPlayingPlaylist = buildNowPlayingBasedPlaylist(requestDTO.getNowPlaying(), limit);
+                if (nowPlayingPlaylist != null) {
+                    List<AgentChatResponseVO.AgentPlaylistCardVO> mergedPlaylists = new ArrayList<>();
+                    mergedPlaylists.add(nowPlayingPlaylist);
+                    mergedPlaylists.addAll(playlists);
+                    playlists = mergedPlaylists.stream().limit(6).toList();
+                    trace.add(toolOk("recommend_now_playing_playlist", "根据当前播放歌曲生成歌单推荐"));
+                }
+
                 trace.add(toolOk("smart_recommendation", "推荐歌曲 " + songs.size() + " 首，推荐歌单 " + playlists.size() + " 个"));
                 toolSummary = "推荐引擎已返回歌曲与歌单结果。";
                 archive.put("recommendSongCount", songs.size());
@@ -504,6 +600,33 @@ public class MusicAgentService {
     }
 
     private List<AgentChatResponseVO.AgentSongCardVO> buildPlaylistByPrompt(String prompt, int limit) {
+        String artistConstraint = extractArtistConstraint(prompt);
+
+        if (!isBlank(artistConstraint)) {
+            Set<String> singerAliases = resolveSingerAliases(artistConstraint);
+            Map<Long, SongVO> dedupSongs = new HashMap<>();
+            int queryLimit = Math.max(limit * 6, 80);
+
+            for (String alias : singerAliases) {
+                List<SongVO> candidates = songMapper.searchSongsByKeyword(alias, queryLimit);
+                if (candidates == null) {
+                    continue;
+                }
+                for (SongVO song : candidates) {
+                    if (song.getSongId() != null) {
+                        dedupSongs.put(song.getSongId(), song);
+                    }
+                }
+            }
+
+            List<SongVO> artistSongs = dedupSongs.values().stream()
+                    .filter(song -> matchesSingerStrict(song.getArtistName(), artistConstraint))
+                    .toList();
+
+            // 指定歌手模式禁止混入其他歌手：命中就返回歌手曲目，未命中则返回空
+            return toSongCards(artistSongs, "local", "按指定歌手生成歌单", limit);
+        }
+
         List<String> styles = Arrays.asList("摇滚", "流行", "民谣", "电子", "古风", "治愈", "说唱", "轻音乐");
         String matchedStyle = styles.stream().filter(prompt::contains).findFirst().orElse(null);
 
@@ -514,11 +637,46 @@ public class MusicAgentService {
             candidates = songMapper.searchSongsByKeyword(prompt, limit);
         }
 
+        // 口语请求如“推荐Coldplay的歌单”优先再用清洗后的关键词兜底一次
+        if ((candidates == null || candidates.isEmpty()) && !isBlank(prompt)) {
+            String fallbackKeyword = extractRecommendKeyword(prompt);
+            if (!isBlank(fallbackKeyword) && !fallbackKeyword.equalsIgnoreCase(prompt.trim())) {
+                candidates = songMapper.searchSongsByKeyword(fallbackKeyword, limit);
+            }
+        }
+
         if (candidates == null || candidates.isEmpty()) {
             candidates = songMapper.getRandomSongsWithArtist().stream().limit(limit).toList();
         }
 
         return toSongCards(candidates, "local", "适配你的歌单意图", limit);
+    }
+
+    private AgentChatResponseVO.AgentPlaylistCardVO buildNowPlayingBasedPlaylist(AgentChatRequestDTO.NowPlayingDTO nowPlaying, int limit) {
+        if (nowPlaying == null || (isBlank(nowPlaying.getArtist()) && isBlank(nowPlaying.getTitle()))) {
+            return null;
+        }
+
+        String keyword = !isBlank(nowPlaying.getArtist()) ? nowPlaying.getArtist() : nowPlaying.getTitle();
+        List<AgentChatResponseVO.AgentSongCardVO> tracks = searchLocalSongs(keyword, Math.max(6, Math.min(limit, 12)));
+        if (tracks.isEmpty()) {
+            return null;
+        }
+
+        String playlistTitle = "正在播放相关推荐";
+        if (!isBlank(nowPlaying.getTitle())) {
+            playlistTitle += " · " + nowPlaying.getTitle();
+        }
+
+        return AgentChatResponseVO.AgentPlaylistCardVO.builder()
+                .playlistId(null)
+                .title(playlistTitle)
+                .coverUrl(tracks.get(0).getCoverUrl())
+                .source("now-playing")
+                .reason("根据当前播放歌曲生成")
+                .songCount(tracks.size())
+                .tracks(tracks)
+                .build();
     }
 
     private String buildRecommendWebKeyword(String userInput, AgentChatRequestDTO.NowPlayingDTO nowPlaying) {
@@ -554,6 +712,172 @@ public class MusicAgentService {
             return "";
         }
         return keyword;
+    }
+
+    private String extractPlaylistArtistConstraint(String input) {
+        if (isBlank(input)) {
+            return "";
+        }
+        String text = input.trim();
+
+        // 仅当明确提到“歌单”时才提取，避免影响普通推荐
+        if (!text.contains("歌单") && !text.toLowerCase(Locale.ROOT).contains("playlist")) {
+            return "";
+        }
+
+        Matcher explicitMatcher = Pattern.compile("推荐\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-]{2,30})\\s*的?\\s*歌单", Pattern.CASE_INSENSITIVE).matcher(text);
+        if (explicitMatcher.find()) {
+            String candidate = explicitMatcher.group(1).trim();
+            if (!isGenericPlaylistWord(candidate)) {
+                return candidate;
+            }
+        }
+
+        String cleaned = text
+                .replaceAll("[，,。！？!?]", " ")
+                .replaceAll("(?i)(给我|帮我|请|麻烦|推荐|来点|来一些|来一首|想听|听点|生成|制作|做一个|做个)", " ")
+                .replaceAll("(?i)(歌单|playlist|音乐|歌曲|歌)", " ")
+                .replaceAll("的", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        if (cleaned.length() < 2 || cleaned.length() > 24 || isGenericPlaylistWord(cleaned)) {
+            return "";
+        }
+        return cleaned;
+    }
+
+    private String extractSingerConstraintForRecommend(String input) {
+        if (isBlank(input)) {
+            return "";
+        }
+        String text = input.trim();
+
+        Matcher m1 = Pattern.compile("推荐\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-]{2,30})\\s*的?\\s*歌(?:曲)?").matcher(text);
+        if (m1.find()) {
+            String candidate = m1.group(1).trim();
+            return isGenericPlaylistWord(candidate) ? "" : candidate;
+        }
+
+        Matcher m2 = Pattern.compile("歌手\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-]{2,30})").matcher(text);
+        if (m2.find()) {
+            String candidate = m2.group(1).trim();
+            return isGenericPlaylistWord(candidate) ? "" : candidate;
+        }
+
+        return "";
+    }
+
+    private boolean matchesSingerStrict(String artistName, String singerConstraint) {
+        if (isBlank(artistName) || isBlank(singerConstraint)) {
+            return false;
+        }
+        Set<String> aliasSet = resolveSingerAliases(singerConstraint).stream()
+                .map(item -> item.toLowerCase(Locale.ROOT).trim())
+                .collect(Collectors.toSet());
+
+        String artist = artistName.toLowerCase(Locale.ROOT).trim();
+        if (aliasSet.contains(artist)) {
+            return true;
+        }
+
+        // 处理多歌手分隔场景，目标歌手必须是独立片段
+        String[] tokens = artist.split("[,&/、|;；\\s]+");
+        for (String token : tokens) {
+            String normalized = token.trim();
+            if (!normalized.isEmpty() && aliasSet.contains(normalized)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<String> resolveSingerAliases(String singerConstraint) {
+        Set<String> aliases = new LinkedHashSet<>();
+        if (isBlank(singerConstraint)) {
+            return aliases;
+        }
+
+        String value = singerConstraint.trim();
+        aliases.add(value);
+        String lower = value.toLowerCase(Locale.ROOT);
+
+        // 常见中英文别名映射，可继续按数据扩展
+        if ("coldplay".equals(lower) || "酷玩".equals(value) || "酷玩乐队".equals(value)) {
+            aliases.add("Coldplay");
+            aliases.add("酷玩");
+            aliases.add("酷玩乐队");
+        }
+
+        return aliases;
+    }
+
+    private String extractArtistConstraint(String input) {
+        if (isBlank(input)) {
+            return "";
+        }
+
+        String text = input.trim();
+        Matcher playlistMatcher = Pattern.compile("(?:推荐|生成|制作|做个|做一个|给我)?\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-]{2,30})\\s*的?\\s*歌单", Pattern.CASE_INSENSITIVE).matcher(text);
+        if (playlistMatcher.find()) {
+            String candidate = sanitizeSingerKeyword(playlistMatcher.group(1));
+            if (isGenericPlaylistWord(candidate)) {
+                return "";
+            }
+            return candidate;
+        }
+
+        if (text.contains("只要")) {
+            String candidate = text.substring(text.indexOf("只要") + 2)
+                    .replaceAll("的?歌单.*$", "")
+                    .replaceAll("的?歌.*$", "")
+                    .trim();
+            candidate = sanitizeSingerKeyword(candidate);
+            if (candidate.length() >= 2 && !isGenericPlaylistWord(candidate)) {
+                return candidate;
+            }
+        }
+
+        if (text.contains("歌手")) {
+            String candidate = text.substring(text.indexOf("歌手") + 2)
+                    .replaceAll("的?歌单.*$", "")
+                    .replaceAll("的?歌.*$", "")
+                    .trim();
+            candidate = sanitizeSingerKeyword(candidate);
+            if (candidate.length() >= 2 && !isGenericPlaylistWord(candidate)) {
+                return candidate;
+            }
+        }
+
+        return "";
+    }
+
+    private String sanitizeSingerKeyword(String raw) {
+        if (isBlank(raw)) {
+            return "";
+        }
+        return raw.trim()
+                .replaceAll("(?i)^(推荐|生成|制作|做个|做一个|给我|来点)", "")
+                .replaceAll("(?i)(歌单|playlist)$", "")
+                .replaceAll("^[\\s:：-]+|[\\s:：-]+$", "")
+                .trim();
+    }
+
+    private boolean isGenericPlaylistWord(String candidate) {
+        if (isBlank(candidate)) {
+            return true;
+        }
+        String normalized = candidate.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("推荐")
+                || normalized.equals("歌单")
+                || normalized.equals("生成")
+                || normalized.equals("制作")
+                || normalized.equals("来个")
+                || normalized.equals("做个")
+                || normalized.equals("一个")
+                || normalized.equals("一些")
+                || normalized.equals("音乐")
+                || normalized.equals("歌曲");
     }
 
     private List<AgentChatResponseVO.AgentSongCardVO> organizePlaylistSeeds(List<AgentChatRequestDTO.PlaylistSeedDTO> seeds, int limit) {

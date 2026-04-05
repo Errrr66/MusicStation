@@ -9,6 +9,89 @@ html.dark {
   --el-fill-color-blank: hsl(var(--background));
 }
 
+.el-message-box {
+  background-color: #242424 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
+.el-message-box__title {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+}
+
+.el-message-box__content {
+  color: #b3b3b3 !important;
+}
+
+.el-message-box__message {
+  color: #b3b3b3 !important;
+}
+
+.el-message-box__input {
+  margin-top: 16px !important;
+}
+
+.el-message-box__input .el-input__wrapper {
+  background-color: #181818 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.el-message-box__input .el-input__inner {
+  color: #ffffff !important;
+}
+
+.el-message-box__input .el-input__inner::placeholder {
+  color: #727272 !important;
+}
+
+.el-message-box__errormsg {
+  color: #f15e6c !important;
+}
+
+.el-message-box__headerbtn {
+  color: #727272 !important;
+}
+
+.el-message-box__headerbtn:hover {
+  color: #ffffff !important;
+}
+
+.el-message-box__btns {
+  margin-top: 20px !important;
+}
+
+.el-message-box__btns .el-button {
+  border-radius: 9999px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  padding: 8px 24px !important;
+  border: none !important;
+}
+
+.el-message-box__btns .el-button--primary {
+  background-color: #1db954 !important;
+  color: #000000 !important;
+}
+
+.el-message-box__btns .el-button--primary:hover {
+  background-color: #1ed760 !important;
+}
+
+.el-message-box__btns .el-button:not(.el-button--primary) {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border: 1px solid #727272 !important;
+}
+
+.el-message-box__btns .el-button:not(.el-button--primary):hover {
+  border-color: #ffffff !important;
+}
+
 /*下拉框*/
 .el-select__wrapper {
   @apply p-4 py-3 rounded-md;

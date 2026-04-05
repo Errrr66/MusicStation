@@ -497,12 +497,7 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
 <template>
   <div class="spotify-chat-page">
     <div class="spotify-chat-header">
-      <span class="spotify-chat-subtitle">
-        <button class="spotify-voice-toggle" @click="voiceEnabled = !voiceEnabled">
-          <Icon :icon="voiceEnabled ? 'mdi:volume-high' : 'mdi:volume-off'" />
-        </button>
-        Ciallo～(∠・ω< )⌒★
-      </span>
+      <span class="spotify-chat-subtitle">Ciallo～(∠・ω< )⌒★</span>
     </div>
 
     <div ref="scrollbarRef" class="spotify-chat-messages">
@@ -530,7 +525,7 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
           <div v-if="msg.role === 'assistant' && msg.agentData" class="spotify-agent-panel">
             <div v-if="msg.agentData.toolTrace?.length" class="spotify-trace-row">
               <span v-for="(trace, tIndex) in msg.agentData.toolTrace" :key="`${index}-${tIndex}`" class="spotify-trace-chip">
-                {{ trace.tool }} · {{ trace.summary }}
+                {{ trace.summary }}
               </span>
             </div>
 
@@ -693,26 +688,8 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
 }
 
 .spotify-chat-subtitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
-}
-
-.spotify-voice-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
-  color: var(--text-subdued, #b3b3b3);
-  border-radius: 999px;
-  padding: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 .spotify-stream-status {
