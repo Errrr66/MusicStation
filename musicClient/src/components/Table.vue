@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { Song } from '@/api/interface'
 import { AudioStore } from '@/stores/modules/audio'
-import { defaultSong } from '@/mock'
-import { trackModel } from '@/stores/interface'
 import { formatMillisecondsToTime, fixUrl } from '@/utils'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'

@@ -102,4 +102,12 @@ public interface SongMapper extends BaseMapper<Song> {
                                              @Param("favoriteSongIds") List<Long> favoriteSongIds,
                                              @Param("limit") int limit);
 
+    // Agent: 关键词搜索本地歌曲
+    List<SongVO> searchSongsByKeyword(@Param("keyword") String keyword,
+                                      @Param("limit") int limit);
+
+    // Agent: 按风格关键词搜索本地歌曲
+    List<SongVO> searchSongsByStyleKeyword(@Param("styleKeyword") String styleKeyword,
+                                           @Param("limit") int limit);
+
 }

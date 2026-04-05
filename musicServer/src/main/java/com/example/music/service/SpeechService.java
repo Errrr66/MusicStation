@@ -10,12 +10,15 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SpeechService {
 
-    private static final String TTS_API_URL = "http://127.0.0.1:5000/voice";
+    @Value("${tts.api-url:http://127.0.0.1:5000/voice}")
+    private String ttsApiUrl;
+
     private final MinioService minioService;
 
     @Autowired
@@ -37,7 +40,7 @@ public class SpeechService {
 
             // 构建请求 URL (GET 参数)
             String url = String.format("%s?text=%s&model_id=%d&encoding=utf-8&length=1.0",
-                    TTS_API_URL, encodedText, modelId);
+                    ttsApiUrl, encodedText, modelId);
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()

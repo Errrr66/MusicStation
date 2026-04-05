@@ -111,4 +111,43 @@
         LIMIT #{limit}
     </select>
 
+    <!-- Agent: 按关键词搜索本地歌曲 -->
+    <select id="searchSongsByKeyword" resultType="com.example.music.model.vo.SongVO">
+        SELECT s.id AS songId,
+               s.name AS songName,
+               s.album,
+               s.duration,
+               s.cover_url AS coverUrl,
+               s.audio_url AS audioUrl,
+               s.release_time AS releaseTime,
+               a.name AS artistName
+        FROM tb_song s
+                 LEFT JOIN tb_artist a ON s.artist_id = a.id
+        WHERE s.name LIKE CONCAT('%', #{keyword}, '%')
+           OR a.name LIKE CONCAT('%', #{keyword}, '%')
+           OR s.album LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY s.release_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Agent: 按风格关键词搜索本地歌曲 -->
+    <select id="searchSongsByStyleKeyword" resultType="com.example.music.model.vo.SongVO">
+        SELECT DISTINCT s.id AS songId,
+                        s.name AS songName,
+                        s.album,
+                        s.duration,
+                        s.cover_url AS coverUrl,
+                        s.audio_url AS audioUrl,
+                        s.release_time AS releaseTime,
+                        a.name AS artistName
+        FROM tb_song s
+                 LEFT JOIN tb_artist a ON s.artist_id = a.id
+                 LEFT JOIN tb_genre g ON s.id = g.song_id
+                 LEFT JOIN tb_style st ON g.style_id = st.id
+        WHERE st.name LIKE CONCAT('%', #{styleKeyword}, '%')
+           OR s.style LIKE CONCAT('%', #{styleKeyword}, '%')
+        ORDER BY s.release_time DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

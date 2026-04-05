@@ -83,12 +83,6 @@ const getBarHeight = (volume: number) => {
   return `${height}px`
 }
 
-const getBarColor = (volume: number) => {
-  if (volume > 0.5) {
-    return props.activeColor
-  }
-  return props.color
-}
 
 const getBarClass = (volume: number) => {
   return {

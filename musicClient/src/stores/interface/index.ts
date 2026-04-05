@@ -1,3 +1,4 @@
+import type { Song } from '@/api/interface'
 // import { ParsedLyrics } from '@/utils/parsedLyrics'
 /* UserState */
 export interface UserState {
@@ -16,7 +17,7 @@ export interface userModel {
 export interface AudioState {
   trackList: trackModel[] // 歌曲缓存
   currentSongIndex: number // 当前播放歌曲索引
-  currentPageSongs: [] // 当前页面的歌曲列表
+  currentPageSongs: Song[] // 当前页面的歌曲列表
   volume: number // 音量
   quality: string // 音质
 }

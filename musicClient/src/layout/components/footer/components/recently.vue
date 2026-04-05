@@ -17,7 +17,7 @@ const props = defineProps({
 
 const menuStore = MenuStore()
 const audioStore = AudioStore()
-const { loadTrack, play, audioElement } = useAudioPlayer()
+const { loadTrack, play } = useAudioPlayer()
 
 const mouseOverIndex = ref(-1)
 const localIsPlaylistOpen = ref(false)
@@ -35,9 +35,9 @@ const isPlaylistOpen = computed({
   }
 })
 
-const currentTrackId = computed(() => audioStore.currentSong?.id)
+const currentTrackId = computed(() => audioStore.trackList[audioStore.currentSongIndex]?.id)
 
-const handleTrackClick = async (track: trackModel, index: number) => {
+const handleTrackClick = async (_track: trackModel, index: number) => {
   await loadTrack(index)
   play()
 }

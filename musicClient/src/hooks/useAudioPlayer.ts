@@ -27,6 +27,7 @@ interface AudioPlayer {
   seek: (time: number) => void
   togglePlayPause: () => void
   setVolume: (volume: number) => void
+  setPlayMode: (mode: PlayMode) => void
   togglePlayMode: () => void
   loadTrack: (index?: number) => Promise<void>
   initAnalyser: () => AudioAnalyser | null
@@ -326,6 +327,7 @@ export const AudioPlayer = () => {
     seek,
     togglePlayPause,
     setVolume,
+    setPlayMode,
     togglePlayMode,
     loadTrack,
     initAnalyser,

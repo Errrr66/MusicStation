@@ -54,9 +54,20 @@ spring:
 
 # DeepSeek API Configuration
 deepseek:
-  api-key: sk-576b0d5ae1d34c5db797d9e530381768 # 替换为你的 DeepSeek API 密钥
+  api-key: ${DEEPSEEK_API_KEY:sk-576b0d5ae1d34c5db797d9e530381768}
   base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
   model: deepseek-v3.2
+
+tts:
+  api-url: ${TTS_API_URL:http://127.0.0.1:5000/voice}
+
+agent:
+  search:
+    connect-timeout-seconds: 3
+    request-timeout-seconds: 5
+    cache-ttl-seconds: 900
+    circuit-breaker-fail-threshold: 3
+    circuit-breaker-open-seconds: 120
 
 # 配置 mybatis-plus
 mybatis-plus:

@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -35,6 +36,10 @@ public class DeepSeekService {
     }
 
     public String chat(ChatRequestDTO chatRequestDTO) {
+        if (apiKey == null || apiKey.isBlank() || apiKey.contains("please-set-deepseek-api-key")) {
+            return "配置错误：未设置 DEEPSEEK_API_KEY，请在环境变量中配置后重启后端。";
+        }
+
         String url = baseUrl + "/chat/completions";
 
         HttpHeaders headers = new HttpHeaders();
@@ -91,8 +96,9 @@ public class DeepSeekService {
             if (response.getBody() != null && response.getBody().getChoices() != null && !response.getBody().getChoices().isEmpty()) {
                 return response.getBody().getChoices().get(0).getMessage().getContent();
             }
+        } catch (HttpClientErrorException.Unauthorized e) {
+            return "配置错误：DeepSeek API 鉴权失败(401)。请检查 DEEPSEEK_API_KEY 与 deepseek.base-url 是否匹配。";
         } catch (Exception e) {
-            e.printStackTrace();
             return "Server Error: " + e.getMessage();
         }
 

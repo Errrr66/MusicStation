@@ -15,6 +15,7 @@ import { UserStore } from '@/stores/modules/user'
 import { Icon } from '@iconify/vue'
 
 const route = useRoute()
+const router = useRouter()
 const audui = AudioStore()
 const playlistStore = usePlaylistStore()
 const favoriteStore = useFavoriteStore()
@@ -24,6 +25,22 @@ const songs = computed(() => playlistStore.songs)
 const { loadTrack, play } = useAudioPlayer()
 
 const dominantColor = ref('#1e3a5f')
+const hasShownSavedToast = ref(false)
+
+const maybeShowSavedToast = async () => {
+  if (hasShownSavedToast.value) {
+    return
+  }
+  if (String(route.query.from || '') === 'chat' && String(route.query.saved || '') === '1') {
+    hasShownSavedToast.value = true
+    ElMessage.success('已保存到你的歌单')
+
+    const nextQuery: Record<string, any> = { ...route.query }
+    delete nextQuery.from
+    delete nextQuery.saved
+    await router.replace({ path: route.path, query: nextQuery })
+  }
+}
 
 const extractDominantColor = (imageUrl: string): Promise<string> => {
   return new Promise((resolve) => {
@@ -226,6 +243,7 @@ watch(
   () => route.params.id,
   async (id) => {
     if (id) {
+      await maybeShowSavedToast()
       playlistStore.setPlaylistInfo(null)
       playlistStore.setSongs([])
       const res = await getPlaylistDetail(Number(id))

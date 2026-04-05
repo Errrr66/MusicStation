@@ -17,7 +17,7 @@ export const AudioStore = defineStore({
     volume: 50,
     // 音质
     quality: 'exhigh',
-    currentPageSongs: [], // 当前页面的歌曲列表
+    currentPageSongs: [] as Song[], // 当前页面的歌曲列表
   }),
   actions: {
     //set AudioStore
@@ -49,6 +49,9 @@ export const AudioStore = defineStore({
       this.trackList = this.trackList.filter(
         (track: { id: string | number }) => track.id !== id
       )
+    },
+    removeTrackFromQueue(id: number | string) {
+      this.deleteTrack(id)
     },
     // 设置当前页面的歌曲列表
     setCurrentPageSongs(songs: Song[]) {
