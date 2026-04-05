@@ -29,6 +29,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -65,6 +73,8 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
     private MinioService minioService;
     @Autowired
     private RedisTemplate redisTemplate;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 获取所有歌曲
@@ -231,9 +241,40 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      * @return 歌曲详情
      */
     @Override
-    @Cacheable(key = "#songId")
+    @Cacheable(key = "#songId", unless = "#result == null || #result.data == null || #result.data.lyric == null || #result.data.lyric.isEmpty()")
     public Result<SongDetailVO> getSongDetail(Long songId, HttpServletRequest request) {
         SongDetailVO songDetailVO = songMapper.getSongDetailById(songId);
+        if (songDetailVO == null) {
+            return Result.error(MessageConstant.SONG + MessageConstant.NOT_FOUND);
+        }
+
+        // 歌词缺失时自动尝试补全并落库，避免详情页无歌词
+        if (songDetailVO.getLyric() == null || songDetailVO.getLyric().trim().isEmpty()) {
+            Song songInDb = songMapper.selectById(songId);
+            String songName = songDetailVO.getSongName();
+            Long artistId = null;
+            String audioUrl = songDetailVO.getAudioUrl();
+
+            if (songInDb != null) {
+                if (songName == null || songName.trim().isEmpty()) {
+                    songName = songInDb.getSongName();
+                }
+                artistId = songInDb.getArtistId();
+                if (audioUrl == null || audioUrl.trim().isEmpty()) {
+                    audioUrl = songInDb.getAudioUrl();
+                }
+            }
+
+            String fetchedLyric = fetchLyricFromNetease(songName, artistId, audioUrl);
+            if (fetchedLyric != null && !fetchedLyric.trim().isEmpty()) {
+                songDetailVO.setLyric(fetchedLyric);
+
+                Song update = new Song();
+                update.setSongId(songId);
+                update.setLyric(fetchedLyric);
+                songMapper.updateById(update);
+            }
+        }
 
         // 获取请求头中的 token
         String token = request.getHeader("Authorization");
@@ -497,6 +538,139 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
         }
 
         return Result.success(MessageConstant.DELETE + MessageConstant.SUCCESS);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "songCache", allEntries = true)
+    public Result fillSongLyric(Long songId) {
+        Song song = songMapper.selectById(songId);
+        if (song == null) {
+            return Result.error(MessageConstant.SONG + MessageConstant.NOT_FOUND);
+        }
+        if (song.getLyric() != null && !song.getLyric().trim().isEmpty()) {
+            return Result.success("该歌曲已有歌词");
+        }
+
+        String lyric = fetchLyricFromNetease(song.getSongName(), song.getArtistId(), song.getAudioUrl());
+        if (lyric == null || lyric.isBlank()) {
+            return Result.error("未找到可用歌词");
+        }
+
+        song.setLyric(lyric);
+        if (songMapper.updateById(song) == 0) {
+            return Result.error(MessageConstant.UPDATE + MessageConstant.FAILED);
+        }
+        return Result.success("歌词补全成功");
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "songCache", allEntries = true)
+    public Result fillMissingLyrics(Integer limit) {
+        boolean fillAll = (limit == null || limit <= 0);
+        int target = fillAll ? Integer.MAX_VALUE : Math.min(limit, 5000);
+        int pageSize = 100;
+
+        int processed = 0;
+        int success = 0;
+        Set<Long> attemptedSongIds = new HashSet<>();
+
+        while (processed < target) {
+            int currentBatch = Math.min(pageSize, target - processed);
+            QueryWrapper<Song> query = new QueryWrapper<Song>()
+                    .and(wrapper -> wrapper.isNull("lyric").or().eq("lyric", ""));
+
+            if (!attemptedSongIds.isEmpty()) {
+                query.notIn("id", attemptedSongIds);
+            }
+
+            query.last("LIMIT " + currentBatch);
+            List<Song> missingLyricsSongs = songMapper.selectList(query);
+            if (missingLyricsSongs.isEmpty()) {
+                break;
+            }
+
+            for (Song song : missingLyricsSongs) {
+                attemptedSongIds.add(song.getSongId());
+                processed++;
+
+                String lyric = fetchLyricFromNetease(song.getSongName(), song.getArtistId(), song.getAudioUrl());
+                if (lyric == null || lyric.isBlank()) {
+                    continue;
+                }
+
+                Song update = new Song();
+                update.setSongId(song.getSongId());
+                update.setLyric(lyric);
+                if (songMapper.updateById(update) > 0) {
+                    success++;
+                }
+            }
+        }
+
+        if (processed == 0) {
+            return Result.success("没有需要补全歌词的歌曲");
+        }
+
+        String mode = fillAll ? "全部补全" : ("限定补全(" + target + "首)");
+        return Result.success(mode + "完成，成功 " + success + " / " + processed + " 首");
+    }
+
+    private String fetchLyricFromNetease(String songName, Long artistId, String audioUrl) {
+        if (songName == null || songName.isBlank()) {
+            return "";
+        }
+
+        try {
+            String encoded = URLEncoder.encode(songName, StandardCharsets.UTF_8);
+            String searchUrl = "https://music.163.com/api/search/get/web?csrf_token=&s=" + encoded
+                    + "&type=1&offset=0&total=true&limit=8";
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(searchUrl)).GET().build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return "";
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode songsNode = root.path("result").path("songs");
+            if (songsNode == null || !songsNode.isArray() || songsNode.isEmpty()) {
+                return "";
+            }
+
+            long songId = 0L;
+            for (JsonNode item : songsNode) {
+                String artistName = item.path("artists").isArray() && !item.path("artists").isEmpty()
+                        ? item.path("artists").get(0).path("name").asText("")
+                        : "";
+                if (artistId != null && audioUrl != null && !audioUrl.isBlank()) {
+                    // 优先按歌名 + 歌手候选命中，尽量避免歌词串歌
+                    if (!artistName.isBlank()) {
+                        songId = item.path("id").asLong(0L);
+                        break;
+                    }
+                } else {
+                    songId = item.path("id").asLong(0L);
+                    break;
+                }
+            }
+
+            if (songId <= 0) {
+                return "";
+            }
+
+            String lyricUrl = "https://music.163.com/api/song/lyric?os=pc&id=" + songId + "&lv=-1&kv=-1&tv=-1";
+            HttpRequest lyricRequest = HttpRequest.newBuilder().uri(URI.create(lyricUrl)).GET().build();
+            HttpResponse<String> lyricResponse = client.send(lyricRequest, HttpResponse.BodyHandlers.ofString());
+            if (lyricResponse.statusCode() != 200) {
+                return "";
+            }
+
+            JsonNode lyricRoot = objectMapper.readTree(lyricResponse.body());
+            return lyricRoot.path("lrc").path("lyric").asText("");
+        } catch (Exception e) {
+            return "";
+        }
     }
 
 }

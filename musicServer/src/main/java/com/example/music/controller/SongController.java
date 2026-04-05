@@ -61,5 +61,21 @@ public class SongController {
         return songService.getSongDetail(songId, request);
     }
 
+    /**
+     * 为指定歌曲补全歌词
+     */
+    @PatchMapping("/fillLyric/{id}")
+    public Result fillSongLyric(@PathVariable("id") Long songId) {
+        return songService.fillSongLyric(songId);
+    }
+
+    /**
+     * 批量补全缺失歌词（limit<=0 表示补全全部）
+     */
+    @PostMapping("/fillMissingLyrics")
+    public Result fillMissingLyrics(@RequestParam(value = "limit", defaultValue = "50") Integer limit) {
+        return songService.fillMissingLyrics(limit);
+    }
+
 
 }

@@ -56,4 +56,10 @@ public interface ISongService extends IService<Song> {
     // 批量删除歌曲
     Result deleteSongs(List<Long> songIds);
 
+    // 为指定歌曲补全歌词
+    Result fillSongLyric(Long songId);
+
+    // 批量为缺失歌词的本地歌曲补全歌词
+    Result fillMissingLyrics(Integer limit);
+
 }
