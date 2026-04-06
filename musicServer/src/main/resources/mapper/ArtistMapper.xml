@@ -45,4 +45,26 @@
         WHERE a.id = #{artistId}
     </select>
 
+    <select id="findArtistIdsByNames" resultType="java.lang.Long">
+        SELECT id
+        FROM tb_artist
+        WHERE name IN
+        <foreach collection="names" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+
+    <select id="findArtistIdsByKeyword" resultType="java.lang.Long">
+        SELECT id
+        FROM tb_artist
+        WHERE LOWER(name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+        ORDER BY CASE
+                     WHEN LOWER(name) = LOWER(#{keyword}) THEN 0
+                     WHEN LOWER(name) LIKE CONCAT(LOWER(#{keyword}), '%') THEN 1
+                     ELSE 2
+                 END,
+                 id ASC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

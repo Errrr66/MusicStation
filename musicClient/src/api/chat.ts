@@ -1,4 +1,4 @@
-import { httpPost } from '@/utils/http'
+import { httpGet, httpPost } from '@/utils/http'
 import { UserStore } from '@/stores/modules/user'
 
 export interface ChatMessage {
@@ -46,6 +46,14 @@ export interface AgentToolTrace {
   summary: string
 }
 
+export interface AgentCitation {
+  sourceType: string
+  sourceId: string
+  title: string
+  snippet: string
+  reason: string
+}
+
 export interface AgentChatResponse {
   answer: string
   audio: string
@@ -54,7 +62,27 @@ export interface AgentChatResponse {
   toolTrace: AgentToolTrace[]
   songs: AgentSongCard[]
   playlists: AgentPlaylistCard[]
+  citations?: AgentCitation[]
   musicArchive: Record<string, any>
+}
+
+export interface ChatHealthResponse {
+  ragEnabled: boolean
+  ragMode: string
+  ragLastRetrieval: {
+    strategy: string
+    mode: string
+    queryCount: number
+    candidateCount: number
+    citationCount: number
+    enabled: boolean
+    updatedAtEpochMs: number
+  }
+  providers: {
+    deepseekConfigured: boolean
+    ttsConfigured: boolean
+  }
+  serverTime: string
 }
 
 export const sendChatMessage = (messages: ChatMessage[]) => {
@@ -70,6 +98,7 @@ export const sendAgentMessage = (payload: {
   nowPlaying?: AgentNowPlaying
   limit?: number
   enableVoice?: boolean
+  enableRag?: boolean
   playlistSeeds?: Array<{ songId: number; songName: string; artistName: string; style?: string }>
 }) => {
   return httpPost<{ code: number; message: string; data: AgentChatResponse }>('/chat/agent', payload)
@@ -82,6 +111,7 @@ export const sendAgentMessageStream = async (
     nowPlaying?: AgentNowPlaying
     limit?: number
     enableVoice?: boolean
+    enableRag?: boolean
     playlistSeeds?: Array<{ songId: number; songName: string; artistName: string; style?: string }>
   },
   handlers: {
@@ -173,5 +203,9 @@ export const saveAgentPlaylist = (payload: {
   tracks: Array<{ songId?: number | null; songName: string; artistName: string }>
 }) => {
   return httpPost<{ code: number; message: string; data: AgentPlaylistSaveResult }>('/chat/agent/savePlaylist', payload)
+}
+
+export const getChatHealth = () => {
+  return httpGet<{ code: number; message: string; data: ChatHealthResponse }>('/chat/health')
 }
 

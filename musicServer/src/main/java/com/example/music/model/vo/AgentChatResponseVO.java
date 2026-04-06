@@ -16,6 +16,7 @@ public class AgentChatResponseVO {
     private List<ToolTraceVO> toolTrace;
     private List<AgentSongCardVO> songs;
     private List<AgentPlaylistCardVO> playlists;
+    private List<CitationVO> citations;
     private Map<String, Object> musicArchive;
 
     @Data
@@ -50,5 +51,14 @@ public class AgentChatResponseVO {
         private Integer songCount;
         private List<AgentSongCardVO> tracks;
     }
-}
 
+    @Data
+    @Builder
+    public static class CitationVO {
+        private String sourceType;
+        private String sourceId;
+        private String title;
+        private String snippet;
+        private String reason;
+    }
+}

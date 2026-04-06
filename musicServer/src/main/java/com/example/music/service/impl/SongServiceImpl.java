@@ -265,7 +265,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
                 }
             }
 
-            String fetchedLyric = fetchLyricFromNetease(songName, artistId, audioUrl);
+            String fetchedLyric = fetchLyricFromProvider(songName, artistId, audioUrl);
             if (fetchedLyric != null && !fetchedLyric.trim().isEmpty()) {
                 songDetailVO.setLyric(fetchedLyric);
 
@@ -551,7 +551,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
             return Result.success("该歌曲已有歌词");
         }
 
-        String lyric = fetchLyricFromNetease(song.getSongName(), song.getArtistId(), song.getAudioUrl());
+        String lyric = fetchLyricFromProvider(song.getSongName(), song.getArtistId(), song.getAudioUrl());
         if (lyric == null || lyric.isBlank()) {
             return Result.error("未找到可用歌词");
         }
@@ -593,7 +593,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
                 attemptedSongIds.add(song.getSongId());
                 processed++;
 
-                String lyric = fetchLyricFromNetease(song.getSongName(), song.getArtistId(), song.getAudioUrl());
+                String lyric = fetchLyricFromProvider(song.getSongName(), song.getArtistId(), song.getAudioUrl());
                 if (lyric == null || lyric.isBlank()) {
                     continue;
                 }
@@ -615,7 +615,8 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
         return Result.success(mode + "完成，成功 " + success + " / " + processed + " 首");
     }
 
-    private String fetchLyricFromNetease(String songName, Long artistId, String audioUrl) {
+    // Use an external lyric provider API and keep this method provider-agnostic.
+    private String fetchLyricFromProvider(String songName, Long artistId, String audioUrl) {
         if (songName == null || songName.isBlank()) {
             return "";
         }

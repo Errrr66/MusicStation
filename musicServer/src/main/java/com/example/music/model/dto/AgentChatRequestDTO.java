@@ -12,6 +12,7 @@ public class AgentChatRequestDTO {
     private List<PlaylistSeedDTO> playlistSeeds;
     private Integer limit;
     private Boolean enableVoice;
+    private Boolean enableRag;
 
     @Data
     public static class ChatMessageDTO {
@@ -35,4 +36,3 @@ public class AgentChatRequestDTO {
         private String style;
     }
 }
-

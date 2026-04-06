@@ -17,7 +17,7 @@ const currentPage = ref(1) // 当前页
 const pageSize = ref(20) // 每页显示的数量
 
 const state = reactive({
-  size: 'default',
+  size: 'default' as const,
   disabled: false,
   background: false,
   layout: 'total, sizes, prev, pager, next, jumper',

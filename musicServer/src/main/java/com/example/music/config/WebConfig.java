@@ -21,6 +21,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/admin/login", "/admin/logout", "/admin/register",
                         "/user/login", "/user/logout", "/user/register",
                         "/user/sendVerificationCode", "/user/resetUserPassword",
+                        "/chat/health",
                         "/chat/ask", "/chat/agent", "/chat/agent/stream",
                         "/banner/getBannerList",
                         "/playlist/getAllPlaylists", "/playlist/getRecommendedPlaylists", "/playlist/getPlaylistDetail/**",

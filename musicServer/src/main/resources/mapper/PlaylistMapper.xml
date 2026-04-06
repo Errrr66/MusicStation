@@ -107,4 +107,17 @@
         ORDER BY u.create_time DESC
     </select>
 
+    <!-- Agent RAG: 按关键词搜索歌单 -->
+    <select id="searchPlaylistsByKeyword" resultType="com.example.music.model.vo.PlaylistVO">
+        SELECT p.id AS playlistId,
+               p.title AS title,
+               p.cover_url AS coverUrl
+        FROM tb_playlist p
+        WHERE p.title LIKE CONCAT('%', #{keyword}, '%')
+           OR p.style LIKE CONCAT('%', #{keyword}, '%')
+           OR p.introduction LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY p.id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

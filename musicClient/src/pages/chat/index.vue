@@ -4,10 +4,13 @@ import {
   sendAgentMessage,
   sendAgentMessageStream,
   saveAgentPlaylist,
+  getChatHealth,
   type ChatMessage,
   type AgentChatResponse,
   type AgentSongCard,
   type AgentPlaylistCard,
+  type AgentCitation,
+  type ChatHealthResponse,
 } from '@/api/chat'
 import { getAllSongs } from '@/api/system'
 import type { Song } from '@/api/interface'
@@ -21,7 +24,7 @@ import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { AudioStore } from '@/stores/modules/audio'
 import defaultAlbum from '@/assets/default_album.jpg'
 
-type TimelineMessage = ChatMessage & { agentData?: AgentChatResponse }
+type TimelineMessage = ChatMessage & { agentData?: AgentChatResponse; pending?: boolean }
 
 const messages = ref<TimelineMessage[]>([])
 const inputMessage = ref('')
@@ -50,18 +53,48 @@ const streamStartedAt = ref<number | null>(null)
 const streamAbortController = ref<AbortController | null>(null)
 const canResumeAfterAbort = ref(false)
 const lastAbortedAssistantIndex = ref<number | null>(null)
+const chatHealth = ref<ChatHealthResponse | null>(null)
+const healthLoading = ref(false)
+const healthError = ref('')
+const healthExpanded = ref(false)
 const lastRequestPayload = ref<{
   message?: string
   messages?: ChatMessage[]
   nowPlaying?: { songId?: string; title?: string; artist?: string; album?: string }
   limit?: number
   enableVoice?: boolean
+  enableRag?: boolean
   playlistSeeds?: Array<{ songId: number; songName: string; artistName: string; style?: string }>
 } | null>(null)
 
 const animationModes: AnimationType[] = ['float', 'sparkle', 'sparkle', 'float']
 const currentModeIndex = ref(0)
 const modeTimerId = ref<number | undefined>(undefined)
+
+const streamStateTextMap: Record<string, string> = {
+  connecting: '连接中',
+  streaming: '生成中',
+  done: '已完成',
+  error: '失败',
+}
+
+const refreshChatHealth = async () => {
+  healthLoading.value = true
+  healthError.value = ''
+  try {
+    const res = await getChatHealth()
+    if (res.code === 0 && res.data) {
+      chatHealth.value = res.data
+      return
+    }
+    healthError.value = res.message || '状态检查失败'
+  } catch (error) {
+    console.error(error)
+    healthError.value = '状态检查失败'
+  } finally {
+    healthLoading.value = false
+  }
+}
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -78,6 +111,7 @@ function updateAnimationMode() {
 
 onMounted(async () => {
   initLiveSpeech()
+  await refreshChatHealth()
   try {
     const colorFrame = await imageToColorFrame('/thinking.png', 45, 54)
     colorFrameRef.value = colorFrame
@@ -123,6 +157,7 @@ const runAgentRequest = async (
     nowPlaying?: { songId?: string; title?: string; artist?: string; album?: string }
     limit?: number
     enableVoice?: boolean
+    enableRag?: boolean
     playlistSeeds?: Array<{ songId: number; songName: string; artistName: string; style?: string }>
   },
   assistantIndex: number
@@ -149,6 +184,7 @@ const runAgentRequest = async (
           }
         }
         messages.value[assistantIndex].content += chunk
+        messages.value[assistantIndex].pending = false
         void scrollToBottom()
       },
       onDone: async (data) => {
@@ -163,6 +199,7 @@ const runAgentRequest = async (
           messages.value[assistantIndex].content = data.answer || '已处理'
         }
         messages.value[assistantIndex].agentData = data
+        messages.value[assistantIndex].pending = false
 
         if (data.intent === 'PLAYER_CONTROL' || data.playerCommand === 'play_target') {
           await executePlayerCommand(data.playerCommand)
@@ -195,6 +232,7 @@ const runAgentRequest = async (
         }
         messages.value[assistantIndex].content = res.data.answer || '已处理'
         messages.value[assistantIndex].agentData = res.data
+        messages.value[assistantIndex].pending = false
 
         if (res.data.audio) {
           const audio = new Audio(res.data.audio)
@@ -240,7 +278,7 @@ const sendByText = async (text: string) => {
   scrollToBottom()
 
   const assistantIndex = messages.value.length
-  messages.value.push({ role: 'assistant', content: '' })
+  messages.value.push({ role: 'assistant', content: '', pending: true })
 
   await runAgentRequest({
     message: userMsg,
@@ -253,6 +291,7 @@ const sendByText = async (text: string) => {
     },
     limit: 8,
     enableVoice: voiceEnabled.value,
+    enableRag: true,
   }, assistantIndex)
 }
 
@@ -270,10 +309,11 @@ const resumeStreaming = async () => {
   const targetIndex = lastAbortedAssistantIndex.value;
   const assistantIndex = targetIndex != null && messages.value[targetIndex]
     ? targetIndex
-    : messages.value.push({ role: 'assistant', content: '' }) - 1
+    : messages.value.push({ role: 'assistant', content: '', pending: true }) - 1
 
   messages.value[assistantIndex].content = ''
   messages.value[assistantIndex].agentData = undefined
+  messages.value[assistantIndex].pending = true
 
   await runAgentRequest(lastRequestPayload.value, assistantIndex)
 }
@@ -502,12 +542,13 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
 
   let editedTitle = playlist.title || 'AI歌单'
   try {
-    const promptResult = await ElMessageBox.prompt('你可以修改歌单标题后再保存', '保存 AI 歌单', {
+    const promptResult = await ElMessageBox.prompt('修改标题', '保存 AI 歌单', {
       inputValue: editedTitle,
       inputPlaceholder: '请输入歌单标题',
       confirmButtonText: '保存',
       cancelButtonText: '取消',
       closeOnClickModal: false,
+      customClass: 'spotify-save-playlist-dialog',
       inputValidator: (value) => {
         if (!value || !value.trim()) {
           return '歌单标题不能为空'
@@ -556,18 +597,97 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
     savingPlaylistKeys.value[key] = false
   }
 }
+
+const extractCitationKeyword = (title?: string) => {
+  if (!title) return ''
+  return title
+    .replace(/^歌曲《/, '')
+    .replace(/^歌单《/, '')
+    .replace(/[》]/g, '')
+    .replace(/\s*-\s*.+$/, '')
+    .trim()
+}
+
+const handleCitationClick = async (citation: AgentCitation, agentData?: AgentChatResponse) => {
+  if (citation.sourceType === 'playlist' && citation.sourceId) {
+    await router.push(`/playlist/${citation.sourceId}`)
+    return
+  }
+
+  if (citation.sourceType === 'song') {
+    const targetId = Number(citation.sourceId)
+    const matchedSong = (agentData?.songs || []).find((song) => song.songId != null && Number(song.songId) === targetId)
+    if (matchedSong) {
+      await playAgentSong(matchedSong)
+      return
+    }
+
+    const keyword = extractCitationKeyword(citation.title)
+    await router.push({
+      path: '/library',
+      query: keyword ? { query: keyword } : undefined,
+    })
+    ElMessage.info(keyword ? `已跳转曲库并搜索: ${keyword}` : '已跳转曲库')
+    return
+  }
+
+  ElMessage.info('当前引用暂不支持跳转')
+}
 </script>
 
 <template>
   <div class="spotify-chat-page">
     <div class="spotify-chat-header">
       <span class="spotify-chat-subtitle">Ciallo～(∠・ω< )⌒★</span>
+      <div class="spotify-health-row">
+        <button class="spotify-health-refresh" :disabled="healthLoading" @click="refreshChatHealth">
+          <Icon icon="mdi:refresh" :class="{ 'spotify-rotating': healthLoading }" />
+          <span>{{ healthLoading ? '检查中' : '健康检查' }}</span>
+        </button>
+        <button class="spotify-health-toggle" @click="healthExpanded = !healthExpanded">
+          <Icon :icon="healthExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'" />
+          <span>{{ healthExpanded ? '收起详情' : '展开详情' }}</span>
+        </button>
+        <span class="spotify-health-chip" :class="chatHealth?.ragEnabled ? 'spotify-health-ok' : 'spotify-health-bad'">
+          RAG {{ chatHealth?.ragEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <span class="spotify-health-chip">模式 {{ chatHealth?.ragMode || '-' }}</span>
+        <span
+          class="spotify-health-chip"
+          :class="chatHealth?.providers?.deepseekConfigured ? 'spotify-health-ok' : 'spotify-health-bad'"
+        >
+          DeepSeek {{ chatHealth?.providers?.deepseekConfigured ? 'OK' : 'MISSING' }}
+        </span>
+        <span
+          class="spotify-health-chip"
+          :class="chatHealth?.providers?.ttsConfigured ? 'spotify-health-ok' : 'spotify-health-bad'"
+        >
+          TTS {{ chatHealth?.providers?.ttsConfigured ? 'OK' : 'MISSING' }}
+        </span>
+        <span class="spotify-health-chip">
+          引用 {{ chatHealth?.ragLastRetrieval?.citationCount ?? 0 }}
+        </span>
+      </div>
+      <div v-if="healthExpanded && chatHealth?.ragLastRetrieval" class="spotify-health-detail">
+        <span>策略: {{ chatHealth.ragLastRetrieval.strategy }}</span>
+        <span>查询: {{ chatHealth.ragLastRetrieval.queryCount }}</span>
+        <span>候选: {{ chatHealth.ragLastRetrieval.candidateCount }}</span>
+        <span>命中: {{ chatHealth.ragLastRetrieval.citationCount }}</span>
+        <span>更新时间: {{ new Date(chatHealth.ragLastRetrieval.updatedAtEpochMs).toLocaleString() }}</span>
+      </div>
+      <div v-if="streamState !== 'idle'" class="spotify-stream-status" :class="`spotify-stream-status-${streamState}`">
+        <span>{{ streamStateTextMap[streamState] || streamState }}</span>
+        <span v-if="streamFirstDeltaMs != null" class="spotify-stream-metric">首字 {{ streamFirstDeltaMs }}ms</span>
+        <span v-if="streamTotalMs != null" class="spotify-stream-metric">总耗时 {{ streamTotalMs }}ms</span>
+      </div>
+      <div v-if="healthError" class="spotify-health-error">{{ healthError }}</div>
     </div>
 
     <div ref="scrollbarRef" class="spotify-chat-messages">
       <div
         v-for="(msg, index) in messages"
         :key="index"
+        v-show="msg.role === 'user' || !msg.pending"
         class="spotify-message"
         :class="msg.role === 'user' ? 'spotify-message-user' : 'spotify-message-assistant'"
       >
@@ -628,6 +748,22 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
                 >
                   {{ savingPlaylistKeys[`${index}-${pIndex}`] ? '保存中...' : '一键保存' }}
                 </button>
+              </div>
+            </div>
+
+            <div v-if="msg.agentData.citations?.length" class="spotify-citation-section">
+              <div class="spotify-citation-title">参考资料</div>
+              <div class="spotify-citation-grid">
+                <div
+                  v-for="(citation, cIndex) in msg.agentData.citations"
+                  :key="`${index}-citation-${cIndex}`"
+                  class="spotify-citation-card"
+                  @click="handleCitationClick(citation, msg.agentData)"
+                >
+                  <span class="spotify-citation-type">{{ citation.sourceType }}</span>
+                  <span class="spotify-citation-name">{{ citation.title }}</span>
+                  <span class="spotify-citation-snippet">{{ citation.snippet }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -756,6 +892,88 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
   color: var(--text-subdued, #b3b3b3);
 }
 
+.spotify-health-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.spotify-health-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.spotify-health-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.spotify-health-detail {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-health-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-subdued, #b3b3b3);
+}
+
+.spotify-health-ok {
+  border-color: rgba(29, 185, 84, 0.5);
+  color: #1ed760;
+}
+
+.spotify-health-bad {
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+}
+
+.spotify-health-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #ef4444;
+}
+
+.spotify-rotating {
+  animation: spotify-rotate 1s linear infinite;
+}
+
+@keyframes spotify-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .spotify-stream-status {
   display: inline-flex;
   align-items: center;
@@ -807,6 +1025,10 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
   gap: 8px;
   flex: 1;
   max-width: 70%;
+}
+
+.spotify-message-assistant .spotify-message-content {
+  max-width: min(920px, 88%);
 }
 
 @keyframes spotify-fade-in {
@@ -882,8 +1104,62 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
 .spotify-songs-grid,
 .spotify-playlist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px;
+}
+
+.spotify-citation-section {
+  margin-top: 10px;
+}
+
+.spotify-citation-title {
+  font-size: 12px;
+  color: var(--text-subdued, #b3b3b3);
+  margin-bottom: 8px;
+}
+
+.spotify-citation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.spotify-citation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.spotify-citation-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(29, 185, 84, 0.5);
+}
+
+.spotify-citation-type {
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 185, 84, 0.45);
+  color: #1ed760;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.spotify-citation-name {
+  font-size: 13px;
+  color: var(--text-base, #fff);
+}
+
+.spotify-citation-snippet {
+  font-size: 12px;
+  color: var(--text-subdued, #b3b3b3);
+  line-height: 1.4;
 }
 
 .spotify-song-card,
@@ -895,6 +1171,11 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
   border-radius: 10px;
   padding: 8px;
   background: rgba(255, 255, 255, 0.04);
+}
+
+.spotify-playlist-card {
+  align-items: flex-start;
+  min-height: 92px;
 }
 
 .spotify-song-card {
@@ -948,6 +1229,8 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 12px;
+  min-width: 84px;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -1229,7 +1512,16 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
   .spotify-message-bubble {
     max-width: 85%;
   }
-  
+
+  .spotify-message-assistant .spotify-message-content {
+    max-width: 100%;
+  }
+
+  .spotify-songs-grid,
+  .spotify-playlist-grid {
+    grid-template-columns: 1fr;
+  }
+
   .spotify-chat-input {
     padding: 12px;
     gap: 8px;

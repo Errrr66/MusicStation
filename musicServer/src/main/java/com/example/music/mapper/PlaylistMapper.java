@@ -47,4 +47,8 @@ public interface PlaylistMapper extends BaseMapper<Playlist> {
             @Param("playlistIds") List<Long> playlistIds,
             @Param("title") String title,
             @Param("style") String style);
+
+    // Agent RAG: 按关键词搜索歌单
+    List<PlaylistVO> searchPlaylistsByKeyword(@Param("keyword") String keyword,
+                                              @Param("limit") int limit);
 }

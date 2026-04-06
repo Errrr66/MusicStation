@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { wrapperEnv } from './build/getEnv'
 import { createProxy } from './build/proxy'
 import { createVitePlugins } from './build/plugins'
+import { createManualChunks } from './build/manualChunks'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -32,20 +33,8 @@ export default defineConfig(({ mode }) => {
           chunkFileNames: 'static/js/[name]-[hash].js',
           entryFileNames: 'static/js/[name]-[hash].js',
           assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
-          // 静态资源分拆打包
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.toString().indexOf('.pnpm/') !== -1) {
-                return id.toString().split('.pnpm/')[1].split('/')[0].toString()
-              } else if (id.toString().indexOf('node_modules/') !== -1) {
-                return id
-                  .toString()
-                  .split('node_modules/')[1]
-                  .split('/')[0]
-                  .toString()
-              }
-            }
-          },
+          // Route-aware chunk strategy to reduce initial payload and large vendor spikes.
+          manualChunks: createManualChunks,
         },
       },
     },

@@ -29,6 +29,11 @@ public class SongVO implements Serializable {
     private String artistName;
 
     /**
+     * 歌手 id
+     */
+    private Long artistId;
+
+    /**
      * 专辑
      */
     private String album;

@@ -8,8 +8,6 @@ import { AudioStore } from '@/stores/modules/audio'
 import { MenuStore } from '@/stores/modules/menu'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import default_album from '@/assets/default_album.jpg'
-// @ts-ignore
-import * as OpenCC from 'opencc-js'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,10 +38,27 @@ const localSongMatch = ref<Song | null>(null)
 const isCheckingLocal = ref(false)
 const audioStore = AudioStore()
 const { loadTrack, play } = useAudioPlayer()
+type TextConverter = (value: string) => string
+const openCcConverter = ref<TextConverter>((value: string) => value)
+const openCcLoaded = ref(false)
 
-const converter = OpenCC.Converter({ from: 'hk', to: 'cn' })
+const ensureOpenCcConverter = async () => {
+  if (openCcLoaded.value) {
+    return
+  }
+  try {
+    const OpenCC = await import('opencc-js')
+    openCcConverter.value = OpenCC.Converter({ from: 'hk', to: 'cn' })
+  } catch (error) {
+    console.warn('opencc-js load failed, fallback to raw text', error)
+    openCcConverter.value = (value: string) => value
+  } finally {
+    openCcLoaded.value = true
+  }
+}
 
 const handleRecognitionSuccess = async (result: any) => {
+  await ensureOpenCcConverter()
   recognizedTrack.value = result.track
   showRecognizerDropdown.value = true
   localSongMatch.value = null
@@ -53,15 +68,15 @@ const handleRecognitionSuccess = async (result: any) => {
   const originalArtist = result.track.subtitle
 
   // 转换为简体中文
-  const simplifiedTitle = converter(originalTitle)
-  const simplifiedArtist = converter(originalArtist)
+  const simplifiedTitle = openCcConverter.value(originalTitle)
+  const simplifiedArtist = openCcConverter.value(originalArtist)
 
   // 提取核心标题（去除括号内容），用于匹配不同版本（如 feat. 等）
   const cleanTitle = (str: string) => {
     return str.replace(/\s*[\(\[（].*?[\)\]）]/g, '').trim()
   }
   const coreTitle = cleanTitle(originalTitle)
-  const simplifiedCoreTitle = converter(coreTitle)
+  const simplifiedCoreTitle = openCcConverter.value(coreTitle)
 
   try {
     // 1. 优先使用简体中文搜索本地曲库

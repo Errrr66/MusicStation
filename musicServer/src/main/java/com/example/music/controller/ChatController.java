@@ -4,13 +4,19 @@ import com.example.music.model.dto.ChatRequestDTO;
 import com.example.music.model.dto.AgentChatRequestDTO;
 import com.example.music.model.dto.AgentPlaylistSaveDTO;
 import com.example.music.model.vo.AgentChatResponseVO;
+import com.example.music.model.vo.ChatHealthVO;
 import com.example.music.model.vo.AgentPlaylistSaveVO;
 import com.example.music.result.Result;
+import com.example.music.service.AgentRagService;
 import com.example.music.service.DeepSeekService;
 import com.example.music.service.MusicAgentService;
 import com.example.music.service.SpeechService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,24 +29,76 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
 
-    private static final ExecutorService STREAM_EXECUTOR = Executors.newCachedThreadPool();
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
+    private static final ExecutorService STREAM_EXECUTOR = Executors.newFixedThreadPool(8, new ThreadFactory() {
+        private int idx = 0;
+
+        @Override
+        public synchronized Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "chat-agent-sse-" + (++idx));
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
 
     private final DeepSeekService deepSeekService;
     private final SpeechService speechService;
     private final MusicAgentService musicAgentService;
+    private final AgentRagService agentRagService;
+
+    @Value("${agent.rag.enabled:true}")
+    private boolean ragEnabled;
+
+    @Value("${agent.rag.mode:hybrid}")
+    private String ragMode;
+
+    @Value("${deepseek.api-key:}")
+    private String deepseekApiKey;
+
+    @Value("${tts.api-url:}")
+    private String ttsApiUrl;
 
     @Autowired
     public ChatController(DeepSeekService deepSeekService,
                           SpeechService speechService,
-                          MusicAgentService musicAgentService) {
+                          MusicAgentService musicAgentService,
+                          AgentRagService agentRagService) {
         this.deepSeekService = deepSeekService;
         this.speechService = speechService;
         this.musicAgentService = musicAgentService;
+        this.agentRagService = agentRagService;
+    }
+
+    @GetMapping("/health")
+    public Result<ChatHealthVO> health() {
+        AgentRagService.RetrievalHealth retrievalHealth = agentRagService.getLastRetrievalHealth();
+
+        ChatHealthVO data = ChatHealthVO.builder()
+                .ragEnabled(ragEnabled)
+                .ragMode(isBlank(ragMode) ? "hybrid" : ragMode)
+                .ragLastRetrieval(ChatHealthVO.RagRetrievalVO.builder()
+                        .strategy(retrievalHealth.strategy())
+                        .mode(retrievalHealth.mode())
+                        .queryCount(retrievalHealth.queryCount())
+                        .candidateCount(retrievalHealth.candidateCount())
+                        .citationCount(retrievalHealth.citationCount())
+                        .enabled(retrievalHealth.enabled())
+                        .updatedAtEpochMs(retrievalHealth.updatedAtEpochMs())
+                        .build())
+                .providers(ChatHealthVO.ProviderStatusVO.builder()
+                        .deepseekConfigured(hasValue(deepseekApiKey))
+                        .ttsConfigured(hasValue(ttsApiUrl))
+                        .build())
+                .serverTime(java.time.LocalDateTime.now().toString())
+                .build();
+
+        return Result.success("Success", data);
     }
 
     @PostMapping("/ask")
@@ -52,7 +110,7 @@ public class ChatController {
 
         // 调用 AI (Single Request Mode)
         String fullResponse = deepSeekService.chat(chatRequestDTO);
-        System.out.println("DeepSeek Response: " + fullResponse);
+        log.debug("DeepSeek Response: {}", fullResponse);
 
         String chineseResponse = fullResponse;
         String japaneseResponse = "";
@@ -67,7 +125,7 @@ public class ChatController {
             // 解析失败（可能 AI 没有返回 JSON），则直接作为中文文本
             chineseResponse = fullResponse;
             japaneseResponse = "";
-            System.err.println("JSON Parsing failed: " + e.getMessage());
+            log.warn("JSON parsing failed: {}", e.getMessage());
         }
 
         // 兜底清洗，确保没有动作描写残留
@@ -116,8 +174,6 @@ public class ChatController {
         }
 
         emitter.onTimeout(emitter::complete);
-        emitter.onCompletion(() -> {
-        });
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -158,5 +214,13 @@ public class ChatController {
             chunks.add(text.substring(i, end));
         }
         return chunks;
+    }
+
+    private boolean hasValue(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

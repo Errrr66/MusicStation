@@ -68,6 +68,13 @@ agent:
     cache-ttl-seconds: 900
     circuit-breaker-fail-threshold: 3
     circuit-breaker-open-seconds: 120
+  rag:
+    enabled: ${AGENT_RAG_ENABLED:true}
+    top-k: ${AGENT_RAG_TOP_K:4}
+    max-snippet-length: ${AGENT_RAG_MAX_SNIPPET_LENGTH:120}
+    mode: ${AGENT_RAG_MODE:hybrid}
+    keyword-weight: ${AGENT_RAG_KEYWORD_WEIGHT:0.45}
+    vector-weight: ${AGENT_RAG_VECTOR_WEIGHT:0.55}
 
 # 配置 mybatis-plus
 mybatis-plus:

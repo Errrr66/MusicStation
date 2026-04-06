@@ -17,7 +17,7 @@ const total = ref(0)
 const isSidebarOpen = ref(true)
 
 const state = reactive({
-  size: 'default',
+  size: 'default' as const,
   disabled: false,
   background: false,
   layout: 'total, sizes, prev, pager, next, jumper',

@@ -115,6 +115,7 @@
     <select id="searchSongsByKeyword" resultType="com.example.music.model.vo.SongVO">
         SELECT s.id AS songId,
                s.name AS songName,
+               s.artist_id AS artistId,
                s.album,
                s.duration,
                s.cover_url AS coverUrl,
@@ -126,6 +127,8 @@
         WHERE s.name LIKE CONCAT('%', #{keyword}, '%')
            OR a.name LIKE CONCAT('%', #{keyword}, '%')
            OR s.album LIKE CONCAT('%', #{keyword}, '%')
+           OR s.style LIKE CONCAT('%', #{keyword}, '%')
+           OR s.lyric LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY s.release_time DESC
         LIMIT #{limit}
     </select>
@@ -134,6 +137,7 @@
     <select id="searchSongsByStyleKeyword" resultType="com.example.music.model.vo.SongVO">
         SELECT DISTINCT s.id AS songId,
                         s.name AS songName,
+                        s.artist_id AS artistId,
                         s.album,
                         s.duration,
                         s.cover_url AS coverUrl,
