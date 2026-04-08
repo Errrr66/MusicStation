@@ -162,8 +162,14 @@ Authorization: <token>
   "cases": [
     {
       "query": "播放 Yellow",
+      "intent": "SEARCH_MUSIC",
       "relevant": [
-        { "sourceType": "song", "sourceId": "123" }
+        {
+          "sourceType": "song",
+          "sourceId": "123",
+          "titleKeyword": "yellow",
+          "artistKeyword": "coldplay"
+        }
       ]
     }
   ]
@@ -175,6 +181,9 @@ Authorization: <token>
 - `recallAtK`
 - `mrr`
 - `hitRate`
+- `softRecallAtK`
+- `softMrr`
+- `softHitRate`
 - `details`
 
 ## 11) 验证命令

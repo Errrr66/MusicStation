@@ -5,6 +5,9 @@ import com.example.music.model.dto.*;
 import com.example.music.model.entity.Artist;
 import com.example.music.model.entity.Playlist;
 import com.example.music.model.vo.ArtistNameVO;
+import com.example.music.model.vo.ChatHealthVO;
+import com.example.music.model.vo.RagDebugRetrieveVO;
+import com.example.music.model.vo.RagEvalVO;
 import com.example.music.model.vo.SongAdminVO;
 import com.example.music.model.vo.UserManagementVO;
 import com.example.music.result.PageResult;
@@ -17,6 +20,7 @@ import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -48,6 +53,24 @@ public class AdminController {
     private IPlaylistService playlistService;
     @Autowired
     private MinioService minioService;
+    @Autowired
+    private AgentRagService agentRagService;
+    @Autowired
+    private ArtistAliasResolver artistAliasResolver;
+    @Autowired
+    private SemanticEmbeddingService semanticEmbeddingService;
+
+    @Value("${agent.rag.enabled:true}")
+    private boolean ragEnabled;
+
+    @Value("${agent.rag.mode:hybrid}")
+    private String ragMode;
+
+    @Value("${deepseek.api-key:}")
+    private String deepseekApiKey;
+
+    @Value("${tts.api-url:}")
+    private String ttsApiUrl;
 
     /**
      * 注册管理员
@@ -490,6 +513,83 @@ public class AdminController {
     @DeleteMapping("/deletePlaylists")
     public Result deletePlaylists(@RequestBody List<Long> playlistIds) {
         return playlistService.deletePlaylists(playlistIds);
+    }
+
+    /**********************************************************************************************/
+
+    @GetMapping("/rag/health")
+    public Result<ChatHealthVO> ragHealth() {
+        AgentRagService.RetrievalHealth retrievalHealth = agentRagService.getLastRetrievalHealth();
+        ChatHealthVO data = ChatHealthVO.builder()
+                .ragEnabled(ragEnabled)
+                .ragMode(isBlank(ragMode) ? "hybrid" : ragMode)
+                .ragLastRetrieval(ChatHealthVO.RagRetrievalVO.builder()
+                        .strategy(retrievalHealth.strategy())
+                        .mode(retrievalHealth.mode())
+                        .queryCount(retrievalHealth.queryCount())
+                        .candidateCount(retrievalHealth.candidateCount())
+                        .citationCount(retrievalHealth.citationCount())
+                        .enabled(retrievalHealth.enabled())
+                        .updatedAtEpochMs(retrievalHealth.updatedAtEpochMs())
+                        .build())
+                .providers(ChatHealthVO.ProviderStatusVO.builder()
+                        .deepseekConfigured(hasValue(deepseekApiKey))
+                        .ttsConfigured(hasValue(ttsApiUrl))
+                        .semanticConfigured(semanticEmbeddingService.isConfigured())
+                        .build())
+                .serverTime(java.time.LocalDateTime.now().toString())
+                .build();
+        return Result.success("Success", data);
+    }
+
+    @PostMapping("/rag/artist-alias/refresh")
+    public Result<Map<String, Object>> refreshRagArtistAliasIndex() {
+        return Result.success("Success", artistAliasResolver.refreshAliasIndex());
+    }
+
+    @PostMapping("/rag/debug-retrieve")
+    public Result<RagDebugRetrieveVO> debugRagRetrieve(@RequestBody RagDebugRetrieveRequestDTO requestDTO) {
+        String query = requestDTO == null || isBlank(requestDTO.getQuery()) ? "" : requestDTO.getQuery().trim();
+        if (query.isEmpty()) {
+            return Result.error("query 不能为空");
+        }
+        String intent = requestDTO == null || isBlank(requestDTO.getIntent()) ? "CHAT" : requestDTO.getIntent().trim().toUpperCase();
+        int topK = Math.max(1, Math.min(requestDTO == null || requestDTO.getTopK() == null ? 8 : requestDTO.getTopK(), 20));
+        boolean enableRag = requestDTO == null || requestDTO.getEnableRag() == null || requestDTO.getEnableRag();
+
+        AgentRagService.RagContext context = agentRagService.retrieve(query, intent, null, enableRag, topK);
+        AgentRagService.RetrievalHealth health = agentRagService.getLastRetrievalHealth();
+
+        RagDebugRetrieveVO data = RagDebugRetrieveVO.builder()
+                .query(query)
+                .intent(intent)
+                .ragEnabled(enableRag)
+                .promptContext(context.promptContext())
+                .citations(context.citations())
+                .retrievalHealth(RagDebugRetrieveVO.AgentRagServiceHealthVO.builder()
+                        .strategy(health.strategy())
+                        .mode(health.mode())
+                        .queryCount(health.queryCount())
+                        .candidateCount(health.candidateCount())
+                        .citationCount(health.citationCount())
+                        .enabled(health.enabled())
+                        .updatedAtEpochMs(health.updatedAtEpochMs())
+                        .build())
+                .build();
+        return Result.success("Success", data);
+    }
+
+    @PostMapping("/rag/evaluate")
+    public Result<RagEvalVO> evaluateRag(@RequestBody RagEvalRequestDTO requestDTO) {
+        return Result.success("Success", agentRagService.evaluate(requestDTO));
+    }
+
+    private boolean hasValue(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
 }

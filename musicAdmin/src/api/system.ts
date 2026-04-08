@@ -421,3 +421,134 @@ export const deleteBanners = (ids: Array<number>) => {
     data: ids
   });
 };
+
+export type AdminRagHealth = {
+  ragEnabled: boolean;
+  ragMode: string;
+  ragLastRetrieval: {
+    strategy: string;
+    mode: string;
+    queryCount: number;
+    candidateCount: number;
+    citationCount: number;
+    enabled: boolean;
+    updatedAtEpochMs: number;
+  };
+  providers: {
+    deepseekConfigured: boolean;
+    ttsConfigured: boolean;
+    semanticConfigured: boolean;
+  };
+  serverTime: string;
+};
+
+export type AdminRagDebugRetrieveResult = {
+  query: string;
+  intent: string;
+  ragEnabled: boolean;
+  promptContext: string;
+  retrievalHealth: {
+    strategy: string;
+    mode: string;
+    queryCount: number;
+    candidateCount: number;
+    citationCount: number;
+    enabled: boolean;
+    updatedAtEpochMs: number;
+  };
+  citations: Array<{
+    sourceType: string;
+    sourceId: string;
+    title: string;
+    snippet: string;
+    reason: string;
+  }>;
+};
+
+export type AdminRagEvalResult = {
+  caseCount: number;
+  topK: number;
+  recallAtK: number;
+  mrr: number;
+  hitRate: number;
+  softRecallAtK: number;
+  softMrr: number;
+  softHitRate: number;
+  details: Array<{
+    query: string;
+    intent: string;
+    hit: boolean;
+    softHit: boolean;
+    recall: number;
+    softRecall: number;
+    reciprocalRank: number;
+    softReciprocalRank: number;
+    retrieved: Array<{
+      sourceType: string;
+      sourceId: string;
+      title: string;
+      snippet: string;
+      reason: string;
+    }>;
+  }>;
+};
+
+export const getAdminRagHealth = () => {
+  const userData = getToken();
+  return http.request<{ code: number; message: string; data: AdminRagHealth }>("get", "/admin/rag/health", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: userData.accessToken
+    }
+  });
+};
+
+export const refreshAdminRagArtistAlias = () => {
+  const userData = getToken();
+  return http.request<{ code: number; message: string; data: Record<string, any> }>("post", "/admin/rag/artist-alias/refresh", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: userData.accessToken
+    }
+  });
+};
+
+export const debugAdminRagRetrieve = (data: {
+  query: string;
+  intent?: string;
+  topK?: number;
+  enableRag?: boolean;
+}) => {
+  const userData = getToken();
+  return http.request<{ code: number; message: string; data: AdminRagDebugRetrieveResult }>("post", "/admin/rag/debug-retrieve", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: userData.accessToken
+    },
+    data
+  });
+};
+
+export const evaluateAdminRag = (data: {
+  topK?: number;
+  cases: Array<{
+    query: string;
+    intent?: string;
+    relevant: Array<{
+      sourceType: string;
+      sourceId: string;
+      titleKeyword?: string;
+      artistKeyword?: string;
+    }>;
+  }>;
+}) => {
+  const userData = getToken();
+  return http.request<{ code: number; message: string; data: AdminRagEvalResult }>("post", "/admin/rag/evaluate", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: userData.accessToken
+    },
+    data
+  });
+};
+

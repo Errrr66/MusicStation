@@ -3,6 +3,7 @@ package com.example.music.service;
 import com.example.music.mapper.PlaylistMapper;
 import com.example.music.mapper.SongMapper;
 import com.example.music.mapper.StyleMapper;
+import com.example.music.mapper.ArtistMapper;
 import com.example.music.model.dto.AgentChatRequestDTO;
 import com.example.music.model.dto.RagEvalRequestDTO;
 import com.example.music.model.vo.AgentChatResponseVO;
@@ -31,6 +32,7 @@ public class AgentRagService {
     private final SongMapper songMapper;
     private final PlaylistMapper playlistMapper;
     private final StyleMapper styleMapper;
+    private final ArtistMapper artistMapper;
     private final SemanticEmbeddingService semanticEmbeddingService;
 
     @Value("${agent.rag.enabled:true}")
@@ -68,10 +70,12 @@ public class AgentRagService {
     public AgentRagService(SongMapper songMapper,
                            PlaylistMapper playlistMapper,
                            StyleMapper styleMapper,
+                           ArtistMapper artistMapper,
                            SemanticEmbeddingService semanticEmbeddingService) {
         this.songMapper = songMapper;
         this.playlistMapper = playlistMapper;
         this.styleMapper = styleMapper;
+        this.artistMapper = artistMapper;
         this.semanticEmbeddingService = semanticEmbeddingService;
     }
 
@@ -94,12 +98,12 @@ public class AgentRagService {
         }
 
         int fetchLimit = Math.max(2, Math.min(Math.max(limit, ragTopK), 10));
-        RetrievalPack retrievalPack = collectCandidates(userQueries, fetchLimit, "匹配用户问题关键词");
+        RetrievalPack retrievalPack = collectCandidates(userQueries, fetchLimit, "匹配用户问题关键词", intent);
         List<Candidate> candidates = retrievalPack.candidates();
         Set<String> dedupe = retrievalPack.dedupeKeys();
 
         if (candidates.isEmpty() && shouldFallbackToNowPlaying(userInput, intent) && !nowPlayingQueries.isEmpty()) {
-            RetrievalPack fallbackPack = collectCandidates(nowPlayingQueries, fetchLimit, "回退到当前播放上下文");
+            RetrievalPack fallbackPack = collectCandidates(nowPlayingQueries, fetchLimit, "回退到当前播放上下文", intent);
             candidates.addAll(fallbackPack.candidates());
             dedupe.addAll(fallbackPack.dedupeKeys());
         }
@@ -155,6 +159,9 @@ public class AgentRagService {
                     .recallAtK(0D)
                     .mrr(0D)
                     .hitRate(0D)
+                    .softRecallAtK(0D)
+                    .softMrr(0D)
+                    .softHitRate(0D)
                     .details(List.of())
                     .build();
         }
@@ -162,26 +169,42 @@ public class AgentRagService {
         double recallSum = 0D;
         double rrSum = 0D;
         int hitCount = 0;
+        double softRecallSum = 0D;
+        double softRrSum = 0D;
+        int softHitCount = 0;
         List<RagEvalVO.CaseResultVO> details = new ArrayList<>();
 
         for (RagEvalRequestDTO.CaseDTO testCase : cases) {
             String query = testCase == null ? "" : safe(testCase.getQuery());
-            List<AgentChatResponseVO.CitationVO> retrieved = retrieve(query, "CHAT", null, true, topK).citations();
+            String intent = normalizeEvalIntent(testCase == null ? null : testCase.getIntent());
+            List<AgentChatResponseVO.CitationVO> retrieved = retrieve(query, intent, null, true, topK).citations();
             Set<String> relevantSet = new LinkedHashSet<>();
+            List<RagEvalRequestDTO.RelevantDocDTO> relevantDocs = new ArrayList<>();
             if (testCase != null && testCase.getRelevant() != null) {
                 for (RagEvalRequestDTO.RelevantDocDTO relevant : testCase.getRelevant()) {
                     if (relevant == null) {
                         continue;
                     }
                     relevantSet.add(buildDocKey(relevant.getSourceType(), relevant.getSourceId()));
+                    relevantDocs.add(relevant);
                 }
             }
 
             int matched = 0;
             int firstRank = -1;
+            Set<Integer> strictMatchedRelevantIndex = new LinkedHashSet<>();
             for (int i = 0; i < retrieved.size(); i++) {
                 AgentChatResponseVO.CitationVO item = retrieved.get(i);
-                if (relevantSet.contains(buildDocKey(item.getSourceType(), item.getSourceId()))) {
+                String normalizedText = (safe(item.getTitle()) + " " + safe(item.getSnippet())).toLowerCase(Locale.ROOT);
+                for (int r = 0; r < relevantDocs.size(); r++) {
+                    if (strictMatchedRelevantIndex.contains(r)) {
+                        continue;
+                    }
+                    RagEvalRequestDTO.RelevantDocDTO relevant = relevantDocs.get(r);
+                    if (!strictDocMatch(item, normalizedText, relevant, intent)) {
+                        continue;
+                    }
+                    strictMatchedRelevantIndex.add(r);
                     matched++;
                     if (firstRank < 0) {
                         firstRank = i + 1;
@@ -189,21 +212,33 @@ public class AgentRagService {
                 }
             }
 
-            double recall = relevantSet.isEmpty() ? 0D : ((double) matched / relevantSet.size());
+            int denominator = relevantDocs.isEmpty() ? relevantSet.size() : relevantDocs.size();
+            double recall = denominator <= 0 ? 0D : ((double) matched / denominator);
             double rr = firstRank > 0 ? (1D / firstRank) : 0D;
             boolean hit = matched > 0;
+
+            SoftEvalResult softEval = evaluateSoftMatch(retrieved, relevantDocs, intent);
 
             recallSum += recall;
             rrSum += rr;
             if (hit) {
                 hitCount++;
             }
+            softRecallSum += softEval.recall();
+            softRrSum += softEval.reciprocalRank();
+            if (softEval.hit()) {
+                softHitCount++;
+            }
 
             details.add(RagEvalVO.CaseResultVO.builder()
                     .query(query)
+                    .intent(intent)
                     .hit(hit)
+                    .softHit(softEval.hit())
                     .recall(round4(recall))
+                    .softRecall(round4(softEval.recall()))
                     .reciprocalRank(round4(rr))
+                    .softReciprocalRank(round4(softEval.reciprocalRank()))
                     .retrieved(retrieved)
                     .build());
         }
@@ -215,8 +250,131 @@ public class AgentRagService {
                 .recallAtK(round4(recallSum / n))
                 .mrr(round4(rrSum / n))
                 .hitRate(round4((double) hitCount / n))
+                .softRecallAtK(round4(softRecallSum / n))
+                .softMrr(round4(softRrSum / n))
+                .softHitRate(round4((double) softHitCount / n))
                 .details(details)
                 .build();
+    }
+
+    private String normalizeEvalIntent(String intent) {
+        String value = safe(intent).toUpperCase(Locale.ROOT);
+        if (value.isEmpty()) {
+            return "CHAT";
+        }
+        return switch (value) {
+            case "SEARCH_MUSIC", "SEARCH_PLAYLIST", "RECOMMEND", "ANALYZE_NOW_PLAYING",
+                    "CREATE_PLAYLIST", "ORGANIZE_PLAYLIST", "PLAYER_CONTROL", "CHAT" -> value;
+            default -> "CHAT";
+        };
+    }
+
+    private SoftEvalResult evaluateSoftMatch(List<AgentChatResponseVO.CitationVO> retrieved,
+                                             List<RagEvalRequestDTO.RelevantDocDTO> relevantDocs,
+                                             String intent) {
+        if (relevantDocs == null || relevantDocs.isEmpty()) {
+            return new SoftEvalResult(false, 0D, 0D);
+        }
+
+        int matched = 0;
+        int firstRank = -1;
+        Set<Integer> matchedRelevantIndex = new LinkedHashSet<>();
+
+        for (int i = 0; i < retrieved.size(); i++) {
+            AgentChatResponseVO.CitationVO citation = retrieved.get(i);
+            String text = (safe(citation.getTitle()) + " " + safe(citation.getSnippet())).toLowerCase(Locale.ROOT);
+            for (int r = 0; r < relevantDocs.size(); r++) {
+                if (matchedRelevantIndex.contains(r)) {
+                    continue;
+                }
+                RagEvalRequestDTO.RelevantDocDTO relevant = relevantDocs.get(r);
+                if (!softDocMatch(citation, text, relevant, intent)) {
+                    continue;
+                }
+                matchedRelevantIndex.add(r);
+                matched++;
+                if (firstRank < 0) {
+                    firstRank = i + 1;
+                }
+            }
+        }
+
+        double recall = relevantDocs.isEmpty() ? 0D : (double) matched / relevantDocs.size();
+        double rr = firstRank > 0 ? 1D / firstRank : 0D;
+        return new SoftEvalResult(matched > 0, recall, rr);
+    }
+
+    private boolean softDocMatch(AgentChatResponseVO.CitationVO citation,
+                                 String normalizedCitationText,
+                                 RagEvalRequestDTO.RelevantDocDTO relevant,
+                                 String intent) {
+        if (!isBlank(relevant.getSourceType())
+                && !safe(relevant.getSourceType()).equalsIgnoreCase(safe(citation.getSourceType()))) {
+            return false;
+        }
+
+        String strictKey = buildDocKey(citation.getSourceType(), citation.getSourceId());
+        if (strictKey.equalsIgnoreCase(buildDocKey(relevant.getSourceType(), relevant.getSourceId()))) {
+            return true;
+        }
+
+        String titleKeyword = safe(relevant.getTitleKeyword()).toLowerCase(Locale.ROOT);
+        String artistKeyword = safe(relevant.getArtistKeyword()).toLowerCase(Locale.ROOT);
+
+        if (titleKeyword.isEmpty() && artistKeyword.isEmpty()) {
+            String normalizedIntent = safe(intent).toUpperCase(Locale.ROOT);
+            boolean allowLooseType = "RECOMMEND".equals(normalizedIntent)
+                    || "CREATE_PLAYLIST".equals(normalizedIntent);
+            return allowLooseType && safe(relevant.getSourceType()).equalsIgnoreCase(safe(citation.getSourceType()));
+        }
+        if (!titleKeyword.isEmpty() && !normalizedCitationText.contains(titleKeyword)) {
+            return false;
+        }
+        return artistKeyword.isEmpty() || normalizedCitationText.contains(artistKeyword);
+    }
+
+    private boolean strictDocMatch(AgentChatResponseVO.CitationVO citation,
+                                   String normalizedCitationText,
+                                   RagEvalRequestDTO.RelevantDocDTO relevant,
+                                   String intent) {
+        if (citation == null || relevant == null) {
+            return false;
+        }
+        if (!isBlank(relevant.getSourceType())
+                && !safe(relevant.getSourceType()).equalsIgnoreCase(safe(citation.getSourceType()))) {
+            return false;
+        }
+
+        String strictKey = buildDocKey(citation.getSourceType(), citation.getSourceId());
+        if (strictKey.equalsIgnoreCase(buildDocKey(relevant.getSourceType(), relevant.getSourceId()))) {
+            return true;
+        }
+
+        String titleKeyword = safe(relevant.getTitleKeyword()).toLowerCase(Locale.ROOT);
+        String artistKeyword = safe(relevant.getArtistKeyword()).toLowerCase(Locale.ROOT);
+        String normalizedIntent = safe(intent).toUpperCase(Locale.ROOT);
+
+        if (!titleKeyword.isEmpty()) {
+            if (!normalizedCitationText.contains(titleKeyword)) {
+                return false;
+            }
+            return artistKeyword.isEmpty() || normalizedCitationText.contains(artistKeyword);
+        }
+
+        if (!artistKeyword.isEmpty()) {
+            boolean allowArtistOnly = "SEARCH_MUSIC".equals(normalizedIntent)
+                    || "RECOMMEND".equals(normalizedIntent)
+                    || "CREATE_PLAYLIST".equals(normalizedIntent);
+            return allowArtistOnly && normalizedCitationText.contains(artistKeyword);
+        }
+
+        // For generic relevance docs (no keyword hints), allow strict type-only match in music intents.
+        return "RECOMMEND".equals(normalizedIntent)
+                || "CREATE_PLAYLIST".equals(normalizedIntent)
+                || "SEARCH_PLAYLIST".equals(normalizedIntent);
+    }
+
+    private record SoftEvalResult(boolean hit, double recall, double reciprocalRank) {
     }
 
     public RetrievalHealth getLastRetrievalHealth() {
@@ -329,7 +487,11 @@ public class AgentRagService {
             queries.add(normalized);
             String compact = normalized
                     .replaceAll("[，,。！？!?]", " ")
-                    .replaceAll("(?i)(请|帮我|推荐|介绍|分析|解析|说说|告诉我|关于|播放|点播|来一首|我要听|帮我放)", " ")
+                    .replaceAll("(?i)(请|帮我|推荐|介绍|分析|解析|说说|告诉我|关于|播放|点播|来一首|我要听|我想听|帮我放|给我|找|搜索|检索|有没有|有吗|来点|一些|一份)", " ")
+                    // Keep "音乐" to avoid damaging style queries like "轻音乐歌单"
+                    .replaceAll("(?i)(歌单|歌曲|这首歌|这歌)", " ")
+                    .replaceAll("(?i)\\b(the|song|playlist|music)\\b", " ")
+                    .replaceAll("的", " ")
                     .replaceAll("\\s+", " ")
                     .trim();
             if (!isBlank(compact) && compact.length() >= 2) {
@@ -338,7 +500,7 @@ public class AgentRagService {
 
             // Extract song keyword from action-style prompts like "播放 Yellow 这首歌".
             String playKeyword = normalized
-                    .replaceFirst("^(?i)(播放|点播|来一首|我要听|帮我放)\\s*", "")
+                    .replaceFirst("^(?i)(播放|点播|来一首|我要听|我想听|帮我放)\\s*", "")
                     .replaceAll("(?i)(这首歌|这歌|歌曲)$", "")
                     .trim();
             if (!isBlank(playKeyword) && playKeyword.length() >= 2) {
@@ -351,9 +513,19 @@ public class AgentRagService {
                 queries.add(quoted);
             }
 
+            String singerKeyword = extractSingerKeywordFromQuery(normalized);
+            if (!isBlank(singerKeyword)) {
+                queries.add(singerKeyword);
+            }
+
+            String styleKeyword = extractStyleKeywordFromQuery(normalized);
+            if (!isBlank(styleKeyword)) {
+                queries.add(styleKeyword);
+            }
+
             queries.addAll(buildSemanticExpansionQueries(normalized));
         }
-        return queries.stream().limit(4).toList();
+        return queries.stream().limit(6).toList();
     }
 
     private List<String> buildSemanticExpansionQueries(String userInput) {
@@ -429,6 +601,12 @@ public class AgentRagService {
         if (containsAny(q, "学习", "专注", "安静") && containsAny(content, "轻音乐", "纯音乐", "钢琴", "lofi")) {
             score += 0.1D;
         }
+        if ("匹配风格关键词".equals(item.reason()) && containsAny(q, "学习", "专注", "安静", "助眠", "放松", "运动")) {
+            score += 0.12D;
+        }
+        if ("匹配歌手关键词".equals(item.reason())) {
+            score += 0.1D;
+        }
         return Math.min(1D, score);
     }
 
@@ -460,12 +638,14 @@ public class AgentRagService {
         return queries.stream().limit(2).toList();
     }
 
-    private RetrievalPack collectCandidates(List<String> queries, int fetchLimit, String reason) {
+    private RetrievalPack collectCandidates(List<String> queries, int fetchLimit, String reason, String intent) {
         List<Candidate> candidates = new ArrayList<>();
         Set<String> dedupe = new LinkedHashSet<>();
+        String normalizedIntent = safe(intent).toUpperCase(Locale.ROOT);
+        boolean playlistOnlyIntent = "SEARCH_PLAYLIST".equals(normalizedIntent);
         for (String query : queries) {
             String styleConstraint = resolveStyleConstraintFromDb(query);
-            if (!isBlank(styleConstraint)) {
+            if (!playlistOnlyIntent && !isBlank(styleConstraint)) {
                 List<SongVO> styleSongs = songMapper.searchSongsByStyleKeyword(styleConstraint, fetchLimit);
                 if (styleSongs != null) {
                     for (int i = 0; i < styleSongs.size(); i++) {
@@ -490,53 +670,166 @@ public class AgentRagService {
                 }
             }
 
-            List<SongVO> songs = songMapper.searchSongsByKeyword(query, fetchLimit);
-            if (songs != null) {
-                for (int i = 0; i < songs.size(); i++) {
-                    SongVO song = songs.get(i);
-                    String key = "song:" + (song.getSongId() == null ? "" : song.getSongId());
-                    if (!dedupe.add(key)) {
-                        continue;
-                    }
-                    String title = "歌曲《" + safe(song.getSongName()) + "》- " + safe(song.getArtistName());
-                    String snippet = shorten("专辑: " + safe(song.getAlbum()) + "，来源: 本地曲库", maxSnippetLength);
-                    candidates.add(new Candidate(
-                            "song",
-                            song.getSongId() == null ? "" : String.valueOf(song.getSongId()),
-                            title,
-                            snippet,
-                            keywordMatchScore(query, title + " " + snippet, i),
-                            0D,
-                            0D,
-                            reason
-                    ));
+            // Only SEARCH_PLAYLIST should prioritize playlist candidates.
+            if ("SEARCH_PLAYLIST".equals(normalizedIntent)) {
+                List<PlaylistVO> intentPlaylists = playlistMapper.searchPlaylistsByKeyword(query, Math.max(fetchLimit, ragTopK));
+                appendPlaylistCandidates(intentPlaylists, dedupe, candidates, query, "匹配歌单关键词");
+                if (!isBlank(styleConstraint)) {
+                    List<PlaylistVO> stylePlaylists = playlistMapper.searchPlaylistsByKeyword(styleConstraint, Math.max(fetchLimit, ragTopK));
+                    appendPlaylistCandidates(stylePlaylists, dedupe, candidates, styleConstraint, "匹配风格歌单关键词");
                 }
             }
 
-            List<PlaylistVO> playlists = playlistMapper.searchPlaylistsByKeyword(query, fetchLimit);
-            if (playlists != null) {
-                for (int i = 0; i < playlists.size(); i++) {
-                    PlaylistVO playlist = playlists.get(i);
-                    String key = "playlist:" + (playlist.getPlaylistId() == null ? "" : playlist.getPlaylistId());
-                    if (!dedupe.add(key)) {
-                        continue;
+            if (!playlistOnlyIntent) {
+                List<SongVO> songs = songMapper.searchSongsByKeyword(query, fetchLimit);
+                if (songs != null) {
+                    for (int i = 0; i < songs.size(); i++) {
+                        SongVO song = songs.get(i);
+                        String key = "song:" + (song.getSongId() == null ? "" : song.getSongId());
+                        if (!dedupe.add(key)) {
+                            continue;
+                        }
+                        String title = "歌曲《" + safe(song.getSongName()) + "》- " + safe(song.getArtistName());
+                        String snippet = shorten("专辑: " + safe(song.getAlbum()) + "，来源: 本地曲库", maxSnippetLength);
+                        candidates.add(new Candidate(
+                                "song",
+                                song.getSongId() == null ? "" : String.valueOf(song.getSongId()),
+                                title,
+                                snippet,
+                                keywordMatchScore(query, title + " " + snippet, i),
+                                0D,
+                                0D,
+                                reason
+                        ));
                     }
-                    String title = "歌单《" + safe(playlist.getTitle()) + "》";
-                    String snippet = shorten("来源: 本地歌单库", maxSnippetLength);
-                    candidates.add(new Candidate(
-                            "playlist",
-                            playlist.getPlaylistId() == null ? "" : String.valueOf(playlist.getPlaylistId()),
-                            title,
-                            snippet,
-                            keywordMatchScore(query, title + " " + snippet, i),
-                            0D,
-                            0D,
-                            reason
-                    ));
                 }
+
+                // Singer-aware expansion: resolve artist ids then pull songs strictly by artist id.
+                List<Long> artistIds = resolveArtistIdsByQuery(query, 8);
+                if (!artistIds.isEmpty()) {
+                    List<SongVO> artistSongs = songMapper.searchSongsByArtistIds(artistIds, Math.max(fetchLimit, ragTopK * 2));
+                    if (artistSongs != null) {
+                        for (int i = 0; i < artistSongs.size(); i++) {
+                            SongVO song = artistSongs.get(i);
+                            String key = "song:" + (song.getSongId() == null ? "" : song.getSongId());
+                            if (!dedupe.add(key)) {
+                                continue;
+                            }
+                            String title = "歌曲《" + safe(song.getSongName()) + "》- " + safe(song.getArtistName());
+                            String snippet = shorten("来源: 按歌手ID严格召回", maxSnippetLength);
+                            candidates.add(new Candidate(
+                                    "song",
+                                    song.getSongId() == null ? "" : String.valueOf(song.getSongId()),
+                                    title,
+                                    snippet,
+                                    keywordMatchScore(query, title + " " + snippet, i),
+                                    0D,
+                                    0D,
+                                    "匹配歌手关键词"
+                            ));
+                        }
+                    }
+                }
+            }
+
+            if ("SEARCH_PLAYLIST".equals(normalizedIntent)) {
+                List<PlaylistVO> playlists = playlistMapper.searchPlaylistsByKeyword(query, fetchLimit);
+                appendPlaylistCandidates(playlists, dedupe, candidates, query, reason);
             }
         }
         return new RetrievalPack(candidates, dedupe);
+    }
+
+    private void appendPlaylistCandidates(List<PlaylistVO> playlists,
+                                          Set<String> dedupe,
+                                          List<Candidate> candidates,
+                                          String query,
+                                          String reason) {
+        if (playlists == null || playlists.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < playlists.size(); i++) {
+            PlaylistVO playlist = playlists.get(i);
+            String key = "playlist:" + (playlist.getPlaylistId() == null ? "" : playlist.getPlaylistId());
+            if (!dedupe.add(key)) {
+                continue;
+            }
+            String title = "歌单《" + safe(playlist.getTitle()) + "》";
+            String snippet = shorten("来源: 本地歌单库", maxSnippetLength);
+            candidates.add(new Candidate(
+                    "playlist",
+                    playlist.getPlaylistId() == null ? "" : String.valueOf(playlist.getPlaylistId()),
+                    title,
+                    snippet,
+                    keywordMatchScore(query, title + " " + snippet, i),
+                    0D,
+                    0D,
+                    reason
+            ));
+        }
+    }
+
+    private String extractSingerKeywordFromQuery(String query) {
+        if (isBlank(query)) {
+            return "";
+        }
+        Matcher matcher = Pattern.compile("(?:有没有|推荐|来一份|给我一些|给我|播放|点播|我想听|我要听)?\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-\\s]{2,40})\\s*的\\s*(歌|歌曲|音乐|歌单)", Pattern.CASE_INSENSITIVE).matcher(query);
+        if (matcher.find()) {
+            return safe(matcher.group(1));
+        }
+
+        // Handle phrases like "来一份 Coldplay 歌单" (without "的").
+        Matcher matcherNoDe = Pattern.compile("(?:有没有|推荐|来一份|给我一些|给我|播放|点播|我想听|我要听)?\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-\\s]{2,40})\\s*(歌单|歌|歌曲|音乐)$", Pattern.CASE_INSENSITIVE).matcher(query.trim());
+        if (matcherNoDe.find()) {
+            return safe(matcherNoDe.group(1));
+        }
+        return "";
+    }
+
+    private List<Long> resolveArtistIdsByQuery(String query, int limit) {
+        if (isBlank(query)) {
+            return List.of();
+        }
+        String keyword = extractSingerKeywordFromQuery(query);
+        if (isBlank(keyword)) {
+            keyword = query;
+        }
+        keyword = sanitizeArtistLookupKeyword(keyword);
+        if (isBlank(keyword)) {
+            return List.of();
+        }
+        try {
+            List<Long> ids = artistMapper.findArtistIdsByKeyword(keyword.trim(), Math.max(1, Math.min(limit, 20)));
+            if (ids == null) {
+                return List.of();
+            }
+            return ids.stream().filter(id -> id != null && id > 0).distinct().toList();
+        } catch (Exception ignored) {
+            return List.of();
+        }
+    }
+
+    private String sanitizeArtistLookupKeyword(String keyword) {
+        if (isBlank(keyword)) {
+            return "";
+        }
+        return keyword
+                .replaceAll("[，,。！？!?]", " ")
+                .replaceAll("(?i)(请|帮我|给我|推荐|播放|点播|来一首|来一份|我想听|我要听|搜索|检索|有没有|有吗)", " ")
+                .replaceAll("(?i)(歌单|歌曲|音乐|歌)", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private String extractStyleKeywordFromQuery(String query) {
+        if (isBlank(query)) {
+            return "";
+        }
+        Matcher matcher = Pattern.compile("([\\u4e00-\\u9fa5A-Za-z0-9&\\-]{2,20})\\s*风格", Pattern.CASE_INSENSITIVE).matcher(query);
+        if (matcher.find()) {
+            return safe(matcher.group(1));
+        }
+        return "";
     }
 
     private String resolveStyleConstraintFromDb(String input) {

@@ -1,6 +1,6 @@
 import Matrix from "./index.vue";
 
-export type { Frame } from "./index.vue";
+export type Frame = number[][];
 export { Matrix };
 
 export function emptyFrame(rows: number, cols: number): number[][] {

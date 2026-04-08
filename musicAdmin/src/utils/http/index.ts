@@ -85,18 +85,27 @@ class PureHttp {
                 if (expired) {
                   if (!PureHttp.isRefreshing) {
                     PureHttp.isRefreshing = true;
-                    // token过期刷新
-                    useUserStoreHook()
-                      .handRefreshToken({ refreshToken: data.refreshToken })
-                      .then(res => {
-                        const token = res.data.accessToken;
-                        config.headers["Authorization"] = formatToken(token);
-                        PureHttp.requests.forEach(cb => cb(token));
-                        PureHttp.requests = [];
-                      })
-                      .finally(() => {
-                        PureHttp.isRefreshing = false;
-                      });
+                    // token过期刷新（当前项目未实现刷新接口时，回退为继续使用当前token）
+                    const userStore = useUserStoreHook() as any;
+                    if (typeof userStore.handRefreshToken === "function") {
+                      userStore
+                        .handRefreshToken({ refreshToken: data.refreshToken })
+                        .then(res => {
+                          const token = res.data.accessToken;
+                          config.headers["Authorization"] = formatToken(token);
+                          PureHttp.requests.forEach(cb => cb(token));
+                          PureHttp.requests = [];
+                        })
+                        .finally(() => {
+                          PureHttp.isRefreshing = false;
+                        });
+                    } else {
+                      config.headers["Authorization"] = formatToken(data.accessToken);
+                      PureHttp.requests = [];
+                      PureHttp.isRefreshing = false;
+                      resolve(config);
+                      return;
+                    }
                   }
                   resolve(PureHttp.retryOriginalRequest(config));
                 } else {

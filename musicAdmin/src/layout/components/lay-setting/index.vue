@@ -21,10 +21,11 @@ const {
 } = useDataThemeChange();
 
 const { themes: matrixThemes, currentThemeIndex, setMatrixTheme } = useMatrixTheme();
+const configure = $storage.configure as Record<string, any>;
 
 const settings = reactive({
-  greyVal: $storage.configure.grey,
-  colorInvert: $storage.configure.colorInvert ?? false
+  greyVal: configure.grey,
+  colorInvert: configure.colorInvert ?? false
 });
 
 /** 灰色模式设置 */
@@ -62,7 +63,7 @@ const toggleColorInvert = (value: boolean): void => {
     htmlEl.classList.remove("color-invert");
     console.log("移除 color-invert 类名");
   }
-  const storageConfigure = $storage.configure;
+  const storageConfigure = $storage.configure as Record<string, any>;
   storageConfigure.colorInvert = value;
   $storage.configure = storageConfigure;
 };
