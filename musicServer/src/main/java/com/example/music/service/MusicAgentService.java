@@ -719,6 +719,7 @@ public class MusicAgentService {
         }
         keyword = keyword
                 .replaceAll("(?i)^歌手\\s*", "")
+                .replaceAll("(?i)^(有没有|有吗|还有吗|是否有|能不能|可不可以|可以吗|有没有人唱)\\s*", "")
                 .replaceAll("(?i)(这首歌|这歌|歌曲)$", "")
                 .replaceAll("(?i)(的?歌|的?歌曲|的?音乐|歌单|单曲)$", "")
                 .replaceAll("(?i)(吧|好吗|行吗)$", "")
@@ -1322,6 +1323,7 @@ public class MusicAgentService {
             return "";
         }
         return raw.trim()
+                .replaceAll("(?i)^(有没有|有吗|还有吗|是否有|能不能|可不可以|可以吗)\\s*", "")
                 .replaceAll("(?i)^(推荐|生成|制作|做个|做一个|给我|帮我|来点|来个|来一份|来一张)", "")
                 .replaceAll("(?i)^(一个|一份|一张|一套)", "")
                 .replaceAll("(?i)(歌单|playlist|歌曲|音乐)$", "")

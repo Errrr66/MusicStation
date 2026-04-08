@@ -3,14 +3,17 @@ package com.example.music.controller;
 import com.example.music.model.dto.ChatRequestDTO;
 import com.example.music.model.dto.AgentChatRequestDTO;
 import com.example.music.model.dto.AgentPlaylistSaveDTO;
+import com.example.music.model.dto.RagEvalRequestDTO;
 import com.example.music.model.vo.AgentChatResponseVO;
 import com.example.music.model.vo.ChatHealthVO;
 import com.example.music.model.vo.AgentPlaylistSaveVO;
+import com.example.music.model.vo.RagEvalVO;
 import com.example.music.result.Result;
 import com.example.music.service.AgentRagService;
 import com.example.music.service.ArtistAliasResolver;
 import com.example.music.service.DeepSeekService;
 import com.example.music.service.MusicAgentService;
+import com.example.music.service.SemanticEmbeddingService;
 import com.example.music.service.SpeechService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -53,6 +56,7 @@ public class ChatController {
     private final MusicAgentService musicAgentService;
     private final AgentRagService agentRagService;
     private final ArtistAliasResolver artistAliasResolver;
+    private final SemanticEmbeddingService semanticEmbeddingService;
 
     @Value("${agent.rag.enabled:true}")
     private boolean ragEnabled;
@@ -71,12 +75,14 @@ public class ChatController {
                           SpeechService speechService,
                           MusicAgentService musicAgentService,
                           AgentRagService agentRagService,
-                          ArtistAliasResolver artistAliasResolver) {
+                          ArtistAliasResolver artistAliasResolver,
+                          SemanticEmbeddingService semanticEmbeddingService) {
         this.deepSeekService = deepSeekService;
         this.speechService = speechService;
         this.musicAgentService = musicAgentService;
         this.agentRagService = agentRagService;
         this.artistAliasResolver = artistAliasResolver;
+        this.semanticEmbeddingService = semanticEmbeddingService;
     }
 
     @GetMapping("/health")
@@ -98,6 +104,7 @@ public class ChatController {
                 .providers(ChatHealthVO.ProviderStatusVO.builder()
                         .deepseekConfigured(hasValue(deepseekApiKey))
                         .ttsConfigured(hasValue(ttsApiUrl))
+                        .semanticConfigured(semanticEmbeddingService.isConfigured())
                         .build())
                 .serverTime(java.time.LocalDateTime.now().toString())
                 .build();
@@ -211,6 +218,11 @@ public class ChatController {
     @PostMapping("/agent/artist-alias/refresh")
     public Result<Map<String, Object>> refreshArtistAliasIndex() {
         return Result.success("Success", artistAliasResolver.refreshAliasIndex());
+    }
+
+    @PostMapping("/rag/evaluate")
+    public Result<RagEvalVO> evaluateRag(@RequestBody RagEvalRequestDTO requestDTO) {
+        return Result.success("Success", agentRagService.evaluate(requestDTO));
     }
 
     private List<String> splitAnswer(String text, int chunkSize) {

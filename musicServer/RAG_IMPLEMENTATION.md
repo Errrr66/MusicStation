@@ -103,7 +103,7 @@ RAG 当前全部基于本地库，不依赖外部知识库。
 
 ## 6. 排序与打分机制
 
-`AgentRagService` 支持三种模式：
+`AgentRagService` 支持三种粗排模式：
 
 - `keyword`
 - `vector`
@@ -120,19 +120,34 @@ RAG 当前全部基于本地库，不依赖外部知识库。
 
 通过关键词包含关系 + 候选排名位置计算。
 
-### 6.2 vector 分（轻量实现）
+### 6.2 vector 分（语义向量 + 轻量回退）
 
-不是外部向量库，而是本地近似：
+当前实现支持两层：
 
-- 文本归一化
-- 字符 bi-gram 向量化
-- 余弦相似度
+- 语义向量（优先）：调用外部 embedding API 生成向量并计算余弦相似度
+- 轻量回退：若未配置 embedding 或调用失败，回退本地 bi-gram 余弦
+
+对应配置：
+
+- `agent.rag.semantic.enabled`
+- `agent.rag.semantic.api-url`
+- `agent.rag.semantic.api-key`
+- `agent.rag.semantic.model`
+- `agent.rag.semantic-weight`
 
 ### 6.3 hybrid 分
 
 `total = keywordWeight * keywordScore + vectorWeight * vectorScore`
 
-最后按 `totalScore` 降序取 Top-K。
+粗排后会进入二阶段 rerank（可配置开启）：
+
+- 相关配置：
+  - `agent.rag.candidate-multiplier`
+  - `agent.rag.rerank.enabled`
+  - `agent.rag.rerank.weight`
+- rerank 信号：短语命中、term 覆盖率、意图与文档类型一致性、场景语义词加权
+
+最终按 rerank 后分数取 Top-K。
 
 ## 7. Prompt 拼接与答案生成
 
@@ -219,7 +234,27 @@ RAG 当前全部基于本地库，不依赖外部知识库。
 - `agent.artist-alias.redis-ttl-seconds`
 - `agent.artist-alias.override-mappings`
 
-## 12. 当前边界与后续建议
+## 12. RAG 评估体系（已支持）
+
+新增接口：`POST /chat/rag/evaluate`
+
+输入：
+
+- `topK`
+- `cases[]`
+  - `query`
+  - `relevant[]`（`sourceType` + `sourceId`）
+
+输出指标：
+
+- `recallAtK`
+- `mrr`
+- `hitRate`
+- `details`（每条样本命中与倒数排名）
+
+这允许你对 RAG 改动做离线量化，而不是只看主观体验。
+
+## 13. 当前边界与后续建议
 
 当前实现优势：
 
@@ -229,8 +264,8 @@ RAG 当前全部基于本地库，不依赖外部知识库。
 
 可继续增强：
 
-- 引入真实向量引擎（Milvus/pgvector/ES vector）替代轻量 bi-gram
-- 加入离线评测集（Recall@K、MRR）量化 RAG 改动收益
+- 进一步引入向量数据库（Milvus/pgvector/ES vector）做 ANN 检索，降低长列表逐条打分成本
+- 扩展评测样本集规模（分意图、分语种）并接入 CI 回归
 - 增加管理台“RAG 命中诊断面板”用于线上调优
 
 ---

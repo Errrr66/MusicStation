@@ -22,6 +22,7 @@
 - `POST /chat/agent/stream`：Agent 流式回复（SSE）
 - `POST /chat/agent/savePlaylist`：保存 AI 生成歌单
 - `POST /chat/agent/artist-alias/refresh`：手动刷新歌手别名索引
+- `POST /chat/rag/evaluate`：离线评估 RAG（Recall@K / MRR / Hit Rate）
 - `GET /chat/health`：健康状态与检索统计
 
 ## 3) Agent Request
@@ -102,6 +103,15 @@
 - `agent.rag.mode`
 - `agent.rag.keyword-weight`
 - `agent.rag.vector-weight`
+- `agent.rag.semantic-weight`
+- `agent.rag.candidate-multiplier`
+- `agent.rag.rerank.enabled`
+- `agent.rag.rerank.weight`
+- `agent.rag.semantic.enabled`
+- `agent.rag.semantic.api-url`
+- `agent.rag.semantic.api-key`
+- `agent.rag.semantic.model`
+- `agent.rag.semantic.max-text-length`
 - `agent.artist-alias.enabled`
 - `agent.artist-alias.refresh-on-startup`
 - `agent.artist-alias.redis-key`
@@ -115,6 +125,8 @@
 - 指定歌手歌单/推荐：优先走 `artist_id` 严格匹配，仅返回该歌手本地歌曲。
 - 指定风格歌单/推荐：优先按风格字段与风格关联命中，不引入无关风格。
 - 歌手别名匹配：启动时基于 `tb_artist` 自动构建别名索引（Redis + 内存双层缓存），无需手工维护全量字典。
+- 排序策略：`hybrid` 粗排后进行二阶段 rerank 精排。
+- 向量策略：支持外部 embedding API 的语义向量打分，未配置时自动回退 bi-gram。
 
 ## 9) 别名索引刷新接口（最小示例）
 
@@ -140,7 +152,32 @@ Authorization: <token>
 }
 ```
 
-## 10) 验证命令
+## 10) RAG 评估接口（最小示例）
+
+请求：
+
+```json
+{
+  "topK": 4,
+  "cases": [
+    {
+      "query": "播放 Yellow",
+      "relevant": [
+        { "sourceType": "song", "sourceId": "123" }
+      ]
+    }
+  ]
+}
+```
+
+响应关键字段：
+
+- `recallAtK`
+- `mrr`
+- `hitRate`
+- `details`
+
+## 11) 验证命令
 
 ```bat
 cd /d "E:\IntelliJ IDEA\workspace\music\musicServer"

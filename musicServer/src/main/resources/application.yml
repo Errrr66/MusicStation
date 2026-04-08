@@ -75,6 +75,17 @@ agent:
     mode: ${AGENT_RAG_MODE:hybrid}
     keyword-weight: ${AGENT_RAG_KEYWORD_WEIGHT:0.45}
     vector-weight: ${AGENT_RAG_VECTOR_WEIGHT:0.55}
+    semantic-weight: ${AGENT_RAG_SEMANTIC_WEIGHT:0.35}
+    candidate-multiplier: ${AGENT_RAG_CANDIDATE_MULTIPLIER:3}
+    rerank:
+      enabled: ${AGENT_RAG_RERANK_ENABLED:true}
+      weight: ${AGENT_RAG_RERANK_WEIGHT:0.25}
+    semantic:
+      enabled: ${AGENT_RAG_SEMANTIC_ENABLED:false}
+      api-url: ${AGENT_RAG_SEMANTIC_API_URL:}
+      api-key: ${AGENT_RAG_SEMANTIC_API_KEY:}
+      model: ${AGENT_RAG_SEMANTIC_MODEL:text-embedding-v3}
+      max-text-length: ${AGENT_RAG_SEMANTIC_MAX_TEXT_LENGTH:1000}
   artist-alias:
     enabled: ${AGENT_ARTIST_ALIAS_ENABLED:true}
     refresh-on-startup: ${AGENT_ARTIST_ALIAS_REFRESH_ON_STARTUP:true}

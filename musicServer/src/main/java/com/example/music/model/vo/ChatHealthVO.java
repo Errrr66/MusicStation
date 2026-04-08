@@ -29,5 +29,6 @@ public class ChatHealthVO {
     public static class ProviderStatusVO {
         private boolean deepseekConfigured;
         private boolean ttsConfigured;
+        private boolean semanticConfigured;
     }
 }
