@@ -39,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -184,7 +183,7 @@ public class MusicAgentService {
                         : toolOk("web_music_search", webResult.summary()));
 
                 songs = mergeSongs(localSongs, webSongs, limit);
-                supplementalCitations = buildSongCitationsFromResults(songs, "按你的问题命中歌曲结果", Math.min(4, limit));
+                supplementalCitations = buildSongCitationsFromResults(songs);
                 toolSummary = "本地曲库和全网搜索均已执行，共返回 " + songs.size() + " 首歌。";
                 if (shouldPlaySpecificSong(userInput) && !songs.isEmpty()) {
                     String playTargetKeyword = extractPlayTargetKeyword(userInput);
@@ -380,7 +379,7 @@ public class MusicAgentService {
                 }
                 AgentChatResponseVO.AgentPlaylistCardVO generated = AgentChatResponseVO.AgentPlaylistCardVO.builder()
                         .playlistId(null)
-                        .title("AI歌单: " + shorten(userInput, 18))
+                        .title("AI歌单: " + shorten(userInput))
                         .coverUrl(songs.isEmpty() ? null : songs.get(0).getCoverUrl())
                         .source("ai-agent")
                         .reason(songs.isEmpty() && strictPlaylistIntent
@@ -416,7 +415,7 @@ public class MusicAgentService {
         String answer;
         String japanese = "";
         AgentRagService.RagContext ragContext = AgentRagService.RagContext.empty();
-        List<AgentChatResponseVO.CitationVO> mergedCitations = new ArrayList<>();
+        List<AgentChatResponseVO.CitationVO> mergedCitations;
 
         if (intent != Intent.PLAYER_CONTROL) {
             boolean requestEnableRag = requestDTO.getEnableRag() == null ? ragEnabled : requestDTO.getEnableRag();
@@ -439,7 +438,7 @@ public class MusicAgentService {
             archive.put("ragMode", retrievalHealth.mode());
         }
 
-        mergedCitations = mergeCitations(ragContext.citations(), supplementalCitations, Math.max(4, Math.min(limit, 8)));
+        mergedCitations = mergeCitations(ragContext.citations(), supplementalCitations, Math.min(limit, 8));
         if (!supplementalCitations.isEmpty()) {
             archive.put("supplementalCitationCount", supplementalCitations.size());
         }
@@ -485,10 +484,9 @@ public class MusicAgentService {
                 .build();
     }
 
-    private List<AgentChatResponseVO.CitationVO> buildSongCitationsFromResults(List<AgentChatResponseVO.AgentSongCardVO> resultSongs,
-                                                                                String reason,
-                                                                                int limit) {
-        if (resultSongs == null || resultSongs.isEmpty() || limit <= 0) {
+    private List<AgentChatResponseVO.CitationVO> buildSongCitationsFromResults(List<AgentChatResponseVO.AgentSongCardVO> resultSongs) {
+        final int limit = 4;
+        if (resultSongs == null || resultSongs.isEmpty()) {
             return List.of();
         }
 
@@ -522,7 +520,7 @@ public class MusicAgentService {
                     .sourceId(sourceId)
                     .title(title)
                     .snippet(snippet)
-                    .reason(reason)
+                    .reason("按你的问题命中歌曲结果")
                     .build());
         }
         return citations;
@@ -1168,7 +1166,7 @@ public class MusicAgentService {
             QueryWrapper<Artist> wrapper = new QueryWrapper<Artist>()
                     .select("id", "name")
                     .like("name", keyword)
-                    .last("LIMIT " + Math.max(1, Math.min(limit, 10)));
+                    .last("LIMIT " + Math.min(limit, 10));
             List<Artist> artists = artistMapper.selectList(wrapper);
             if (artists != null) {
                 artists.stream()
@@ -1262,7 +1260,7 @@ public class MusicAgentService {
             return candidate;
         }
 
-        Matcher singerPlaylistMatcher = Pattern.compile("(?:歌手)\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-\\s]{2,30})\\s*(?:的)?\\s*歌单", Pattern.CASE_INSENSITIVE).matcher(text);
+        Matcher singerPlaylistMatcher = Pattern.compile("歌手\\s*([\\u4e00-\\u9fa5A-Za-z0-9·\\-\\s]{2,30})\\s*的?\\s*歌单", Pattern.CASE_INSENSITIVE).matcher(text);
         if (singerPlaylistMatcher.find()) {
             String candidate = sanitizeSingerKeyword(singerPlaylistMatcher.group(1));
             if (isGenericPlaylistWord(candidate) || shouldTreatAsStyleCandidate(candidate, text)) {
@@ -1293,7 +1291,7 @@ public class MusicAgentService {
             }
         }
 
-        Matcher fallback = Pattern.compile("^([\\u4e00-\\u9fa5A-Za-z0-9·\\-\\s]{2,30})\\s*(?:的)?\\s*歌单$", Pattern.CASE_INSENSITIVE).matcher(text);
+        Matcher fallback = Pattern.compile("^([\\u4e00-\\u9fa5A-Za-z0-9·\\-\\s]{2,30})\\s*的?\\s*歌单$", Pattern.CASE_INSENSITIVE).matcher(text);
         if (fallback.find()) {
             String candidate = sanitizeSingerKeyword(fallback.group(1));
             if (candidate.length() >= 2 && !isGenericPlaylistWord(candidate) && !shouldTreatAsStyleCandidate(candidate, text)) {
@@ -1409,7 +1407,7 @@ public class MusicAgentService {
         String raw = deepSeekService.chat(requestDTO);
         if (!isBlank(raw)) {
             try {
-                Map<String, String> parsed = objectMapper.readValue(raw, new TypeReference<Map<String, String>>() {});
+                Map<String, String> parsed = objectMapper.readValue(raw, new TypeReference<>() {});
                 String chinese = parsed.getOrDefault("chinese", raw);
                 String japanese = parsed.getOrDefault("japanese", "");
                 return new TextPair(chinese, japanese);
@@ -1610,7 +1608,8 @@ public class MusicAgentService {
                 .trim();
     }
 
-    private String shorten(String text, int max) {
+    private String shorten(String text) {
+        final int max = 18;
         if (text == null) {
             return "新的心情";
         }
@@ -1742,12 +1741,11 @@ public class MusicAgentService {
         if (isBlank(input)) {
             return "";
         }
-        String keyword = input.trim()
+        return input.trim()
                 .replaceAll("(?i)^(播放|点播|来一首|我要听|帮我放)\\s*", "")
                 .replaceAll("(?i)(这首歌|这歌|歌曲)$", "")
                 .replaceAll("\\s+", " ")
                 .trim();
-        return keyword;
     }
 
     private List<AgentChatResponseVO.AgentSongCardVO> rankSongsForPlayTarget(List<AgentChatResponseVO.AgentSongCardVO> songs,
@@ -1811,8 +1809,6 @@ public class MusicAgentService {
                                    boolean fromCache,
                                    String summary) {}
 }
-
-
 
 
 

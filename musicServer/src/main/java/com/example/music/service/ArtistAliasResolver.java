@@ -153,7 +153,7 @@ public class ArtistAliasResolver {
         }
         List<String> pairs = Arrays.stream(overrideMappings.split(","))
                 .map(String::trim)
-                .filter(item -> !item.isEmpty() && item.contains("="))
+                .filter(item -> item.contains("="))
                 .toList();
         for (String pair : pairs) {
             String[] arr = pair.split("=", 2);
@@ -232,13 +232,13 @@ public class ArtistAliasResolver {
 
         String noBracket = original
                 .replaceAll("[（(].*?[)）]", " ")
-                .replaceAll("[\\[【].*?[\\]】]", " ")
+                .replaceAll("[\\[【].*?[]】]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
         aliases.add(normalizeAlias(noBracket));
 
         String noPunctuation = original
-                .replaceAll("[·•・'`~!@#$%^&*()_+=\\-\\[\\]{};:\"\\|,.<>/?，。！？；：、]", " ")
+                .replaceAll("[·•・'`~!@#$%^&*()_+=\\-\\[\\]{};:\"|,.<>/?，。！？；：、]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
         aliases.add(normalizeAlias(noPunctuation));
@@ -260,11 +260,10 @@ public class ArtistAliasResolver {
         if (isBlank(raw)) {
             return "";
         }
-        String value = Normalizer.normalize(raw, Normalizer.Form.NFKC)
+        return Normalizer.normalize(raw, Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("\\s+", " ")
                 .trim();
-        return value;
     }
 
     private boolean isBlank(String text) {

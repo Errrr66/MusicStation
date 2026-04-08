@@ -40,10 +40,12 @@ import java.util.concurrent.ThreadFactory;
 public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
+    private static final int STREAM_CHUNK_SIZE = 12;
     private static final ExecutorService STREAM_EXECUTOR = Executors.newFixedThreadPool(8, new ThreadFactory() {
         private int idx = 0;
 
         @Override
+        @SuppressWarnings("NullableProblems")
         public synchronized Thread newThread(Runnable r) {
             Thread thread = new Thread(r, "chat-agent-sse-" + (++idx));
             thread.setDaemon(true);
@@ -123,13 +125,13 @@ public class ChatController {
         String fullResponse = deepSeekService.chat(chatRequestDTO);
         log.debug("DeepSeek Response: {}", fullResponse);
 
-        String chineseResponse = fullResponse;
-        String japaneseResponse = "";
+        String chineseResponse;
+        String japaneseResponse;
 
         // 解析 JSON
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            Map<String, String> jsonMap = mapper.readValue(fullResponse, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
+            Map<String, String> jsonMap = mapper.readValue(fullResponse, new com.fasterxml.jackson.core.type.TypeReference<>() {});
             chineseResponse = jsonMap.get("chinese");
             japaneseResponse = jsonMap.get("japanese");
         } catch (Exception e) {
@@ -191,7 +193,7 @@ public class ChatController {
                 emitter.send(SseEmitter.event().name("start").data("ok"));
                 AgentChatResponseVO responseVO = musicAgentService.handle(requestDTO, request);
                 String answer = responseVO.getAnswer() == null ? "" : responseVO.getAnswer();
-                for (String chunk : splitAnswer(answer, 12)) {
+                for (String chunk : splitAnswer(answer)) {
                     emitter.send(SseEmitter.event().name("delta").data(chunk));
                 }
                 String donePayload = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(responseVO);
@@ -225,13 +227,13 @@ public class ChatController {
         return Result.success("Success", agentRagService.evaluate(requestDTO));
     }
 
-    private List<String> splitAnswer(String text, int chunkSize) {
+    private List<String> splitAnswer(String text) {
         java.util.ArrayList<String> chunks = new java.util.ArrayList<>();
-        if (text == null || text.isEmpty() || chunkSize <= 0) {
+        if (text == null || text.isEmpty()) {
             return chunks;
         }
-        for (int i = 0; i < text.length(); i += chunkSize) {
-            int end = Math.min(i + chunkSize, text.length());
+        for (int i = 0; i < text.length(); i += STREAM_CHUNK_SIZE) {
+            int end = Math.min(i + STREAM_CHUNK_SIZE, text.length());
             chunks.add(text.substring(i, end));
         }
         return chunks;

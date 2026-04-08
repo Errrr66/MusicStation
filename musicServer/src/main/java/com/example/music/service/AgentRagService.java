@@ -705,7 +705,7 @@ public class AgentRagService {
                 }
 
                 // Singer-aware expansion: resolve artist ids then pull songs strictly by artist id.
-                List<Long> artistIds = resolveArtistIdsByQuery(query, 8);
+                List<Long> artistIds = resolveArtistIdsByQuery(query);
                 if (!artistIds.isEmpty()) {
                     List<SongVO> artistSongs = songMapper.searchSongsByArtistIds(artistIds, Math.max(fetchLimit, ragTopK * 2));
                     if (artistSongs != null) {
@@ -786,7 +786,7 @@ public class AgentRagService {
         return "";
     }
 
-    private List<Long> resolveArtistIdsByQuery(String query, int limit) {
+    private List<Long> resolveArtistIdsByQuery(String query) {
         if (isBlank(query)) {
             return List.of();
         }
@@ -799,7 +799,7 @@ public class AgentRagService {
             return List.of();
         }
         try {
-            List<Long> ids = artistMapper.findArtistIdsByKeyword(keyword.trim(), Math.max(1, Math.min(limit, 20)));
+            List<Long> ids = artistMapper.findArtistIdsByKeyword(keyword.trim(), 8);
             if (ids == null) {
                 return List.of();
             }

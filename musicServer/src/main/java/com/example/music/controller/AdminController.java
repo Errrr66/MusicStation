@@ -19,6 +19,8 @@ import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.BindingResult;
@@ -40,6 +42,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
 
     @Autowired
     private IAdminService adminService;
@@ -80,7 +84,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/register")
-    public Result register(@RequestBody @Valid AdminDTO adminDTO, BindingResult bindingResult) {
+    public Result<?> register(@RequestBody @Valid AdminDTO adminDTO, BindingResult bindingResult) {
         // 校验失败时，返回错误信息
         String errorMessage = BindingResultUtil.handleBindingResultErrors(bindingResult);
         if (errorMessage != null) {
@@ -98,7 +102,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/login")
-    public Result login(@RequestBody @Valid AdminDTO adminDTO, BindingResult bindingResult) {
+    public Result<?> login(@RequestBody @Valid AdminDTO adminDTO, BindingResult bindingResult) {
         // 校验失败时，返回错误信息
         String errorMessage = BindingResultUtil.handleBindingResultErrors(bindingResult);
         if (errorMessage != null) {
@@ -115,11 +119,11 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/logout")
-    public Result logout(@RequestHeader("Authorization") String token) {
+    public Result<?> logout(@RequestHeader("Authorization") String token) {
         return adminService.logout(token);
     }
 
-    /**********************************************************************************************/
+    /* ******************************************************************************************** */
 
     /**
      * 获取所有用户数量
@@ -149,7 +153,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addUser")
-    public Result addUser(@RequestBody @Valid UserAddDTO userAddDTO, BindingResult bindingResult) {
+    public Result<?> addUser(@RequestBody @Valid UserAddDTO userAddDTO, BindingResult bindingResult) {
         // 校验失败时，返回错误信息
         String errorMessage = BindingResultUtil.handleBindingResultErrors(bindingResult);
         if (errorMessage != null) {
@@ -166,7 +170,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updateUser")
-    public Result updateUser(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
+    public Result<?> updateUser(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
         // 校验失败时，返回错误信息
         String errorMessage = BindingResultUtil.handleBindingResultErrors(bindingResult);
         if (errorMessage != null) {
@@ -184,7 +188,7 @@ public class AdminController {
      * @return 结果
      */
     @PatchMapping("/updateUserStatus/{id}/{status}")
-    public Result updateUserStatus(@PathVariable("id") Long userId, @PathVariable("status") Integer userStatus) {
+    public Result<?> updateUserStatus(@PathVariable("id") Long userId, @PathVariable("status") Integer userStatus) {
         return userService.updateUserStatus(userId, userStatus);
     }
 
@@ -195,7 +199,7 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deleteUser/{id}")
-    public Result deleteUser(@PathVariable("id") Long userId) {
+    public Result<?> deleteUser(@PathVariable("id") Long userId) {
         return userService.deleteUser(userId);
     }
 
@@ -206,11 +210,11 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deleteUsers")
-    public Result deleteUsers(@RequestBody List<Long> userIds) {
+    public Result<?> deleteUsers(@RequestBody List<Long> userIds) {
         return userService.deleteUsers(userIds);
     }
 
-    /**********************************************************************************************/
+    /* ******************************************************************************************** */
 
     /**
      * 获取所有歌手数量
@@ -242,7 +246,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addArtist")
-    public Result addArtist(@RequestBody ArtistAddDTO artistAddDTO) {
+    public Result<?> addArtist(@RequestBody ArtistAddDTO artistAddDTO) {
         return artistService.addArtist(artistAddDTO);
     }
 
@@ -253,7 +257,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updateArtist")
-    public Result updateArtist(@RequestBody ArtistUpdateDTO artistUpdateDTO) {
+    public Result<?> updateArtist(@RequestBody ArtistUpdateDTO artistUpdateDTO) {
         return artistService.updateArtist(artistUpdateDTO);
     }
 
@@ -265,7 +269,7 @@ public class AdminController {
      * @return 结果
      */
     @PatchMapping("/updateArtistAvatar/{id}")
-    public Result updateArtistAvatar(@PathVariable("id") Long artistId, @RequestParam("avatar") MultipartFile avatar) {
+    public Result<?> updateArtistAvatar(@PathVariable("id") Long artistId, @RequestParam("avatar") MultipartFile avatar) {
         String avatarUrl = minioService.uploadFile(avatar, "artists");  // 上传到 artists 目录
         return artistService.updateArtistAvatar(artistId, avatarUrl);
     }
@@ -277,7 +281,7 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deleteArtist/{id}")
-    public Result deleteArtist(@PathVariable("id") Long artistId) {
+    public Result<?> deleteArtist(@PathVariable("id") Long artistId) {
         return artistService.deleteArtist(artistId);
     }
 
@@ -288,11 +292,11 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deleteArtists")
-    public Result deleteArtists(@RequestBody List<Long> artistIds) {
+    public Result<?> deleteArtists(@RequestBody List<Long> artistIds) {
         return artistService.deleteArtists(artistIds);
     }
 
-    /**********************************************************************************************/
+    /* ******************************************************************************************** */
 
     /**
      * 获取所有歌曲的数量
@@ -333,7 +337,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addSong")
-    public Result addSong(@RequestBody SongAddDTO songAddDTO) {
+    public Result<?> addSong(@RequestBody SongAddDTO songAddDTO) {
         return songService.addSong(songAddDTO);
     }
 
@@ -344,7 +348,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updateSong")
-    public Result UpdateSong(@RequestBody SongUpdateDTO songUpdateDTO) {
+    public Result<?> UpdateSong(@RequestBody SongUpdateDTO songUpdateDTO) {
         return songService.updateSong(songUpdateDTO);
     }
 
@@ -356,7 +360,7 @@ public class AdminController {
      * @return 结果
      */
     @PatchMapping("/updateSongCover/{id}")
-    public Result updateSongCover(@PathVariable("id") Long songId, @RequestParam("cover") MultipartFile cover) {
+    public Result<?> updateSongCover(@PathVariable("id") Long songId, @RequestParam("cover") MultipartFile cover) {
         String coverUrl = minioService.uploadFile(cover, "songCovers");  // 上传到 songCovers 目录
         return songService.updateSongCover(songId, coverUrl);
     }
@@ -369,7 +373,7 @@ public class AdminController {
      * @return 结果
      */
     @PatchMapping("/updateSongAudio/{id}")
-    public Result updateSongAudio(@PathVariable("id") Long songId, @RequestParam("audio") MultipartFile audio) {
+    public Result<?> updateSongAudio(@PathVariable("id") Long songId, @RequestParam("audio") MultipartFile audio) {
         String lyrics = extractLyrics(audio);
         String audioUrl = minioService.uploadFile(audio, "songs");  // 上传到 songs 目录
         return songService.updateSongAudio(songId, audioUrl, lyrics);
@@ -403,10 +407,12 @@ public class AdminController {
                 return tag.getFirst(FieldKey.LYRICS);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Extract lyrics failed", e);
         } finally {
             if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
+                if (!tempFile.delete()) {
+                    log.debug("Temp file delete failed: {}", tempFile.getAbsolutePath());
+                }
             }
         }
         return null;
@@ -419,7 +425,7 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deleteSong/{id}")
-    public Result deleteSong(@PathVariable("id") Long songId) {
+    public Result<?> deleteSong(@PathVariable("id") Long songId) {
         return songService.deleteSong(songId);
     }
 
@@ -430,11 +436,11 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deleteSongs")
-    public Result deleteSongs(@RequestBody List<Long> songIds) {
+    public Result<?> deleteSongs(@RequestBody List<Long> songIds) {
         return songService.deleteSongs(songIds);
     }
 
-    /**********************************************************************************************/
+    /* ******************************************************************************************** */
 
     /**
      * 获取所有歌单数量
@@ -465,7 +471,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addPlaylist")
-    public Result addPlaylist(@RequestBody PlaylistAddDTO playlistAddDTO) {
+    public Result<?> addPlaylist(@RequestBody PlaylistAddDTO playlistAddDTO) {
         return playlistService.addPlaylist(playlistAddDTO);
     }
 
@@ -476,7 +482,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updatePlaylist")
-    public Result updatePlaylist(@RequestBody PlaylistUpdateDTO playlistUpdateDTO) {
+    public Result<?> updatePlaylist(@RequestBody PlaylistUpdateDTO playlistUpdateDTO) {
         return playlistService.updatePlaylist(playlistUpdateDTO);
     }
 
@@ -488,7 +494,7 @@ public class AdminController {
      * @return 结果
      */
     @PatchMapping("/updatePlaylistCover/{id}")
-    public Result updatePlaylistCover(@PathVariable("id") Long playlistId, @RequestParam("cover") MultipartFile cover) {
+    public Result<?> updatePlaylistCover(@PathVariable("id") Long playlistId, @RequestParam("cover") MultipartFile cover) {
         String coverUrl = minioService.uploadFile(cover, "playlists");  // 上传到 playlists 目录
         return playlistService.updatePlaylistCover(playlistId, coverUrl);
     }
@@ -500,7 +506,7 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deletePlaylist/{id}")
-    public Result deletePlaylist(@PathVariable("id") Long playlistId) {
+    public Result<?> deletePlaylist(@PathVariable("id") Long playlistId) {
         return playlistService.deletePlaylist(playlistId);
     }
 
@@ -511,11 +517,11 @@ public class AdminController {
      * @return 结果
      */
     @DeleteMapping("/deletePlaylists")
-    public Result deletePlaylists(@RequestBody List<Long> playlistIds) {
+    public Result<?> deletePlaylists(@RequestBody List<Long> playlistIds) {
         return playlistService.deletePlaylists(playlistIds);
     }
 
-    /**********************************************************************************************/
+    /* ******************************************************************************************** */
 
     @GetMapping("/rag/health")
     public Result<ChatHealthVO> ragHealth() {
@@ -549,13 +555,13 @@ public class AdminController {
 
     @PostMapping("/rag/debug-retrieve")
     public Result<RagDebugRetrieveVO> debugRagRetrieve(@RequestBody RagDebugRetrieveRequestDTO requestDTO) {
-        String query = requestDTO == null || isBlank(requestDTO.getQuery()) ? "" : requestDTO.getQuery().trim();
+        String query = isBlank(requestDTO.getQuery()) ? "" : requestDTO.getQuery().trim();
         if (query.isEmpty()) {
             return Result.error("query 不能为空");
         }
-        String intent = requestDTO == null || isBlank(requestDTO.getIntent()) ? "CHAT" : requestDTO.getIntent().trim().toUpperCase();
-        int topK = Math.max(1, Math.min(requestDTO == null || requestDTO.getTopK() == null ? 8 : requestDTO.getTopK(), 20));
-        boolean enableRag = requestDTO == null || requestDTO.getEnableRag() == null || requestDTO.getEnableRag();
+        String intent = isBlank(requestDTO.getIntent()) ? "CHAT" : requestDTO.getIntent().trim().toUpperCase();
+        int topK = Math.max(1, Math.min(requestDTO.getTopK() == null ? 8 : requestDTO.getTopK(), 20));
+        boolean enableRag = requestDTO.getEnableRag() == null || requestDTO.getEnableRag();
 
         AgentRagService.RagContext context = agentRagService.retrieve(query, intent, null, enableRag, topK);
         AgentRagService.RetrievalHealth health = agentRagService.getLastRetrievalHealth();
