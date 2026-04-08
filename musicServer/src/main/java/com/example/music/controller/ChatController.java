@@ -8,6 +8,7 @@ import com.example.music.model.vo.ChatHealthVO;
 import com.example.music.model.vo.AgentPlaylistSaveVO;
 import com.example.music.result.Result;
 import com.example.music.service.AgentRagService;
+import com.example.music.service.ArtistAliasResolver;
 import com.example.music.service.DeepSeekService;
 import com.example.music.service.MusicAgentService;
 import com.example.music.service.SpeechService;
@@ -51,6 +52,7 @@ public class ChatController {
     private final SpeechService speechService;
     private final MusicAgentService musicAgentService;
     private final AgentRagService agentRagService;
+    private final ArtistAliasResolver artistAliasResolver;
 
     @Value("${agent.rag.enabled:true}")
     private boolean ragEnabled;
@@ -68,11 +70,13 @@ public class ChatController {
     public ChatController(DeepSeekService deepSeekService,
                           SpeechService speechService,
                           MusicAgentService musicAgentService,
-                          AgentRagService agentRagService) {
+                          AgentRagService agentRagService,
+                          ArtistAliasResolver artistAliasResolver) {
         this.deepSeekService = deepSeekService;
         this.speechService = speechService;
         this.musicAgentService = musicAgentService;
         this.agentRagService = agentRagService;
+        this.artistAliasResolver = artistAliasResolver;
     }
 
     @GetMapping("/health")
@@ -202,6 +206,11 @@ public class ChatController {
     public Result<AgentPlaylistSaveVO> saveAgentPlaylist(@RequestBody AgentPlaylistSaveDTO saveDTO,
                                                          HttpServletRequest request) {
         return Result.success("Success", musicAgentService.saveAgentPlaylist(saveDTO, request));
+    }
+
+    @PostMapping("/agent/artist-alias/refresh")
+    public Result<Map<String, Object>> refreshArtistAliasIndex() {
+        return Result.success("Success", artistAliasResolver.refreshAliasIndex());
     }
 
     private List<String> splitAnswer(String text, int chunkSize) {

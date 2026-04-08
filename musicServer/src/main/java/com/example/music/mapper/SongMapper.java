@@ -110,4 +110,8 @@ public interface SongMapper extends BaseMapper<Song> {
     List<SongVO> searchSongsByStyleKeyword(@Param("styleKeyword") String styleKeyword,
                                            @Param("limit") int limit);
 
+    // Agent: 按歌手 id 严格查询歌曲（不混入其他歌手）
+    List<SongVO> searchSongsByArtistIds(@Param("artistIds") List<Long> artistIds,
+                                        @Param("limit") int limit);
+
 }

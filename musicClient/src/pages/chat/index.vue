@@ -713,46 +713,52 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
               </span>
             </div>
 
-            <div v-if="msg.agentData.songs?.length" class="spotify-songs-grid">
-              <button
-                v-for="(song, songIndex) in msg.agentData.songs"
-                :key="`${index}-song-${songIndex}`"
-                class="spotify-song-card"
-                @click="playAgentSong(song)"
-              >
-                <img :src="song.coverUrl || '/song.jpg'" alt="cover" class="spotify-song-cover" />
-                <div class="spotify-song-meta">
-                  <span class="spotify-song-name">{{ song.songName }}</span>
-                  <span class="spotify-song-artist">{{ song.artistName }}</span>
-                </div>
-                <Icon icon="mdi:play-circle" class="spotify-song-play" />
-              </button>
-            </div>
-
-            <div v-if="msg.agentData.playlists?.length" class="spotify-playlist-grid">
-              <div
-                v-for="(playlist, pIndex) in msg.agentData.playlists"
-                :key="`${index}-playlist-${pIndex}`"
-                class="spotify-playlist-card"
-              >
-                <img :src="playlist.coverUrl || '/cover.png'" alt="playlist" class="spotify-playlist-cover" />
-                <div class="spotify-playlist-meta">
-                  <span class="spotify-playlist-name">{{ playlist.title }}</span>
-                  <span class="spotify-playlist-reason">{{ playlist.reason || 'AI 歌单建议' }}</span>
-                </div>
+            <div v-if="msg.agentData.songs?.length" class="spotify-agent-section">
+              <div class="spotify-agent-section-title">歌曲结果</div>
+              <div class="spotify-songs-grid">
                 <button
-                  v-if="playlist.tracks?.length"
-                  class="spotify-save-playlist-btn"
-                  :disabled="savingPlaylistKeys[`${index}-${pIndex}`]"
-                  @click="saveGeneratedPlaylist(playlist, `${index}-${pIndex}`)"
+                  v-for="(song, songIndex) in msg.agentData.songs"
+                  :key="`${index}-song-${songIndex}`"
+                  class="spotify-song-card"
+                  @click="playAgentSong(song)"
                 >
-                  {{ savingPlaylistKeys[`${index}-${pIndex}`] ? '保存中...' : '一键保存' }}
+                  <img :src="song.coverUrl || '/song.jpg'" alt="cover" class="spotify-song-cover" />
+                  <div class="spotify-song-meta">
+                    <span class="spotify-song-name">{{ song.songName }}</span>
+                    <span class="spotify-song-artist">{{ song.artistName }}</span>
+                  </div>
+                  <Icon icon="mdi:play-circle" class="spotify-song-play" />
                 </button>
               </div>
             </div>
 
-            <div v-if="msg.agentData.citations?.length" class="spotify-citation-section">
-              <div class="spotify-citation-title">参考资料</div>
+            <div v-if="msg.agentData.playlists?.length" class="spotify-agent-section">
+              <div class="spotify-agent-section-title">歌单建议</div>
+              <div class="spotify-playlist-grid">
+                <div
+                  v-for="(playlist, pIndex) in msg.agentData.playlists"
+                  :key="`${index}-playlist-${pIndex}`"
+                  class="spotify-playlist-card"
+                >
+                  <img :src="playlist.coverUrl || '/cover.png'" alt="playlist" class="spotify-playlist-cover" />
+                  <div class="spotify-playlist-meta">
+                    <span class="spotify-playlist-name">{{ playlist.title }}</span>
+                    <span class="spotify-playlist-reason">{{ playlist.reason || 'AI 歌单建议' }}</span>
+                  </div>
+                  <button
+                    v-if="playlist.tracks?.length"
+                    class="spotify-save-playlist-btn"
+                    :disabled="savingPlaylistKeys[`${index}-${pIndex}`]"
+                    @click="saveGeneratedPlaylist(playlist, `${index}-${pIndex}`)"
+                  >
+                    {{ savingPlaylistKeys[`${index}-${pIndex}`] ? '保存中...' : '保存到我的歌单' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="msg.agentData.citations?.length" class="spotify-agent-section spotify-citation-section">
+              <div class="spotify-agent-section-title spotify-citation-title">参考资料</div>
               <div class="spotify-citation-grid">
                 <div
                   v-for="(citation, cIndex) in msg.agentData.citations"
@@ -1112,6 +1118,16 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   margin-top: 10px;
 }
 
+.spotify-agent-section {
+  margin-top: 10px;
+}
+
+.spotify-agent-section-title {
+  font-size: 12px;
+  color: var(--text-subdued, #b3b3b3);
+  margin-bottom: 8px;
+}
+
 .spotify-citation-title {
   font-size: 12px;
   color: var(--text-subdued, #b3b3b3);
@@ -1174,8 +1190,9 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 }
 
 .spotify-playlist-card {
-  align-items: flex-start;
-  min-height: 92px;
+  align-items: center;
+  min-height: 82px;
+  padding: 10px 12px;
 }
 
 .spotify-song-card {
@@ -1196,6 +1213,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
 }
 
 .spotify-song-name,
@@ -1211,9 +1229,10 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 .spotify-playlist-reason {
   font-size: 12px;
   color: var(--text-subdued, #b3b3b3);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .spotify-song-play {
@@ -1222,16 +1241,18 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 }
 
 .spotify-save-playlist-btn {
-  margin-left: auto;
+  margin-left: 8px;
+  align-self: center;
   border: 1px solid rgba(29, 185, 84, 0.7);
   background: transparent;
   color: #1db954;
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   font-size: 12px;
-  min-width: 84px;
+  min-width: 112px;
   text-align: center;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .spotify-save-playlist-btn:disabled {

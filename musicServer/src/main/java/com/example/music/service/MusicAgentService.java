@@ -63,6 +63,7 @@ public class MusicAgentService {
     private final ISongService songService;
     private final IPlaylistService playlistService;
     private final AgentRagService agentRagService;
+    private final ArtistAliasResolver artistAliasResolver;
     private final DeepSeekService deepSeekService;
     private final SpeechService speechService;
     private final StringRedisTemplate stringRedisTemplate;
@@ -99,6 +100,7 @@ public class MusicAgentService {
                              ISongService songService,
                              IPlaylistService playlistService,
                              AgentRagService agentRagService,
+                             ArtistAliasResolver artistAliasResolver,
                              DeepSeekService deepSeekService,
                              SpeechService speechService,
                              StringRedisTemplate stringRedisTemplate) {
@@ -111,6 +113,7 @@ public class MusicAgentService {
         this.songService = songService;
         this.playlistService = playlistService;
         this.agentRagService = agentRagService;
+        this.artistAliasResolver = artistAliasResolver;
         this.deepSeekService = deepSeekService;
         this.speechService = speechService;
         this.stringRedisTemplate = stringRedisTemplate;
@@ -137,32 +140,7 @@ public class MusicAgentService {
 
                 List<SongVO> localSongRows;
                 if (strictSingerMode) {
-                    int singerFetchLimit = Math.max(limit * 6, 80);
-                    Map<String, SongVO> mergedSingerRows = new LinkedHashMap<>();
-                    List<String> singerQueries = new ArrayList<>(resolveSingerAliases(singerConstraint));
-                    if (!isBlank(searchKeyword)) {
-                        singerQueries.add(searchKeyword);
-                    }
-
-                    for (String query : singerQueries) {
-                        if (isBlank(query)) {
-                            continue;
-                        }
-                        List<SongVO> rows = songMapper.searchSongsByKeyword(query, singerFetchLimit);
-                        if (rows == null) {
-                            continue;
-                        }
-                        for (SongVO row : rows) {
-                            if (row == null) {
-                                continue;
-                            }
-                            String dedupeKey = row.getSongId() == null
-                                    ? (safe(row.getSongName()) + "|" + safe(row.getArtistName())).toLowerCase(Locale.ROOT)
-                                    : "id:" + row.getSongId();
-                            mergedSingerRows.putIfAbsent(dedupeKey, row);
-                        }
-                    }
-                    localSongRows = new ArrayList<>(mergedSingerRows.values());
+                    localSongRows = searchSongsBySingerStrict(singerConstraint, Math.max(limit * 6, 80));
                 } else {
                     localSongRows = songMapper.searchSongsByKeyword(searchKeyword, Math.max(4, limit / 2));
                     if ((localSongRows == null || localSongRows.isEmpty()) && isPotentialSingerKeyword(searchKeyword)) {
@@ -265,8 +243,7 @@ public class MusicAgentService {
 
                 // 1) 歌手需求：严格歌手模式，绝不混入其他歌手，也不参考当前播放
                 if (!isBlank(singerConstraint)) {
-                    List<SongVO> candidateSongs = songMapper.searchSongsByKeyword(singerConstraint, Math.max(limit * 6, 80));
-                    List<SongVO> strictSingerSongs = filterSongsBySingerStrict(candidateSongs, singerConstraint);
+                    List<SongVO> strictSingerSongs = searchSongsBySingerStrict(singerConstraint, Math.max(limit * 6, 80));
 
                     songs = toSongCards(strictSingerSongs, "local", "严格按指定歌手本地曲库推荐", limit);
                     trace.add(toolOk("recommend_singer_local_strict", "按歌手严格命中本地曲库 " + songs.size() + " 首: " + singerConstraint));
@@ -443,13 +420,19 @@ public class MusicAgentService {
 
         if (intent != Intent.PLAYER_CONTROL) {
             boolean requestEnableRag = requestDTO.getEnableRag() == null ? ragEnabled : requestDTO.getEnableRag();
-            ragContext = agentRagService.retrieve(userInput, intent.name(), requestDTO.getNowPlaying(), requestEnableRag, limit);
-            if (!ragContext.citations().isEmpty()) {
-                trace.add(toolOk("rag_retriever", "知识检索命中 " + ragContext.citations().size() + " 条"));
+            boolean useRag = requestEnableRag && shouldUseRagForInput(userInput, intent);
+            if (useRag) {
+                ragContext = agentRagService.retrieve(userInput, intent.name(), requestDTO.getNowPlaying(), true, limit);
+                if (!ragContext.citations().isEmpty()) {
+                    trace.add(toolOk("rag_retriever", "知识检索命中 " + ragContext.citations().size() + " 条"));
+                } else {
+                    trace.add(toolOk("rag_retriever", "知识检索未命中，回退常规回答"));
+                }
             } else {
-                trace.add(toolOk("rag_retriever", "知识检索未命中，回退常规回答"));
+                ragContext = AgentRagService.RagContext.empty();
+                trace.add(toolOk("rag_retriever", "常识/通用对话已直答，未启用RAG检索"));
             }
-            archive.put("ragEnabled", requestEnableRag);
+            archive.put("ragEnabled", useRag);
             archive.put("ragCitationCount", ragContext.citations().size());
             AgentRagService.RetrievalHealth retrievalHealth = agentRagService.getLastRetrievalHealth();
             archive.put("ragStrategy", retrievalHealth.strategy());
@@ -644,6 +627,10 @@ public class MusicAgentService {
 
     private Intent detectIntent(String input) {
         String text = input == null ? "" : input.toLowerCase(Locale.ROOT);
+
+        if (isLikelyKnowledgeQuestion(input)) {
+            return Intent.CHAT;
+        }
 
         if (isPlaylistSearchIntent(input)) {
             return Intent.SEARCH_PLAYLIST;
@@ -885,23 +872,7 @@ public class MusicAgentService {
         String styleConstraint = resolveStyleConstraint(prompt);
 
         if (!isBlank(artistConstraint)) {
-            Set<String> singerAliases = resolveSingerAliases(artistConstraint);
-            Map<Long, SongVO> dedupSongs = new HashMap<>();
-            int queryLimit = Math.max(limit * 6, 80);
-
-            for (String alias : singerAliases) {
-                List<SongVO> candidates = songMapper.searchSongsByKeyword(alias, queryLimit);
-                if (candidates == null) {
-                    continue;
-                }
-                for (SongVO song : candidates) {
-                    if (song.getSongId() != null) {
-                        dedupSongs.put(song.getSongId(), song);
-                    }
-                }
-            }
-
-            List<SongVO> artistSongs = filterSongsBySingerStrict(new ArrayList<>(dedupSongs.values()), artistConstraint);
+            List<SongVO> artistSongs = searchSongsBySingerStrict(artistConstraint, Math.max(limit * 6, 80));
 
             // 指定歌手模式禁止混入其他歌手：命中就返回歌手曲目，未命中则返回空
             return toSongCards(artistSongs, "local", "按指定歌手生成歌单", limit);
@@ -980,6 +951,15 @@ public class MusicAgentService {
         }
         String text = input.toLowerCase(Locale.ROOT);
         List<String> styles = loadKnownStyleNames();
+
+        Matcher styleMatcher = Pattern.compile("([\\u4e00-\\u9fa5A-Za-z0-9&\\-]{2,20})\\s*风格").matcher(input);
+        if (styleMatcher.find()) {
+            String rawStyle = styleMatcher.group(1).trim();
+            String matched = matchKnownStyle(rawStyle, styles);
+            if (!isBlank(matched)) {
+                return matched;
+            }
+        }
 
         if (containsAny(text, "r&b", "rb", "rnb")) {
             return "节奏布鲁斯";
@@ -1095,12 +1075,65 @@ public class MusicAgentService {
                 .toList();
     }
 
+    private List<SongVO> searchSongsBySingerStrict(String singerConstraint, int limit) {
+        if (isBlank(singerConstraint) || limit <= 0) {
+            return List.of();
+        }
+
+        int queryLimit = Math.max(limit, 20);
+        Set<Long> artistIds = resolveSingerArtistIds(singerConstraint);
+        Map<String, SongVO> merged = new LinkedHashMap<>();
+
+        if (!artistIds.isEmpty()) {
+            List<SongVO> byArtistIds = songMapper.searchSongsByArtistIds(new ArrayList<>(artistIds), queryLimit);
+            if (byArtistIds != null) {
+                for (SongVO song : byArtistIds) {
+                    if (song == null) {
+                        continue;
+                    }
+                    String key = song.getSongId() == null
+                            ? (safe(song.getSongName()) + "|" + safe(song.getArtistName())).toLowerCase(Locale.ROOT)
+                            : "id:" + song.getSongId();
+                    merged.putIfAbsent(key, song);
+                }
+            }
+        }
+
+        // Name-based fallback still remains for alias mismatch scenarios.
+        if (merged.isEmpty()) {
+            List<String> singerQueries = new ArrayList<>(resolveSingerAliases(singerConstraint));
+            for (String query : singerQueries) {
+                if (isBlank(query)) {
+                    continue;
+                }
+                List<SongVO> rows = songMapper.searchSongsByKeyword(query, queryLimit);
+                if (rows == null) {
+                    continue;
+                }
+                for (SongVO row : rows) {
+                    if (row == null) {
+                        continue;
+                    }
+                    String key = row.getSongId() == null
+                            ? (safe(row.getSongName()) + "|" + safe(row.getArtistName())).toLowerCase(Locale.ROOT)
+                            : "id:" + row.getSongId();
+                    merged.putIfAbsent(key, row);
+                }
+            }
+        }
+
+        return filterSongsBySingerStrict(new ArrayList<>(merged.values()), singerConstraint).stream()
+                .limit(limit)
+                .toList();
+    }
+
     private Set<Long> resolveSingerArtistIds(String singerConstraint) {
         Set<Long> artistIds = new LinkedHashSet<>();
         if (isBlank(singerConstraint)) {
             return artistIds;
         }
         try {
+            artistIds.addAll(artistAliasResolver.resolveArtistIds(singerConstraint));
             List<String> aliases = new ArrayList<>(resolveSingerAliases(singerConstraint));
             if (aliases.isEmpty()) {
                 return artistIds;
@@ -1155,9 +1188,38 @@ public class MusicAgentService {
 
         String value = singerConstraint.trim();
         aliases.add(value);
-        String lower = value.toLowerCase(Locale.ROOT);
+        aliases.add(value.replaceAll("[·•・]", "").trim());
+        aliases.add(value.replaceAll("\\s+", " ").trim());
 
-        // 常见中英文别名映射，可继续按数据扩展
+        // 从本地歌手库动态扩展别名，提升中英文/大小写/写法差异命中率。
+        try {
+            List<Artist> exactArtists = artistMapper.selectList(new QueryWrapper<Artist>()
+                    .select("id", "name")
+                    .eq("name", value)
+                    .last("LIMIT 8"));
+            if (exactArtists != null) {
+                exactArtists.stream()
+                        .map(Artist::getArtistName)
+                        .filter(item -> item != null && !item.trim().isEmpty())
+                        .map(String::trim)
+                        .forEach(aliases::add);
+            }
+
+            List<Artist> fuzzyArtists = artistMapper.selectList(new QueryWrapper<Artist>()
+                    .select("id", "name")
+                    .like("name", value)
+                    .last("LIMIT 12"));
+            if (fuzzyArtists != null) {
+                fuzzyArtists.stream()
+                        .map(Artist::getArtistName)
+                        .filter(item -> item != null && !item.trim().isEmpty())
+                        .map(String::trim)
+                        .forEach(aliases::add);
+            }
+        } catch (Exception ignored) {
+        }
+
+        String lower = value.toLowerCase(Locale.ROOT);
         if ("coldplay".equals(lower) || "酷玩".equals(value) || "酷玩乐队".equals(value)) {
             aliases.add("Coldplay");
             aliases.add("酷玩");
@@ -1165,6 +1227,23 @@ public class MusicAgentService {
         }
 
         return aliases;
+    }
+
+    private String matchKnownStyle(String rawStyle, List<String> styles) {
+        if (isBlank(rawStyle) || styles == null || styles.isEmpty()) {
+            return "";
+        }
+        String keyword = rawStyle.trim().toLowerCase(Locale.ROOT);
+        for (String style : styles) {
+            if (isBlank(style)) {
+                continue;
+            }
+            String styleName = style.trim().toLowerCase(Locale.ROOT);
+            if (styleName.equals(keyword) || styleName.contains(keyword) || keyword.contains(styleName)) {
+                return style.trim();
+            }
+        }
+        return "";
     }
 
     private String extractArtistConstraint(String input) {
@@ -1565,7 +1644,7 @@ public class MusicAgentService {
             return false;
         }
         String text = raw.toLowerCase(Locale.ROOT);
-        if (containsAny(text, "为什么", "怎么", "如何", "可以", "能不能", "介绍", "是什么", "是谁", "谢谢", "你好")) {
+        if (containsAny(text, "为什么", "怎么", "如何", "可以", "能不能", "介绍", "是什么", "是谁", "谢谢", "你好", "多少", "几", "哪里", "何时", "多大")) {
             return false;
         }
         if (containsAny(text, "暂停", "下一首", "上一首", "推荐", "生成歌单", "整理歌单", "解析", "分析")) {
@@ -1576,6 +1655,48 @@ public class MusicAgentService {
         }
         String keyword = buildSearchKeyword(raw);
         return !isBlank(keyword) && keyword.length() >= 2;
+    }
+
+    private boolean isLikelyKnowledgeQuestion(String input) {
+        if (isBlank(input)) {
+            return false;
+        }
+        String text = input.trim().toLowerCase(Locale.ROOT);
+        if (containsAny(text,
+                "为什么", "怎么", "如何", "是什么", "是谁", "多少", "几", "哪里", "哪个", "哪国", "哪年", "多大", "天气", "时间", "日期", "数学", "历史", "地理")) {
+            return !containsAny(text, "歌", "歌曲", "歌手", "播放", "歌单", "专辑", "歌词", "曲库");
+        }
+        return false;
+    }
+
+    private boolean shouldUseRagForInput(String input, Intent intent) {
+        if (intent == Intent.PLAYER_CONTROL) {
+            return false;
+        }
+        if (intent != Intent.CHAT) {
+            return true;
+        }
+        return isMusicDomainQuery(input);
+    }
+
+    private boolean isMusicDomainQuery(String input) {
+        if (isBlank(input)) {
+            return false;
+        }
+        String text = input.toLowerCase(Locale.ROOT);
+        if (containsAny(text,
+                "歌", "歌曲", "歌手", "专辑", "歌词", "曲库", "播放", "点播", "歌单", "风格", "收藏",
+                "music", "song", "artist", "album", "playlist", "lyric", "play")) {
+            return true;
+        }
+        // Only treat plain text as music query when it can map to local song/artist keywords.
+        if (isLikelyDirectMusicSearch(input)) {
+            String keyword = buildSearchKeyword(input);
+            boolean hasSongHit = !toSongCards(songMapper.searchSongsByKeyword(keyword, 1), "local", "", 1).isEmpty();
+            boolean hasArtistHit = !resolveArtistNameCandidates(keyword, 1).isEmpty();
+            return hasSongHit || hasArtistHit;
+        }
+        return false;
     }
 
     private boolean isPotentialSingerKeyword(String keyword) {

@@ -75,6 +75,13 @@ agent:
     mode: ${AGENT_RAG_MODE:hybrid}
     keyword-weight: ${AGENT_RAG_KEYWORD_WEIGHT:0.45}
     vector-weight: ${AGENT_RAG_VECTOR_WEIGHT:0.55}
+  artist-alias:
+    enabled: ${AGENT_ARTIST_ALIAS_ENABLED:true}
+    refresh-on-startup: ${AGENT_ARTIST_ALIAS_REFRESH_ON_STARTUP:true}
+    redis-key: ${AGENT_ARTIST_ALIAS_REDIS_KEY:agent:artist:alias:index:v1}
+    redis-ttl-seconds: ${AGENT_ARTIST_ALIAS_REDIS_TTL_SECONDS:43200}
+    # Format: alias=canonicalArtistName,alias2=canonicalArtistName2
+    override-mappings: ${AGENT_ARTIST_ALIAS_OVERRIDE_MAPPINGS:}
 
 # 配置 mybatis-plus
 mybatis-plus:
