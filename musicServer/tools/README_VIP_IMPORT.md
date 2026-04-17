@@ -11,7 +11,7 @@ This tool imports local songs from NetEase download folders into this project da
 - Uploads song cover to MinIO `songCovers/`
 - Creates artist (if missing) and artist avatar in MinIO `artists/`
 - Inserts `tb_song` and `tb_genre` mappings
-- Writes a JSONL manifest for audit and reruns
+- Writes a JSONL manifest for audit and reruns 
 
 ## Files
 - Script: `musicServer/tools/import_vip_songs.py`

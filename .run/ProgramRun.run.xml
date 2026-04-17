@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="ProgramRun" type="CompoundRunConfigurationType">
-    <toRun name="AdminServer" type="js.build_tools.npm" />
-    <toRun name="ClientServer" type="js.build_tools.npm" />
-    <toRun name="MusicServerApplication" type="SpringBootApplicationConfigurationType" />
-    <method v="2" />
-  </configuration>
-</component>
