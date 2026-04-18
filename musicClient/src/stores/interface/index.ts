@@ -39,6 +39,7 @@ export interface MenuState {
   isPlaylistOpen: boolean // 是否打开播放队列
   isMobileMenuOpen: boolean // 是否打开移动端菜单
   isRightAsideOpen: boolean // 是否打开移动端侧边栏（右）
+  isSongDrawerOpen: boolean // 是否打开歌曲大抽屉
 }
 
 /* SettingState */

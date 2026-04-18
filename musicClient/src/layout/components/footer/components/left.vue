@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import DrawerMusic from '@/components/DrawerMusic/index.vue'
 import AudioVisualizer from '@/components/AudioVisualizer.vue'
@@ -12,13 +12,18 @@ import { useRoute } from 'vue-router'
 import { useLibraryStore } from '@/stores/modules/library'
 import { useArtistStore } from '@/stores/modules/artist'
 import { usePlaylistStore } from '@/stores/modules/playlist'
+import { MenuStore } from '@/stores/modules/menu'
 
 const { currentTrack } = useAudioPlayer()
-const showDrawerMusic = ref(false)
 const userStore = UserStore()
 const audioStore = AudioStore()
 const route = useRoute()
 const libraryStore = useLibraryStore()
+const menuStore = MenuStore()
+const showDrawerMusic = computed({
+  get: () => menuStore.isSongDrawerOpen,
+  set: (value: boolean) => menuStore.setSongDrawerOpen(value),
+})
 
 // 获取当前播放歌曲的喜欢状态
 const currentSongLikeStatus = computed(() => {

@@ -186,7 +186,7 @@ public class ArtistServiceImpl extends ServiceImpl<ArtistMapper, Artist> impleme
      * @return 歌手详情
      */
     @Override
-    @Cacheable(key = "#artistId")
+    @Cacheable(key = "#artistId + '-' + (#request.getHeader('Authorization') == null ? 'guest' : #request.getHeader('Authorization'))")
     public Result<ArtistDetailVO> getArtistDetail(Long artistId, HttpServletRequest request) {
         ArtistDetailVO artistDetailVO = artistMapper.getArtistDetailById(artistId);
 

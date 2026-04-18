@@ -118,6 +118,8 @@ role-path-permissions:
       - "/song/"
       - "/favorite/"
       - "/chat/"
+      - "/social/"
+      - "/search/"
       - "/comment/"
       - "/banner/"
       - "/feedback/"

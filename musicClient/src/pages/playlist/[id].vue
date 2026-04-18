@@ -13,6 +13,7 @@ import { useFavoriteStore } from '@/stores/modules/favorite'
 import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import { Icon } from '@iconify/vue'
+import { MenuStore } from '@/stores/modules/menu'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +21,7 @@ const audui = AudioStore()
 const playlistStore = usePlaylistStore()
 const favoriteStore = useFavoriteStore()
 const userStore = UserStore()
+const menuStore = MenuStore()
 const playlist = computed(() => playlistStore.playlist)
 const songs = computed(() => playlistStore.songs)
 const { loadTrack, play } = useAudioPlayer()
@@ -109,8 +111,15 @@ const toggleCollect = async () => {
   }
 }
 
+const sharePlaylist = () => {
+  const playlistId = Number(route.params.id)
+  if (!playlistId) return
+  router.push({ path: '/messages', query: { playlistId } })
+}
+
 interface PlaylistComment {
   commentId: number
+  userId?: number
   username: string
   userAvatar: string
   content: string
@@ -138,6 +147,12 @@ const comments = computed(() => {
 
 // 获取当前用户名
 const currentUsername = computed(() => userStore.userInfo?.username || '')
+
+const goUserProfile = (userId?: number) => {
+  if (!userId) return
+  menuStore.setSongDrawerOpen(false)
+  router.push(`/profile/${userId}`)
+}
 
 // 发布评论
 const handleComment = async () => {
@@ -346,6 +361,9 @@ const handlePlayAll = async () => {
             <Icon icon="mdi:play" class="text-xl" />
             <span>播放</span>
           </button>
+          <button @click="sharePlaylist" class="spotify-action-btn" title="分享给好友">
+            <Icon icon="mdi:share-variant-outline" class="text-xl" />
+          </button>
           <button @click="toggleCollect" class="spotify-action-btn" :class="{ 'spotify-action-active': isCollected }">
             <Icon :icon="isCollected ? 'mdi:check' : 'mdi:plus'" class="text-xl" />
           </button>
@@ -412,10 +430,11 @@ const handlePlayAll = async () => {
                 :src="comment.userAvatar || coverImg"
                 alt="avatar"
                 class="spotify-comment-avatar"
+                @click="goUserProfile(comment.userId)"
               />
               <div class="spotify-comment-body">
                 <div class="spotify-comment-header">
-                  <span class="spotify-comment-username">{{ comment.username }}</span>
+                  <span class="spotify-comment-username" @click="goUserProfile(comment.userId)">{{ comment.username }}</span>
                 </div>
                 <p class="spotify-comment-content">{{ comment.content }}</p>
                 <div class="spotify-comment-footer">
@@ -746,6 +765,7 @@ const handlePlayAll = async () => {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .spotify-comment-body {
@@ -761,6 +781,7 @@ const handlePlayAll = async () => {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-base, #fff);
+  cursor: pointer;
 }
 
 .spotify-comment-content {

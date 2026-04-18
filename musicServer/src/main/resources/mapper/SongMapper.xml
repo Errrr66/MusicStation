@@ -15,6 +15,7 @@
         <result column="releaseTime" property="releaseTime"/>
         <collection property="comments" ofType="com.example.music.model.vo.CommentVO">
             <id column="commentId" property="commentId"/>
+            <result column="userId" property="userId"/>
             <result column="username" property="username"/>
             <result column="userAvatar" property="userAvatar"/>
             <result column="content" property="content"/>
@@ -38,6 +39,7 @@
                c.content      AS content,
                c.create_time  AS createTime,
                c.like_count   AS likeCount,
+                c.user_id      AS userId,
                u.username     AS username,
                u.user_avatar  AS userAvatar
         FROM tb_song s

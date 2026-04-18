@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import {
   sendAgentMessage,
   sendAgentMessageStream,
@@ -18,6 +18,7 @@ import SongRecognizer from '@/components/SongRecognizer.vue'
 import { useFavoriteStore } from '@/stores/modules/favorite'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Icon } from '@iconify/vue'
+import Orb from '@/components/voice/Orb.vue'
 import Matrix from '@/components/Matrix/index.vue'
 import { imageToColorFrame, createAnimatedFrames, type ColorFrame, type AnimationType } from '@/utils/matrix'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
@@ -30,6 +31,7 @@ const messages = ref<TimelineMessage[]>([])
 const inputMessage = ref('')
 const loading = ref(false)
 const voiceEnabled = ref(true)
+const viewMode = ref<'tts' | 'voice'>('tts')
 const scrollbarRef = ref<HTMLElement | null>(null)
 const matrixFrames = ref<ColorFrame[]>([])
 const matrixLoading = ref(true)
@@ -44,8 +46,27 @@ const recognizedTrack = ref<any>(null)
 const localSongMatch = ref<Song | null>(null)
 const speechRecognition = ref<any>(null)
 const isLiveVoiceListening = ref(false)
+const isRecognitionRunning = ref(false)
+const isRecognitionStarting = ref(false)
+const pausedByTts = ref(false)
+const lastQueuedVoiceText = ref('')
+const lastQueuedVoiceAt = ref(0)
 const voiceHint = ref('')
+const voiceQuestionQueue = ref<string[]>([])
 const currentTtsAudio = ref<HTMLAudioElement | null>(null)
+const isTtsPlaying = ref(false)
+const orbColorsRef = ref<[string, string]>(['#CADCFC', '#A0B9D1'])
+
+const inputAudioContext = ref<AudioContext | null>(null)
+const inputStream = ref<MediaStream | null>(null)
+const inputAnalyser = ref<AnalyserNode | null>(null)
+const inputDataArray = ref<Uint8Array | null>(null)
+
+const outputAudioContext = ref<AudioContext | null>(null)
+const outputAnalyser = ref<AnalyserNode | null>(null)
+const outputDataArray = ref<Uint8Array | null>(null)
+const outputSourceNode = ref<AudioNode | null>(null)
+const outputPulsePhase = ref(0)
 const streamState = ref<'idle' | 'connecting' | 'streaming' | 'done' | 'error'>('idle')
 const streamFirstDeltaMs = ref<number | null>(null)
 const streamTotalMs = ref<number | null>(null)
@@ -57,6 +78,7 @@ const chatHealth = ref<ChatHealthResponse | null>(null)
 const healthLoading = ref(false)
 const healthError = ref('')
 const healthExpanded = ref(false)
+const isVoiceMode = computed(() => viewMode.value === 'voice')
 const lastRequestPayload = ref<{
   message?: string
   messages?: ChatMessage[]
@@ -67,9 +89,18 @@ const lastRequestPayload = ref<{
   playlistSeeds?: Array<{ songId: number; songName: string; artistName: string; style?: string }>
 } | null>(null)
 
+const orbAgentState = computed<null | 'thinking' | 'listening' | 'talking'>(() => {
+  if (isTtsPlaying.value) return 'talking'
+  if (isLiveVoiceListening.value) return 'listening'
+  if (loading.value || streamState.value === 'connecting' || streamState.value === 'streaming') return 'thinking'
+  return null
+})
+
 const animationModes: AnimationType[] = ['float', 'sparkle', 'sparkle', 'float']
 const currentModeIndex = ref(0)
 const modeTimerId = ref<number | undefined>(undefined)
+let inputAgcGain = 1
+let outputAgcGain = 1
 
 const streamStateTextMap: Record<string, string> = {
   connecting: '连接中',
@@ -77,6 +108,22 @@ const streamStateTextMap: Record<string, string> = {
   done: '已完成',
   error: '失败',
 }
+
+watch(orbAgentState, (state) => {
+  if (state === 'listening') {
+    orbColorsRef.value = ['#7EE8FA', '#80FFDB']
+    return
+  }
+  if (state === 'thinking') {
+    orbColorsRef.value = ['#CADCFC', '#A0B9D1']
+    return
+  }
+  if (state === 'talking') {
+    orbColorsRef.value = ['#FF9A9E', '#FAD0C4']
+    return
+  }
+  orbColorsRef.value = ['#CADCFC', '#A0B9D1']
+})
 
 const refreshChatHealth = async () => {
   healthLoading.value = true
@@ -109,6 +156,193 @@ function updateAnimationMode() {
   matrixFrames.value = createAnimatedFrames(colorFrameRef.value, animationModes[currentModeIndex.value], 12)
 }
 
+const sampleAnalyserVolume = (analyser: AnalyserNode | null, dataArray: Uint8Array | null, channel: 'input' | 'output') => {
+  if (!analyser || !dataArray) return 0
+  analyser.getByteTimeDomainData(dataArray)
+  let sum = 0
+  for (let i = 0; i < dataArray.length; i++) {
+    const normalized = (dataArray[i] - 128) / 128
+    sum += normalized * normalized
+  }
+  const rms = Math.sqrt(sum / dataArray.length)
+  const isInput = channel === 'input'
+  const targetGain = (isInput ? 0.12 : 0.1) / Math.max(rms, 0.01)
+  if (isInput) {
+    inputAgcGain += (targetGain - inputAgcGain) * 0.08
+  } else {
+    outputAgcGain += (targetGain - outputAgcGain) * 0.08
+  }
+  const gain = isInput ? inputAgcGain : outputAgcGain
+  const gated = rms < 0.008 ? 0 : rms
+  return Math.max(0, Math.min(1, gated * gain * 4.2))
+}
+
+const getInputVolume = () => sampleAnalyserVolume(inputAnalyser.value, inputDataArray.value, 'input')
+const getOutputVolume = () => {
+  const analyserVolume = sampleAnalyserVolume(outputAnalyser.value, outputDataArray.value, 'output')
+  if (analyserVolume > 0.001) {
+    return analyserVolume
+  }
+  // If analyser is unavailable but TTS is playing, keep subtle pulse to reflect speaking state.
+  if (isTtsPlaying.value) {
+    outputPulsePhase.value += 0.2
+    return 0.18 + (Math.sin(outputPulsePhase.value) + 1) * 0.12
+  }
+  return 0
+}
+
+const normalizeVoiceFinalText = (value: string) =>
+  value
+    .replace(/[，。！？、,.!?]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const isMeaningfulVoiceText = (value: string) => {
+  const normalized = value.toLowerCase().trim()
+  if (!normalized || normalized.length < 2) {
+    return false
+  }
+  const fillerWords = ['嗯', '啊', '额', '呃', '哦', '唉', '诶', '嗯嗯', '啊啊', '喂', '哈喽']
+  return !fillerWords.includes(normalized)
+}
+
+const startRecognitionSafely = () => {
+  if (!speechRecognition.value) {
+    return
+  }
+  if (!isLiveVoiceListening.value || isRecognitionRunning.value || isRecognitionStarting.value) {
+    return
+  }
+  isRecognitionStarting.value = true
+  try {
+    speechRecognition.value.start()
+  } catch (error) {
+    isRecognitionStarting.value = false
+    console.error('recognition start failed', error)
+  }
+}
+
+const stopRecognitionSafely = () => {
+  if (!speechRecognition.value) {
+    return
+  }
+  if (!isRecognitionRunning.value && !isRecognitionStarting.value) {
+    return
+  }
+  try {
+    speechRecognition.value.stop()
+  } catch (error) {
+    console.error('recognition stop failed', error)
+  } finally {
+    isRecognitionRunning.value = false
+    isRecognitionStarting.value = false
+  }
+}
+
+const ensureInputAnalyser = async () => {
+  if (inputAnalyser.value) return
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  inputStream.value = stream
+  const ctx = new AudioContext()
+  const source = ctx.createMediaStreamSource(stream)
+  const analyser = ctx.createAnalyser()
+  analyser.fftSize = 1024
+  analyser.smoothingTimeConstant = 0.85
+  source.connect(analyser)
+
+  inputAudioContext.value = ctx
+  inputAnalyser.value = analyser
+  inputDataArray.value = new Uint8Array(analyser.fftSize)
+}
+
+const attachOutputAnalyser = (audio: HTMLAudioElement) => {
+  try {
+    if (!outputAudioContext.value) {
+      outputAudioContext.value = new AudioContext()
+    }
+
+    outputSourceNode.value?.disconnect()
+    outputAnalyser.value?.disconnect()
+
+    const mediaWithCapture = audio as HTMLMediaElement & {
+      captureStream?: () => MediaStream
+      mozCaptureStream?: () => MediaStream
+    }
+    const analyser = outputAudioContext.value.createAnalyser()
+    analyser.fftSize = 1024
+    analyser.smoothingTimeConstant = 0.85
+
+    const stream = mediaWithCapture.captureStream?.() || mediaWithCapture.mozCaptureStream?.()
+    let sourceNode: AudioNode | null = null
+    if (stream) {
+      sourceNode = outputAudioContext.value.createMediaStreamSource(stream)
+      sourceNode.connect(analyser)
+    } else {
+      // Fallback for browsers without captureStream support.
+      const source = outputAudioContext.value.createMediaElementSource(audio)
+      source.connect(analyser)
+      analyser.connect(outputAudioContext.value.destination)
+      sourceNode = source
+    }
+
+    outputSourceNode.value = sourceNode
+    outputAnalyser.value = analyser
+    outputDataArray.value = new Uint8Array(analyser.fftSize)
+
+    if (outputAudioContext.value.state === 'suspended') {
+      outputAudioContext.value.resume().catch(() => undefined)
+    }
+  } catch (error) {
+    console.error('attachOutputAnalyser failed', error)
+    outputSourceNode.value = null
+    outputAnalyser.value = null
+    outputDataArray.value = null
+  }
+}
+
+const closeVoiceAnalyser = () => {
+  inputStream.value?.getTracks().forEach((track) => track.stop())
+  inputStream.value = null
+  inputAnalyser.value = null
+  inputDataArray.value = null
+  inputAudioContext.value?.close().catch(() => undefined)
+  inputAudioContext.value = null
+}
+
+const closeOutputAnalyser = () => {
+  outputSourceNode.value?.disconnect()
+  outputAnalyser.value?.disconnect()
+  outputSourceNode.value = null
+  outputAnalyser.value = null
+  outputDataArray.value = null
+  outputAudioContext.value?.close().catch(() => undefined)
+  outputAudioContext.value = null
+}
+
+const switchToVoiceMode = async () => {
+  viewMode.value = 'voice'
+  orbColorsRef.value = ['#7EE8FA', '#80FFDB']
+  try {
+    await ensureInputAnalyser()
+    if (!isLiveVoiceListening.value) {
+      isLiveVoiceListening.value = true
+    }
+    startRecognitionSafely()
+  } catch (error) {
+    console.error(error)
+    ElMessage.warning('无法访问麦克风，语音可视化不可用')
+  }
+}
+
+const switchToTtsMode = () => {
+  viewMode.value = 'tts'
+  isLiveVoiceListening.value = false
+  pausedByTts.value = false
+  voiceHint.value = ''
+  stopRecognitionSafely()
+  orbColorsRef.value = ['#CADCFC', '#A0B9D1']
+}
+
 onMounted(async () => {
   initLiveSpeech()
   await refreshChatHealth()
@@ -116,7 +350,6 @@ onMounted(async () => {
     const colorFrame = await imageToColorFrame('/thinking.png', 45, 54)
     colorFrameRef.value = colorFrame
     matrixFrames.value = createAnimatedFrames(colorFrame, animationModes[0], 12)
-    
     modeTimerId.value = window.setInterval(() => {
       updateAnimationMode()
     }, 5000)
@@ -135,11 +368,13 @@ onUnmounted(() => {
   stopCurrentTtsAudio()
   isLiveVoiceListening.value = false
   if (speechRecognition.value) {
-    speechRecognition.value.stop()
+    stopRecognitionSafely()
   }
   if (modeTimerId.value) {
     clearInterval(modeTimerId.value)
   }
+  closeVoiceAnalyser()
+  closeOutputAnalyser()
 })
 
 const stopCurrentTtsAudio = () => {
@@ -148,6 +383,58 @@ const stopCurrentTtsAudio = () => {
     currentTtsAudio.value.currentTime = 0
     currentTtsAudio.value = null
   }
+  isTtsPlaying.value = false
+}
+
+const playTtsAudio = (audioUrl: string) => {
+  const audio = new Audio(audioUrl)
+  audio.preload = 'auto'
+  try {
+    attachOutputAnalyser(audio)
+  } catch (error) {
+    console.error('Attach output analyser failed', error)
+  }
+  audio.onplay = () => {
+    isTtsPlaying.value = true
+    outputAudioContext.value?.resume().catch(() => undefined)
+    if (viewMode.value !== 'voice' && isLiveVoiceListening.value && isRecognitionRunning.value) {
+      pausedByTts.value = true
+      stopRecognitionSafely()
+    }
+  }
+  audio.onpause = () => {
+    isTtsPlaying.value = false
+    if (pausedByTts.value && isLiveVoiceListening.value) {
+      pausedByTts.value = false
+      startRecognitionSafely()
+    }
+  }
+  audio.onended = () => {
+    isTtsPlaying.value = false
+    if (pausedByTts.value && isLiveVoiceListening.value) {
+      pausedByTts.value = false
+      startRecognitionSafely()
+    }
+    if (currentTtsAudio.value === audio) {
+      currentTtsAudio.value = null
+    }
+  }
+  currentTtsAudio.value = audio
+  audio.play().catch((e) => {
+    isTtsPlaying.value = false
+    console.error('Audio play failed', e)
+  })
+}
+
+const flushVoiceQueue = async () => {
+  if (loading.value || !voiceQuestionQueue.value.length) {
+    return
+  }
+  const nextQuestion = voiceQuestionQueue.value.shift()
+  if (!nextQuestion) {
+    return
+  }
+  await sendByText(nextQuestion)
 }
 
 const runAgentRequest = async (
@@ -210,9 +497,7 @@ const runAgentRequest = async (
         }
 
         if (data.audio) {
-          const audio = new Audio(data.audio)
-          currentTtsAudio.value = audio
-          audio.play().catch(e => console.error('Audio play failed', e))
+          playTtsAudio(data.audio)
         }
       },
       onError: (message) => {
@@ -235,9 +520,7 @@ const runAgentRequest = async (
         messages.value[assistantIndex].pending = false
 
         if (res.data.audio) {
-          const audio = new Audio(res.data.audio)
-          currentTtsAudio.value = audio
-          audio.play().catch(e => console.error('Audio play failed', e))
+          playTtsAudio(res.data.audio)
         }
       } else {
         streamState.value = 'error'
@@ -392,6 +675,11 @@ const initLiveSpeech = () => {
   recognition.interimResults = true
   recognition.continuous = true
 
+  recognition.onstart = () => {
+    isRecognitionStarting.value = false
+    isRecognitionRunning.value = true
+  }
+
   recognition.onresult = async (event: any) => {
     let finalText = ''
     let interimText = ''
@@ -410,19 +698,37 @@ const initLiveSpeech = () => {
       stopCurrentTtsAudio()
     }
 
-    if (finalText.trim() && !loading.value) {
-      await sendByText(finalText)
+    const normalizedFinal = normalizeVoiceFinalText(finalText)
+    if (normalizedFinal && isMeaningfulVoiceText(normalizedFinal)) {
+      const now = Date.now()
+      if (normalizedFinal === lastQueuedVoiceText.value && now - lastQueuedVoiceAt.value < 1200) {
+        return
+      }
+      lastQueuedVoiceText.value = normalizedFinal
+      lastQueuedVoiceAt.value = now
+      voiceQuestionQueue.value.push(normalizedFinal)
+      if (loading.value) {
+        stopStreaming()
+      }
+      await flushVoiceQueue()
     }
   }
 
   recognition.onend = () => {
+    isRecognitionRunning.value = false
+    isRecognitionStarting.value = false
     if (isLiveVoiceListening.value) {
-      recognition.start()
+      startRecognitionSafely()
     }
   }
 
   recognition.onerror = () => {
     voiceHint.value = ''
+    isRecognitionRunning.value = false
+    isRecognitionStarting.value = false
+    if (isLiveVoiceListening.value) {
+      startRecognitionSafely()
+    }
   }
 
   speechRecognition.value = recognition
@@ -436,14 +742,33 @@ const toggleLiveVoice = () => {
 
   if (isLiveVoiceListening.value) {
     isLiveVoiceListening.value = false
+    pausedByTts.value = false
     voiceHint.value = ''
-    speechRecognition.value.stop()
+    stopRecognitionSafely()
+    return
+  }
+
+  if (!isVoiceMode.value) {
+    void switchToVoiceMode()
     return
   }
 
   isLiveVoiceListening.value = true
-  speechRecognition.value.start()
+  ensureInputAnalyser()
+    .catch((error) => {
+      console.error(error)
+      ElMessage.warning('麦克风权限未开启，无法采集实时音量')
+    })
+    .finally(() => {
+      startRecognitionSafely()
+    })
 }
+
+watch(loading, (isLoading) => {
+  if (!isLoading) {
+    void flushVoiceQueue()
+  }
+})
 
 const normalizeText = (value?: string) =>
   (value || '')
@@ -683,7 +1008,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
       <div v-if="healthError" class="spotify-health-error">{{ healthError }}</div>
     </div>
 
-    <div ref="scrollbarRef" class="spotify-chat-messages">
+    <div v-if="viewMode === 'tts'" ref="scrollbarRef" class="spotify-chat-messages">
       <div
         v-for="(msg, index) in messages"
         :key="index"
@@ -808,11 +1133,42 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
       </div>
     </div>
 
+    <div v-else class="spotify-voice-stage">
+      <Orb
+        class="spotify-orb"
+        :agent-state="orbAgentState"
+        :colors-ref="orbColorsRef"
+        :seed="20260418"
+        volume-mode="auto"
+        :get-input-volume="getInputVolume"
+        :get-output-volume="getOutputVolume"
+      />
+      <p class="spotify-orb-hint">
+        {{ orbAgentState === 'talking' ? 'AI 正在回答，语音振幅实时驱动 Orb' : orbAgentState === 'listening' ? '实时语音输入中，请继续说' : orbAgentState === 'thinking' ? 'AI 思考中...' : '点击下方麦克风开始语音输入' }}
+      </p>
+    </div>
+
     <div class="spotify-chat-input">
       <div class="spotify-input-tools">
-        <SongRecognizer @success="handleRecognitionSuccess" />
+        <div class="spotify-mode-switch">
+          <button
+            class="spotify-mode-btn"
+            :class="{ 'spotify-mode-btn-active': viewMode === 'tts' }"
+            @click="switchToTtsMode"
+          >
+            TTS
+          </button>
+          <button
+            class="spotify-mode-btn"
+            :class="{ 'spotify-mode-btn-active': viewMode === 'voice' }"
+            @click="switchToVoiceMode"
+          >
+            语音
+          </button>
+        </div>
+        <SongRecognizer v-if="viewMode === 'tts'" @success="handleRecognitionSuccess" />
         <button
-          v-if="canResumeAfterAbort && !loading"
+          v-if="viewMode === 'tts' && canResumeAfterAbort && !loading"
           class="spotify-resume-btn"
           @click="resumeStreaming"
           title="继续生成"
@@ -825,14 +1181,14 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         <Icon icon="ri:chat-1-line" class="spotify-input-icon" />
         <input
           v-model="inputMessage"
-          :placeholder="voiceHint ? `识别中: ${voiceHint}` : '输入消息...'"
+          :placeholder="viewMode === 'voice' ? (voiceHint ? `识别中: ${voiceHint}` : '语音模式：点击右侧麦克风开始实时输入') : (voiceHint ? `识别中: ${voiceHint}` : '输入消息...')"
           @keyup.enter="handleSend"
-          :disabled="loading"
+          :disabled="loading || viewMode === 'voice'"
           class="spotify-input"
         />
         <button
           class="spotify-live-voice-btn"
-          :class="{ 'spotify-live-voice-btn-active': isLiveVoiceListening }"
+          :class="{ 'spotify-live-voice-btn-active': isLiveVoiceListening || viewMode === 'voice' }"
           @click="toggleLiveVoice"
           :title="isLiveVoiceListening ? '停止语音输入' : '语音输入'"
         >
@@ -840,7 +1196,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         </button>
       </div>
       <button
-        v-if="!loading"
+        v-if="!loading && viewMode === 'tts'"
         @click="handleSend"
         :disabled="!inputMessage.trim()"
         class="spotify-send-btn"
@@ -849,13 +1205,14 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         <Icon icon="mdi:send" class="text-lg" />
       </button>
       <button
-        v-else
+        v-else-if="loading"
         @click="stopStreaming"
         class="spotify-stop-btn"
         title="中断生成"
       >
         <Icon icon="mdi:stop" class="text-lg" />
       </button>
+      <div v-else class="spotify-voice-pill">语音模式</div>
     </div>
   </div>
 </template>
@@ -1320,6 +1677,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 14px;
 }
 
 .spotify-matrix-loading {
@@ -1331,6 +1689,27 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 .spotify-matrix-fallback {
   max-width: 200px;
   border-radius: 16px;
+}
+
+.spotify-voice-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.spotify-orb {
+  width: min(60vw, 420px);
+  height: min(60vw, 420px);
+  min-width: 240px;
+  min-height: 240px;
+}
+
+.spotify-orb-hint {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
 }
 
 .spotify-chat-input {
@@ -1346,6 +1725,29 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.spotify-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+}
+
+.spotify-mode-btn {
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.spotify-mode-btn-active {
+  border-color: rgba(29, 185, 84, 0.7);
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.12);
 }
 
 .spotify-live-voice-btn {
@@ -1480,6 +1882,18 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 .spotify-stop-btn:hover {
   background-color: #dc2626;
   transform: scale(1.04);
+}
+
+.spotify-voice-pill {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 232, 250, 0.5);
+  color: #7ee8fa;
+  background: rgba(126, 232, 250, 0.12);
+  font-size: 12px;
 }
 
 /* Light Theme */

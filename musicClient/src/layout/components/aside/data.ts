@@ -30,6 +30,7 @@ export const MenuData = [
     title: '我的',
     children: [
       { title: '喜欢', icon: 'ri:heart-line', router: '/like' },
+      { title: '私信', icon: 'ri:chat-private-line', router: '/messages' },
       {
         title: '资料',
         icon: 'mi:user',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import DrawerMusic from '@/components/DrawerMusic/index.vue'
 import { Icon } from '@iconify/vue'
@@ -7,11 +7,16 @@ import { UserStore } from '@/stores/modules/user'
 import { AudioStore } from '@/stores/modules/audio'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
+import { MenuStore } from '@/stores/modules/menu'
 
 const { currentTrack, isPlaying, togglePlayPause, nextTrack, prevTrack, currentTime, duration, playMode, togglePlayMode } = useAudioPlayer()
-const showDrawerMusic = ref(false)
 const userStore = UserStore()
 const audioStore = AudioStore()
+const menuStore = MenuStore()
+const showDrawerMusic = computed({
+  get: () => menuStore.isSongDrawerOpen,
+  set: (value: boolean) => menuStore.setSongDrawerOpen(value),
+})
 
 const progressPercent = computed(() => {
   if (duration.value === 0) return 0

@@ -229,7 +229,7 @@ watch(
           type="text"
           class="spotify-search-input"
           placeholder="想播放什么？"
-          @keyup.enter="router.push('/library?query=' + searchText)"
+          @keyup.enter="router.push('/search?query=' + searchText)"
         />
       </div>
       <SongRecognizer @success="handleRecognitionSuccess" />
@@ -306,7 +306,7 @@ watch(
           type="text"
           class="spotify-search-input"
           placeholder="想播放什么？"
-          @keyup.enter="router.push('/library?query=' + searchText); toggleMobileSearch()"
+          @keyup.enter="router.push('/search?query=' + searchText); toggleMobileSearch()"
         />
       </div>
     </div>

@@ -3,6 +3,7 @@ import piniaPersistConfig from '@/stores/helper/persist'
 import { UserState } from '@/stores/interface'
 import { login, logout, getUserInfo } from '@/api/system'
 import { AudioStore } from './audio'
+import { useFavoriteStore } from './favorite'
 
 interface UserInfo {
   userId?: number
@@ -49,6 +50,8 @@ export const UserStore = defineStore('UserStore', {
 
       // 清空所有歌曲的喜欢状态
       const audioStore = AudioStore()
+      const favoriteStore = useFavoriteStore()
+      favoriteStore.clearFavoritePlaylists()
       // 清空播放列表中的喜欢状态
       audioStore.trackList.forEach((track) => {
         track.likeStatus = 0

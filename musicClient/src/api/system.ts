@@ -1,4 +1,7 @@
 import { http } from '@/utils/http'
+import type { Conversation, PrivateMessage, UserProfile, UserSimple } from './interface'
+
+type HttpOptions = Parameters<typeof http>[2]
 
 export type Result = {
   code: number
@@ -184,3 +187,62 @@ export const deleteComment = (commentId: number) => {
 export const addFeedback = (data: { content: string }) => {
   return http<Result>('post', '/feedback/addFeedback', { params: data })
 }
+
+/** 获取公开用户主页 */
+export const getUserProfile = (userId: number) => {
+  return http<{ code: number; message: string; data?: UserProfile }>('get', `/social/profile/${userId}`)
+}
+
+/** 关注用户 */
+export const followUser = (targetUserId: number) => {
+  return http<Result>('post', `/social/follow/${targetUserId}`)
+}
+
+/** 取消关注用户 */
+export const unfollowUser = (targetUserId: number) => {
+  return http<Result>('delete', `/social/follow/${targetUserId}`)
+}
+
+/** 获取关注列表 */
+export const getFollowingUsers = (userId: number, options?: HttpOptions) => {
+  return http<{ code: number; message: string; data?: UserSimple[] }>('get', `/social/following/${userId}`, options)
+}
+
+/** 获取粉丝列表 */
+export const getFollowerUsers = (userId: number, options?: HttpOptions) => {
+  return http<{ code: number; message: string; data?: UserSimple[] }>('get', `/social/followers/${userId}`, options)
+}
+
+/** 私信会话列表 */
+export const getConversations = (options?: HttpOptions) => {
+  return http<{ code: number; message: string; data?: Conversation[] }>('get', '/social/conversations', options)
+}
+
+/** 获取与好友聊天记录 */
+export const getPrivateMessages = (friendId: number, pageNum = 1, pageSize = 30, options?: HttpOptions) => {
+  return http<{ code: number; message: string; data?: PrivateMessage[] }>('get', `/social/messages/${friendId}`, {
+    params: { pageNum, pageSize },
+    ...options,
+  })
+}
+
+/** 发送私信 */
+export const sendPrivateMessage = (data: {
+  toUserId: number
+  messageType?: string
+  content?: string
+  songId?: number
+  playlistId?: number
+}) => {
+  return http<Result>('post', '/social/messages', { data })
+}
+
+/** 综合搜索：歌曲/歌手/歌单/用户 */
+export const searchAll = (keyword: string, limit = 20) => {
+  return http<{
+    code: number
+    message: string
+    data?: { songs: any[]; artists: any[]; playlists: any[]; users: UserSimple[] }
+  }>('get', '/search/all', { params: { keyword, limit } })
+}
+

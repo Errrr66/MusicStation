@@ -11,6 +11,7 @@ export const MenuStore = defineStore({
     isPlaylistOpen: false,
     isMobileMenuOpen: false,
     isRightAsideOpen: false,
+    isSongDrawerOpen: false,
   }),
   actions: {
     setMenuIndex(menuIndex: string) {
@@ -24,6 +25,9 @@ export const MenuStore = defineStore({
     },
     setRightAsideOpen(isOpen: boolean) {
       this.isRightAsideOpen = isOpen
+    },
+    setSongDrawerOpen(isOpen: boolean) {
+      this.isSongDrawerOpen = isOpen
     },
   },
   persist: piniaPersistConfig('MenuStore'),

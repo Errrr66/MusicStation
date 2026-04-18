@@ -83,7 +83,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      * @return 歌曲列表
      */
     @Override
-    @Cacheable(key = "#songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.artistName + '-' + #songDTO.album")
+    @Cacheable(key = "#songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.artistName + '-' + #songDTO.album + '-' + (#request.getHeader('Authorization') == null ? 'guest' : #request.getHeader('Authorization'))")
     public Result<PageResult<SongVO>> getAllSongs(SongDTO songDTO, HttpServletRequest request) {
         // 获取请求头中的 token
         String token = request.getHeader("Authorization");
@@ -241,7 +241,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      * @return 歌曲详情
      */
     @Override
-    @Cacheable(key = "#songId", unless = "#result == null || #result.data == null || #result.data.lyric == null || #result.data.lyric.isEmpty()")
+    @Cacheable(key = "#songId + '-' + (#request.getHeader('Authorization') == null ? 'guest' : #request.getHeader('Authorization'))", unless = "#result == null || #result.data == null || #result.data.lyric == null || #result.data.lyric.isEmpty()")
     public Result<SongDetailVO> getSongDetail(Long songId, HttpServletRequest request) {
         SongDetailVO songDetailVO = songMapper.getSongDetailById(songId);
         if (songDetailVO == null) {

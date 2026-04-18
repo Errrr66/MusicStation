@@ -9,6 +9,15 @@ import 'nprogress/nprogress.css'
 import { UserStore } from '@/stores/modules/user'
 import { ElMessage } from 'element-plus'
 
+type HttpMeta = {
+  silentProgress?: boolean
+  silentError?: boolean
+}
+
+type HttpRequestConfig = Omit<AxiosRequestConfig, 'method' | 'url'> & {
+  meta?: HttpMeta
+}
+
 const instance: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_APP_BASE_API, // 从环境变量读取接口地址
   timeout: 20000, // 设置超时时间 20秒
@@ -23,8 +32,11 @@ const instance: AxiosInstance = axios.create({
 // 请求拦截器
 instance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const meta = (config as InternalAxiosRequestConfig & { meta?: HttpMeta }).meta
     // 开启进度条
-    NProgress.start()
+    if (!meta?.silentProgress) {
+      NProgress.start()
+    }
 
     // 只有登录请求不需要添加token
     if (config.url?.includes('/user/login')) {
@@ -57,14 +69,24 @@ instance.interceptors.request.use(
 // 响应拦截器
 instance.interceptors.response.use(
   (response) => {
+    const meta = (response.config as AxiosRequestConfig & { meta?: HttpMeta }).meta
     // 关闭进度条
-    NProgress.done()
+    if (!meta?.silentProgress) {
+      NProgress.done()
+    }
     const { data } = response
     return data
   },
   (error) => {
+    const meta = (error.config as AxiosRequestConfig & { meta?: HttpMeta } | undefined)?.meta
     // 关闭进度条
-    NProgress.done()
+    if (!meta?.silentProgress) {
+      NProgress.done()
+    }
+
+    if (meta?.silentError) {
+      return Promise.reject(error)
+    }
 
     if (error.response) {
       switch (error.response.status) {
@@ -102,7 +124,7 @@ instance.interceptors.response.use(
 export const http = <T>(
   method: 'get' | 'post' | 'put' | 'delete' | 'patch',
   url: string,
-  config?: Omit<AxiosRequestConfig, 'method' | 'url'>
+  config?: HttpRequestConfig
 ): Promise<T> => {
   return instance({ method, url, ...config })
 }

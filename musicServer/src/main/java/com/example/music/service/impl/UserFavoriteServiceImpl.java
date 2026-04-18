@@ -55,7 +55,7 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
      * @return 用户收藏的歌曲列表
      */
     @Override
-    @Cacheable(key = "#songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.artistName + '-' + #songDTO.album")
+    @Cacheable(key = "#root.target.currentUserCacheKey() + '-' + #songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.artistName + '-' + #songDTO.album")
     public Result<PageResult<SongVO>> getUserFavoriteSongs(SongDTO songDTO) {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
@@ -141,7 +141,7 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
      * @return 用户收藏的歌单列表
      */
     @Override
-    @Cacheable(key = "#playlistDTO.pageNum + '-' + #playlistDTO.pageSize + '-' + #playlistDTO.title + '-' + #playlistDTO.style")
+    @Cacheable(key = "#root.target.currentUserCacheKey() + '-' + #playlistDTO.pageNum + '-' + #playlistDTO.pageSize + '-' + #playlistDTO.title + '-' + #playlistDTO.style")
     public Result<PageResult<PlaylistVO>> getUserFavoritePlaylists(PlaylistDTO playlistDTO) {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
@@ -212,6 +212,16 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
         }
 
         return Result.success(MessageConstant.DELETE + MessageConstant.SUCCESS);
+    }
+
+    public String currentUserCacheKey() {
+        Map<String, Object> map = ThreadLocalUtil.get();
+        if (map == null) {
+            return "guest";
+        }
+        Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
+        Long userId = TypeConversionUtil.toLong(userIdObj);
+        return userId == null ? "guest" : String.valueOf(userId);
     }
 
 }

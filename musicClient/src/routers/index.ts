@@ -25,6 +25,10 @@ const router = createRouter({
       component: () => import('@/pages/library/index.vue'),
     },
     {
+      path: '/search',
+      component: () => import('@/pages/search/index.vue'),
+    },
+    {
       path: '/artist',
       component: () => import('@/pages/artist/index.vue'),
     },
@@ -47,6 +51,14 @@ const router = createRouter({
     {
       path: '/user',
       component: () => import('@/pages/user/index.vue'),
+    },
+    {
+      path: '/profile/:id',
+      component: () => import('@/pages/profile/[id].vue'),
+    },
+    {
+      path: '/messages',
+      component: () => import('@/pages/messages/index.vue'),
     },
     {
       path: '/chat',

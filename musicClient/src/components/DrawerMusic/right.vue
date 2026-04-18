@@ -8,6 +8,10 @@ import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { Icon } from '@iconify/vue'
+import { MenuStore } from '@/stores/modules/menu'
+
+const router = useRouter()
+const menuStore = MenuStore()
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
 const userStore = UserStore()
@@ -139,6 +143,24 @@ const formatDate = (date: string) => {
   })
 }
 
+const goUserProfile = (userId?: number) => {
+  if (!userId) return
+  menuStore.setSongDrawerOpen(false)
+  router.push(`/profile/${userId}`)
+}
+
+const shareCurrentSong = () => {
+  if (!songDetail.value?.songId) return
+  menuStore.setSongDrawerOpen(false)
+  router.push({
+    path: '/messages',
+    query: {
+      songId: songDetail.value.songId,
+      shareAt: Date.now(),
+    },
+  })
+}
+
 // 处理点赞
 const handleLike = async (comment: any) => {
   if (!userStore.isLoggedIn) {
@@ -250,6 +272,12 @@ const handleDelete = async (comment: any) => {
             <span class="spotify-info-label">发行时间</span>
             <span class="spotify-info-value">{{ formatDate(songDetail.releaseTime) }}</span>
           </div>
+          <div class="spotify-info-item">
+            <button class="spotify-share-btn" @click="shareCurrentSong">
+              <Icon icon="mdi:share-variant-outline" />
+              <span>分享歌曲给好友</span>
+            </button>
+          </div>
         </div>
 
         <!-- Comments List -->
@@ -264,10 +292,11 @@ const handleDelete = async (comment: any) => {
                 :src="fixUrl(comment.userAvatar) || coverImg"
                 alt="avatar"
                 class="spotify-comment-avatar"
+                @click="goUserProfile(comment.userId)"
               />
               <div class="spotify-comment-body">
                 <div class="spotify-comment-header">
-                  <span class="spotify-comment-username">{{ comment.username }}</span>
+                  <span class="spotify-comment-username" @click="goUserProfile(comment.userId)">{{ comment.username }}</span>
                   <span class="spotify-comment-time">{{ comment.createTime }}</span>
                 </div>
                 <p class="spotify-comment-text">{{ comment.content }}</p>
@@ -463,6 +492,19 @@ const handleDelete = async (comment: any) => {
   font-weight: 500;
 }
 
+.spotify-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(29, 185, 84, 0.7);
+  background: transparent;
+  color: #1db954;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
 .spotify-comments-list {
   flex: 1;
 }
@@ -491,6 +533,7 @@ const handleDelete = async (comment: any) => {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .spotify-comment-body {
@@ -509,6 +552,7 @@ const handleDelete = async (comment: any) => {
   font-size: 0.8125rem;
   font-weight: 600;
   color: #fff;
+  cursor: pointer;
 }
 
 .spotify-comment-time {

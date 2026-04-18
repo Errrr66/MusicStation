@@ -5,7 +5,6 @@ import type { SongDetail } from '@/api/interface'
 import { ref, inject, type Ref } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { MenuStore } from '@/stores/modules/menu'
-import Recently from '../../layout/components/footer/components/recently.vue'
 import vinylImg from '@/assets/vinyl.png'
 
 const menuStore = MenuStore()
@@ -125,7 +124,6 @@ const togglePlayMode = () => {
         </button>
       </div>
     </div>
-    <Recently />
   </div>
 </template>
 
