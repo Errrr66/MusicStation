@@ -22,8 +22,22 @@ public class ArtistVO implements Serializable {
     private String artistName;
 
     /**
+     * 歌手类型：0-男歌手，1-女歌手，2-组合/乐队
+     */
+    private Integer gender;
+
+    /**
      * 歌手头像
      */
     private String avatar;
 
+    /**
+     * 歌手地区
+     */
+    private String area;
+
+    /**
+     * 歌手简介
+     */
+    private String introduction;
 }

@@ -10,29 +10,42 @@ import { fixUrl } from '@/utils'
 
 const showDrawer = defineModel<boolean>()
 const songDetail = ref<SongDetail | null>(null)
+let latestDetailRequestId = 0
 
 const { currentTrack } = useAudioPlayer()
 
 watch(
   () => currentTrack.value.id,
   async (newId) => {
-    if (newId) {
-      try {
-        const res = await getSongDetail(Number(newId))
-        if (res.code === 0 && res.data) {
-          const songData = res.data as unknown as SongDetail
-          if (
-            'songId' in songData &&
-            'songName' in songData &&
-            'artistName' in songData &&
-            'album' in songData
-          ) {
-            songDetail.value = songData
-          } else {
-            console.error('歌曲详情数据格式不正确')
-          }
+    songDetail.value = null
+    const currentSongId = Number(newId)
+    if (!currentSongId) {
+      return
+    }
+
+    const requestId = ++latestDetailRequestId
+
+    try {
+      const res = await getSongDetail(currentSongId)
+      if (requestId !== latestDetailRequestId) {
+        return
+      }
+      if (res.code === 0 && res.data) {
+        const songData = res.data as unknown as SongDetail
+        if (
+          'songId' in songData &&
+          'songName' in songData &&
+          'artistName' in songData &&
+          'album' in songData &&
+          Number(songData.songId) === currentSongId
+        ) {
+          songDetail.value = songData
+        } else {
+          console.error('歌曲详情数据格式不正确或歌曲ID不匹配')
         }
-      } catch (error) {
+      }
+    } catch (error) {
+      if (requestId === latestDetailRequestId) {
         console.error('获取歌曲详情失败:', error)
       }
     }

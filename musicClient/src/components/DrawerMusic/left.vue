@@ -2,7 +2,7 @@
 import { formatTime, fixUrl } from '@/utils'
 import { Icon } from '@iconify/vue'
 import type { SongDetail } from '@/api/interface'
-import { ref, inject, type Ref } from 'vue'
+import { computed, ref, inject, type Ref } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { MenuStore } from '@/stores/modules/menu'
 import vinylImg from '@/assets/vinyl.png'
@@ -22,6 +22,33 @@ const {
 } = useAudioPlayer()
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
+
+const isCurrentTrackDetail = computed(() => {
+  const detailSongId = Number(songDetail?.value?.songId)
+  const playingSongId = Number(currentTrack.value.id)
+  return detailSongId > 0 && detailSongId === playingSongId
+})
+
+const displayCover = computed(() => {
+  if (isCurrentTrackDetail.value && songDetail?.value?.coverUrl) {
+    return fixUrl(songDetail.value.coverUrl)
+  }
+  return fixUrl(currentTrack.value.cover)
+})
+
+const displaySongName = computed(() => {
+  if (isCurrentTrackDetail.value && songDetail?.value?.songName) {
+    return songDetail.value.songName
+  }
+  return currentTrack.value.title
+})
+
+const displayArtistName = computed(() => {
+  if (isCurrentTrackDetail.value && songDetail?.value?.artistName) {
+    return songDetail.value.artistName
+  }
+  return currentTrack.value.artist
+})
 
 const playModes = {
   order: {
@@ -63,14 +90,14 @@ const togglePlayMode = () => {
           <div
             class="spotify-album-cover"
             :style="{
-              backgroundImage: `url(${fixUrl(songDetail?.coverUrl) || fixUrl(currentTrack.cover)})`,
+              backgroundImage: `url(${displayCover})`,
             }"
           ></div>
           <div
             class="spotify-vinyl"
             :style="{
               animationPlayState: isPlaying ? 'running' : 'paused',
-              backgroundImage: `url(${vinylImg}), url(${fixUrl(songDetail?.coverUrl) || fixUrl(currentTrack.cover)})`,
+              backgroundImage: `url(${vinylImg}), url(${displayCover})`,
             }"
           ></div>
         </div>
@@ -78,10 +105,10 @@ const togglePlayMode = () => {
 
       <div class="spotify-song-header">
         <h2 class="spotify-song-title">
-          {{ songDetail?.songName || currentTrack.title }}
+          {{ displaySongName }}
         </h2>
         <p class="spotify-song-artist">
-          {{ songDetail?.artistName || currentTrack.artist }}
+          {{ displayArtistName }}
         </p>
       </div>
 

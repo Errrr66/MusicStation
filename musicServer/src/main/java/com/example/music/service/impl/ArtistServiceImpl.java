@@ -68,14 +68,15 @@ public class ArtistServiceImpl extends ServiceImpl<ArtistMapper, Artist> impleme
         Page<Artist> page = new Page<>(artistDTO.getPageNum(), artistDTO.getPageSize());
         QueryWrapper<Artist> queryWrapper = new QueryWrapper<>();
         // 根据 artistDTO 的条件构建查询条件
-        if (artistDTO.getArtistName() != null) {
-            queryWrapper.like("name", artistDTO.getArtistName());
+        if (artistDTO.getArtistName() != null && !artistDTO.getArtistName().isBlank()) {
+            queryWrapper.like("name", artistDTO.getArtistName().trim());
         }
         if (artistDTO.getGender() != null) {
             queryWrapper.eq("gender", artistDTO.getGender());
         }
-        if (artistDTO.getArea() != null) {
-            queryWrapper.like("area", artistDTO.getArea());
+        if (artistDTO.getArea() != null && !artistDTO.getArea().isBlank()) {
+            // 地区筛选使用精确匹配，避免“地区类型”查询结果不稳定
+            queryWrapper.eq("area", artistDTO.getArea().trim());
         }
 
         IPage<Artist> artistPage = artistMapper.selectPage(page, queryWrapper);
@@ -107,14 +108,14 @@ public class ArtistServiceImpl extends ServiceImpl<ArtistMapper, Artist> impleme
         Page<Artist> page = new Page<>(artistDTO.getPageNum(), artistDTO.getPageSize());
         QueryWrapper<Artist> queryWrapper = new QueryWrapper<>();
         // 根据 artistDTO 的条件构建查询条件
-        if (artistDTO.getArtistName() != null) {
-            queryWrapper.like("name", artistDTO.getArtistName());
+        if (artistDTO.getArtistName() != null && !artistDTO.getArtistName().isBlank()) {
+            queryWrapper.like("name", artistDTO.getArtistName().trim());
         }
         if (artistDTO.getGender() != null) {
             queryWrapper.eq("gender", artistDTO.getGender());
         }
-        if (artistDTO.getArea() != null) {
-            queryWrapper.like("area", artistDTO.getArea());
+        if (artistDTO.getArea() != null && !artistDTO.getArea().isBlank()) {
+            queryWrapper.eq("area", artistDTO.getArea().trim());
         }
 
         // 倒序排序
@@ -250,8 +251,8 @@ public class ArtistServiceImpl extends ServiceImpl<ArtistMapper, Artist> impleme
         if (gender != null) {
             queryWrapper.eq("gender", gender);
         }
-        if (area != null) {
-            queryWrapper.eq("area", area);
+        if (area != null && !area.isBlank()) {
+            queryWrapper.eq("area", area.trim());
         }
 
         return Result.success(artistMapper.selectCount(queryWrapper));

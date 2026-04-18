@@ -117,6 +117,6 @@ export interface PrivateMessage {
   playlistCoverUrl?: string | null
   fromUsername?: string
   fromUserAvatar?: string | null
+  readStatus?: number | boolean | null
   createTime: string
 }
-

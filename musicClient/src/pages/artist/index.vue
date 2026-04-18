@@ -7,6 +7,12 @@ import { fixUrl } from '@/utils'
 const router = useRouter()
 const artistList = ref([])
 
+const genderLabelMap: Record<number, string> = {
+  0: '男歌手',
+  1: '女歌手',
+  2: '组合/乐队',
+}
+
 const selectedGender = ref('-1')
 const selectedArea = ref('-1')
 
@@ -57,7 +63,7 @@ const handleGetArtistList = () => {
   const params = {
     pageNum: currentPage.value,
     pageSize: pageSize.value,
-    name: null,
+    artistName: null,
     gender:
       selectedGender.value === '-1'
         ? null
@@ -78,7 +84,9 @@ const handleGetArtistList = () => {
         artistId: item.artistId,
         name: item.artistName,
         picUrl: fixUrl(item.avatar),
-        alias: [],
+        area: item.area || '其他',
+        gender: item.gender,
+        introduction: item.introduction || '',
       }))
       total.value = res.data.total
       state.total = res.data.total
@@ -117,7 +125,9 @@ const handleSearch = () => {
         artistId: item.artistId,
         name: item.artistName,
         picUrl: fixUrl(item.avatar),
-        alias: [],
+        area: item.area || '其他',
+        gender: item.gender,
+        introduction: item.introduction || '',
       }))
       total.value = res.data.total
       state.total = res.data.total
@@ -271,7 +281,7 @@ onMounted(() => {
             </div>
           </div>
           <h3 class="spotify-artist-name">{{ artist.name }}</h3>
-          <span class="spotify-artist-label">艺人</span>
+          <span class="spotify-artist-label">{{ genderLabelMap[artist.gender] || '艺人' }} · {{ artist.area || '其他' }}</span>
         </div>
       </div>
 

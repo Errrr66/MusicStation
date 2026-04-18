@@ -8,7 +8,7 @@ type VolumeMode = 'auto' | 'manual'
 
 interface OrbProps {
   colors?: [string, string]
-  colorsRef?: { value: [string, string] }
+  colorsRef?: { value: [string, string] } | [string, string]
   seed?: number
   agentState?: AgentState
   volumeMode?: VolumeMode
@@ -75,10 +75,22 @@ const getVolumes = () => {
   }
 }
 
+const isColorTuple = (value: unknown): value is [string, string] =>
+  Array.isArray(value) && value.length === 2
+
+const isColorRefObject = (value: unknown): value is { value: [string, string] } =>
+  typeof value === 'object' &&
+  value !== null &&
+  'value' in value &&
+  isColorTuple((value as { value: unknown }).value)
+
 const resolveColors = (): [string, string] => {
-  const fromRef = props.colorsRef?.value
-  if (fromRef && fromRef.length === 2) {
-    return fromRef
+  const fromRefOrValue = props.colorsRef
+  if (isColorTuple(fromRefOrValue)) {
+    return fromRefOrValue
+  }
+  if (isColorRefObject(fromRefOrValue)) {
+    return fromRefOrValue.value
   }
   return props.colors
 }
@@ -289,10 +301,16 @@ watch(
 )
 
 watch(
-  () => props.colorsRef?.value,
+  () => props.colorsRef,
   (next) => {
-    if (!next || next.length !== 2) return
-    updateTargetColors(next)
+    if (!next) return
+    if (isColorTuple(next)) {
+      updateTargetColors(next)
+      return
+    }
+    if (isColorRefObject(next)) {
+      updateTargetColors(next.value)
+    }
   },
   { deep: true }
 )

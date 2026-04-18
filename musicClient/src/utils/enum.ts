@@ -26,7 +26,7 @@ export const categories = ref<Category[]>([
       { id: '2', label: '美国', value: '美国' },
       { id: '3', label: '韩国', value: '韩国' },
       { id: '4', label: '日本', value: '日本' },
-      { id: '5', label: '其他', value: null },
+      { id: '5', label: '其他', value: '其他' },
     ],
   },
 ])
