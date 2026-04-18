@@ -1,6 +1,13 @@
 # MusicServer RAG 实现详解
 
-本文档基于当前项目代码，说明 `musicServer` 中 AI 助手 RAG（Retrieval-Augmented Generation）的完整实现方式。
+## 关联文档
+
+- `music-server.md`
+- `agent-api.md`
+- `../operations/ai-agent-runbook.md`
+- `../changelog/2026-04-06.md`
+
+本文件基于当前项目代码，说明 `musicServer` 中 AI 助手 RAG（Retrieval-Augmented Generation）的完整实现方式。
 
 ## 1. 实现目标
 
@@ -271,4 +278,3 @@ RAG 当前全部基于本地库，不依赖外部知识库。
 ---
 
 如果你希望，我可以再补一版“按你当前数据库实际样本演示的检索案例文档”（例如 Coldplay、Yellow、风格歌单三条真实请求的检索与排序过程）。
-
