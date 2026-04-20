@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { getArtistDetail } from '@/api/system'
 import Table from '@/components/Table.vue'
 import { useArtistStore } from '@/stores/modules/artist'
 import { ElMessage } from 'element-plus'
 import { useRoute } from 'vue-router'
 import { fixUrl } from '@/utils'
+import defaultArtistAvatar from '@/assets/user.jpg'
 
 interface ArtistDetailResponse {
   artistId: number
@@ -21,6 +22,76 @@ const route = useRoute()
 const artistStore = useArtistStore()
 // 艺人数据
 const artistInfo = computed(() => artistStore.artistInfo)
+const artistAvatar = computed(
+  () => fixUrl(artistInfo.value?.avatar) || defaultArtistAvatar
+)
+const gradientColor = ref('#1e3a5f')
+let latestColorTaskId = 0
+
+const firstSongCover = computed(() => {
+  const firstSong = artistInfo.value?.songs?.[0] as { coverUrl?: string } | undefined
+  return fixUrl(firstSong?.coverUrl)
+})
+
+const extractDominantColor = (imageUrl: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas context not available'))
+        return
+      }
+
+      const sampleWidth = 50
+      const sampleHeight = 50
+      canvas.width = sampleWidth
+      canvas.height = sampleHeight
+      ctx.drawImage(img, 0, 0, sampleWidth, sampleHeight)
+      const pixels = ctx.getImageData(0, 0, sampleWidth, sampleHeight).data
+
+      let r = 0
+      let g = 0
+      let b = 0
+      let count = 0
+      for (let i = 0; i < pixels.length; i += 4) {
+        const alpha = pixels[i + 3]
+        if (alpha > 16) {
+          r += pixels[i]
+          g += pixels[i + 1]
+          b += pixels[i + 2]
+          count++
+        }
+      }
+
+      if (!count) {
+        reject(new Error('No valid pixel'))
+        return
+      }
+
+      const avgR = Math.round(r / count)
+      const avgG = Math.round(g / count)
+      const avgB = Math.round(b / count)
+      // 略微压暗，避免顶部过亮影响文字可读性
+      const darken = 0.72
+      const finalR = Math.max(0, Math.round(avgR * darken))
+      const finalG = Math.max(0, Math.round(avgG * darken))
+      const finalB = Math.max(0, Math.round(avgB * darken))
+      resolve(`rgb(${finalR}, ${finalG}, ${finalB})`)
+    }
+    img.onerror = () => reject(new Error('Image load failed'))
+    img.src = imageUrl
+  })
+}
+
+const handleArtistAvatarError = (event: Event) => {
+  const target = event.target as HTMLImageElement | null
+  if (target && target.src !== defaultArtistAvatar) {
+    target.src = defaultArtistAvatar
+  }
+}
 
 const fetchArtistDetail = async () => {
   const id = route.params.id
@@ -60,6 +131,29 @@ watch(
   { immediate: true }
 )
 
+watch(
+  firstSongCover,
+  async (coverUrl) => {
+    const taskId = ++latestColorTaskId
+    if (!coverUrl) {
+      gradientColor.value = '#1e3a5f'
+      return
+    }
+
+    try {
+      const color = await extractDominantColor(coverUrl)
+      if (taskId === latestColorTaskId) {
+        gradientColor.value = color
+      }
+    } catch {
+      if (taskId === latestColorTaskId) {
+        gradientColor.value = '#1e3a5f'
+      }
+    }
+  },
+  { immediate: true }
+)
+
 // 格式化生日
 const formatBirth = (birth: string) => {
   if (!birth) return ''
@@ -68,14 +162,15 @@ const formatBirth = (birth: string) => {
 </script>
 
 <template>
-  <div class="spotify-artist-page">
+  <div class="spotify-artist-page" :style="{ '--gradient-color': gradientColor }">
     <!-- Artist Header -->
     <div class="spotify-artist-header">
       <div class="spotify-artist-avatar">
         <img
-          :src="artistInfo?.avatar"
+          :src="artistAvatar"
           :alt="artistInfo?.artistName"
           class="spotify-artist-avatar-img"
+          @error="handleArtistAvatarError"
         />
       </div>
       <div class="spotify-artist-info">

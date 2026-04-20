@@ -3,6 +3,7 @@ import { categories } from '@/utils/enum'
 import { getAllArtists } from '@/api/system'
 import { ElNotification } from 'element-plus'
 import { fixUrl } from '@/utils'
+import defaultArtistAvatar from '@/assets/user.jpg'
 
 const router = useRouter()
 const artistList = ref([])
@@ -274,8 +275,12 @@ onMounted(() => {
               lazy
               :alt="artist.name"
               class="spotify-artist-img"
-              :src="artist.picUrl + '?param=230y230'"
-            />
+              :src="fixUrl(artist.picUrl) || defaultArtistAvatar"
+            >
+              <template #error>
+                <img :src="defaultArtistAvatar" :alt="artist.name" class="spotify-artist-img" />
+              </template>
+            </el-image>
             <div class="spotify-artist-play">
               <Icon icon="mdi:play" class="text-2xl" />
             </div>

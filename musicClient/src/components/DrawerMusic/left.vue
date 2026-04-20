@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { formatTime, fixUrl } from '@/utils'
+import { formatTime } from '@/utils'
 import { Icon } from '@iconify/vue'
 import type { SongDetail } from '@/api/interface'
 import { computed, ref, inject, type Ref } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { MenuStore } from '@/stores/modules/menu'
 import vinylImg from '@/assets/vinyl.png'
+import defaultAlbum from '@/assets/default_album.jpg'
 
 const menuStore = MenuStore()
 
@@ -22,6 +23,7 @@ const {
 } = useAudioPlayer()
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
+const drawerCover = inject<Ref<string>>('drawerCover')
 
 const isCurrentTrackDetail = computed(() => {
   const detailSongId = Number(songDetail?.value?.songId)
@@ -30,10 +32,7 @@ const isCurrentTrackDetail = computed(() => {
 })
 
 const displayCover = computed(() => {
-  if (isCurrentTrackDetail.value && songDetail?.value?.coverUrl) {
-    return fixUrl(songDetail.value.coverUrl)
-  }
-  return fixUrl(currentTrack.value.cover)
+  return drawerCover?.value || defaultAlbum
 })
 
 const displaySongName = computed(() => {
@@ -90,14 +89,14 @@ const togglePlayMode = () => {
           <div
             class="spotify-album-cover"
             :style="{
-              backgroundImage: `url(${displayCover})`,
+              backgroundImage: `url('${displayCover}')`,
             }"
           ></div>
           <div
             class="spotify-vinyl"
             :style="{
               animationPlayState: isPlaying ? 'running' : 'paused',
-              backgroundImage: `url(${vinylImg}), url(${displayCover})`,
+              backgroundImage: `url('${vinylImg}'), url('${displayCover}')`,
             }"
           ></div>
         </div>

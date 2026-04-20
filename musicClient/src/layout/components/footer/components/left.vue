@@ -13,6 +13,8 @@ import { useLibraryStore } from '@/stores/modules/library'
 import { useArtistStore } from '@/stores/modules/artist'
 import { usePlaylistStore } from '@/stores/modules/playlist'
 import { MenuStore } from '@/stores/modules/menu'
+import defaultAlbum from '@/assets/default_album.jpg'
+import { appendImageParam, fixUrl } from '@/utils'
 
 const { currentTrack } = useAudioPlayer()
 const userStore = UserStore()
@@ -129,7 +131,7 @@ const handleLike = async () => {
     >
       <div class="spotify-playing-bar-cover">
         <img
-          :src="currentTrack.cover + '?param=90y90'"
+          :src="appendImageParam(currentTrack.cover, '90y90') || fixUrl(currentTrack.cover) || defaultAlbum"
           :alt="currentTrack.title"
           class="spotify-playing-bar-img"
         />

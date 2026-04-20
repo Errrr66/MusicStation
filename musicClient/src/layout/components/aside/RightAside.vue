@@ -123,6 +123,13 @@ const playNextTrack = () => {
   playNext()
 }
 
+const handleArtistAvatarError = (event: Event) => {
+  const target = event.target as HTMLImageElement | null
+  if (target && target.src !== defaultUserAvatar) {
+    target.src = defaultUserAvatar
+  }
+}
+
 const openQueue = () => {
   menuStore.setPlaylistOpen(true)
 }
@@ -196,6 +203,7 @@ const openQueue = () => {
                 :src="fixUrl(artistInfo.avatar) || defaultUserAvatar"
                 alt="Artist Avatar"
                 class="spotify-now-playing-artist-avatar"
+                @error="handleArtistAvatarError"
               />
               <div class="spotify-now-playing-artist-name">
                 {{ artistInfo.artistName || currentTrack.artist }}

@@ -8,6 +8,8 @@ import { AudioStore } from '@/stores/modules/audio'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
 import { MenuStore } from '@/stores/modules/menu'
+import defaultAlbum from '@/assets/default_album.jpg'
+import { appendImageParam, fixUrl } from '@/utils'
 
 const { currentTrack, isPlaying, togglePlayPause, nextTrack, prevTrack, currentTime, duration, playMode, togglePlayMode } = useAudioPlayer()
 const userStore = UserStore()
@@ -77,7 +79,7 @@ const handleLike = async () => {
     <div class="spotify-mobile-player-content" @click="showDrawerMusic = true">
       <div class="spotify-mobile-player-cover">
         <img
-          :src="currentTrack.cover + '?param=60y60'"
+          :src="appendImageParam(currentTrack.cover, '60y60') || fixUrl(currentTrack.cover) || defaultAlbum"
           :alt="currentTrack.title"
           class="spotify-mobile-player-img"
         />

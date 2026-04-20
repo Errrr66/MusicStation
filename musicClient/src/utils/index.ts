@@ -53,16 +53,71 @@ export function getTimeState() {
  */
 export function fixUrl(url: string | undefined | null): string {
   if (!url) return ''
-  // 如果是相对路径，直接返回
-  if (url.startsWith('/')) return url
-  
-  // 替换 localhost 和 127.0.0.1 为当前 hostname
+  const normalizedUrl = url.trim()
+  if (!normalizedUrl) return ''
+
+  // 相对路径直接返回，保持与历史行为一致
+  if (normalizedUrl.startsWith('/')) {
+    return normalizedUrl
+  }
+
+  // 签名 URL 不能做任何重写或编码处理，否则签名会失效
+  const signedUrlPattern = /(x-amz-|x-oss-|signature=|awsaccesskeyid=)/i
+  if (signedUrlPattern.test(normalizedUrl)) {
+    return normalizedUrl
+  }
+
   try {
     const currentHost = window.location.hostname
-    return url.replace(/localhost|127\.0\.0\.1/g, currentHost)
+    return normalizedUrl.replace(/localhost|127\.0\.0\.1/g, currentHost)
   } catch (e) {
-    return url
+    return normalizedUrl
   }
+}
+
+/**
+ * 为图片 URL 安全追加 MinIO 缩略参数。
+ * - 自动处理 ? / & 拼接
+ * - 已存在 param 时会覆盖，避免重复参数导致服务端解析异常
+ */
+export function appendImageParam(
+  url: string | undefined | null,
+  size: string = '200y200'
+): string {
+  const normalizedUrl = fixUrl(url)
+  if (!normalizedUrl) return ''
+  if (!size) return normalizedUrl
+
+  // blob/data URL 不能追加 query
+  const lower = normalizedUrl.toLowerCase()
+  if (lower.startsWith('blob:') || lower.startsWith('data:')) {
+    return normalizedUrl
+  }
+
+  const signedQueryPattern = /(x-amz-|x-oss-|signature=|awsaccesskeyid=)/i
+  if (signedQueryPattern.test(normalizedUrl)) {
+    return normalizedUrl
+  }
+
+  const [urlWithoutHash, hash = ''] = normalizedUrl.split('#')
+  const hashSuffix = hash ? `#${hash}` : ''
+  const questionIndex = urlWithoutHash.indexOf('?')
+
+  if (questionIndex === -1) {
+    return `${urlWithoutHash}?param=${size}${hashSuffix}`
+  }
+
+  const query = urlWithoutHash.slice(questionIndex + 1)
+  if (signedQueryPattern.test(query)) {
+    return `${urlWithoutHash}${hashSuffix}`
+  }
+
+  // 已存在 param 时保持原样
+  if (/(^|&)param=/.test(query)) {
+    return `${urlWithoutHash}${hashSuffix}`
+  }
+
+  return `${urlWithoutHash}&param=${size}${hashSuffix}`
 }
 
 export function formatNumber(num: number): string {

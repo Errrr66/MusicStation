@@ -2,6 +2,14 @@
 import { onMounted, ref, watch } from 'vue'
 import { searchAll } from '@/api/system'
 import { fixUrl } from '@/utils'
+import defaultUserAvatar from '@/assets/user.jpg'
+
+const handleAvatarError = (event: Event) => {
+  const target = event.target as HTMLImageElement | null
+  if (target && target.src !== defaultUserAvatar) {
+    target.src = defaultUserAvatar
+  }
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -63,7 +71,7 @@ onMounted(runSearch)
 
     <div class="card" v-if="activeTab === 'artist'">
       <button v-for="artist in artists" :key="artist.artistId" class="item" @click="router.push('/artist/' + artist.artistId)">
-        <img :src="fixUrl(artist.avatar) || '/user.jpg'" alt="artist" class="circle" />
+        <img :src="fixUrl(artist.avatar) || defaultUserAvatar" alt="artist" class="circle" @error="handleAvatarError" />
         <div><p>{{ artist.artistName }}</p><span>{{ artist.area || '未知地区' }}</span></div>
       </button>
       <p v-if="!artists.length" class="empty">没有找到歌手</p>
@@ -79,7 +87,7 @@ onMounted(runSearch)
 
     <div class="card" v-if="activeTab === 'user'">
       <button v-for="user in users" :key="user.userId" class="item" @click="router.push('/profile/' + user.userId)">
-        <img :src="fixUrl(user.userAvatar) || '/user.jpg'" alt="user" class="circle" />
+        <img :src="fixUrl(user.userAvatar) || defaultUserAvatar" alt="user" class="circle" @error="handleAvatarError" />
         <div><p>{{ user.username }}</p><span>{{ user.introduction || '暂无简介' }}</span></div>
       </button>
       <p v-if="!users.length" class="empty">没有找到用户</p>

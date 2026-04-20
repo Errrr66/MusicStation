@@ -3,20 +3,74 @@ import Left from './left.vue'
 import Right from './right.vue'
 import { getSongDetail } from '@/api/system'
 import type { SongDetail } from '@/api/interface'
-import { ref, provide, watch } from 'vue'
+import { ref, provide, watch, computed } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { Icon } from '@iconify/vue'
 import { fixUrl } from '@/utils'
+import { AudioStore } from '@/stores/modules/audio'
+import defaultAlbum from '@/assets/default_album.jpg'
 
 const showDrawer = defineModel<boolean>()
 const songDetail = ref<SongDetail | null>(null)
 let latestDetailRequestId = 0
 
 const { currentTrack } = useAudioPlayer()
+const audioStore = AudioStore()
+const drawerCover = computed(() => fixUrl(currentTrack.value.cover) || defaultAlbum)
+const stableDrawerCover = ref(defaultAlbum)
+let latestCoverProbeId = 0
+
+const probeImage = (url: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
+
+const syncTrackMetaFromDetail = (detail: SongDetail, songId: number) => {
+  const targetIndex = audioStore.currentSongIndex
+  const targetTrack = audioStore.trackList[targetIndex] as any
+  if (!targetTrack || Number(targetTrack.id) !== songId) return
+
+  // 仅同步文案字段，封面统一以当前播放列表数据为准，避免歌词页与播放栏封面不一致
+  if (detail.songName) {
+    targetTrack.title = detail.songName
+  }
+  if (detail.artistName) {
+    targetTrack.artist = detail.artistName
+  }
+}
+
+watch(
+  () => drawerCover.value,
+  async (newCover) => {
+    const probeId = ++latestCoverProbeId
+    if (!newCover) {
+      stableDrawerCover.value = defaultAlbum
+      return
+    }
+
+    const ok = await probeImage(newCover)
+    if (probeId !== latestCoverProbeId) return
+
+    if (ok) {
+      stableDrawerCover.value = newCover
+      return
+    }
+
+    // 当前歌曲封面不可用时，直接回退默认封面，避免沿用上一首封面造成错位
+    stableDrawerCover.value = defaultAlbum
+  },
+  { immediate: true }
+)
 
 watch(
   () => currentTrack.value.id,
   async (newId) => {
+    // 切歌先重置为默认封面，等待新封面探测结果，避免旧封面残留
+    stableDrawerCover.value = defaultAlbum
     songDetail.value = null
     const currentSongId = Number(newId)
     if (!currentSongId) {
@@ -40,6 +94,7 @@ watch(
           Number(songData.songId) === currentSongId
         ) {
           songDetail.value = songData
+          syncTrackMetaFromDetail(songData, currentSongId)
         } else {
           console.error('歌曲详情数据格式不正确或歌曲ID不匹配')
         }
@@ -54,12 +109,13 @@ watch(
 )
 
 provide('songDetail', songDetail)
+provide('drawerCover', stableDrawerCover)
 </script>
 
 <template>
   <el-drawer
     :style="{
-      '--track-cover-url': `url(${fixUrl(currentTrack.cover)})`,
+      '--track-cover-url': `url('${stableDrawerCover}')`,
     }"
     v-model="showDrawer"
     direction="btt"

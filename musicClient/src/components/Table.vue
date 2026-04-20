@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Song } from '@/api/interface'
 import { AudioStore } from '@/stores/modules/audio'
-import { formatMillisecondsToTime, fixUrl } from '@/utils'
+import { appendImageParam, formatMillisecondsToTime, fixUrl } from '@/utils'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
 import default_album from '@/assets/default_album.jpg'
@@ -180,7 +180,7 @@ const isCurrentPlaying = (songId: number) => {
         <div class="spotify-table-cell spotify-table-title-cell">
           <div class="spotify-song-cover">
             <el-image
-              :src="fixUrl(row.coverUrl) + '?param=50y50'"
+              :src="appendImageParam(row.coverUrl, '50y50') || fixUrl(row.coverUrl) || default_album"
               fit="cover"
               lazy
               :alt="row.songName"
