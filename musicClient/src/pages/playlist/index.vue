@@ -41,7 +41,7 @@ const selectedTag = ref('全部')
 const currentPage = ref(1) // 当前页
 const pageSize = ref(12) // 每页显示的数量
 const state = reactive({
-  size: 'default' as const,
+  size: 'default',
   disabled: false,
   background: false,
   layout: 'total, sizes, prev, pager, next, jumper',
@@ -212,9 +212,7 @@ onMounted(() => {
               "
             />
             <button class="spotify-playlist-play-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                <path fill="currentColor" d="M8 5v14l11-7z"/>
-              </svg>
+              <Icon icon="mdi:play" class="text-2xl" />
             </button>
           </div>
           <h3 class="spotify-playlist-title">{{ playlist.name }}</h3>
@@ -467,11 +465,6 @@ onMounted(() => {
   transform: translateY(8px);
   transition: all 200ms ease;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-.spotify-playlist-play-btn svg {
-  color: #000;
-  fill: #000;
 }
 
 .spotify-playlist-card:hover .spotify-playlist-play-btn:hover {

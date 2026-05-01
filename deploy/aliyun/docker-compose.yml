@@ -1,0 +1,128 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: music-mysql
+    restart: always
+    environment:
+      TZ: ${TZ}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - /www/projects/music/data/mysql:/var/lib/mysql
+    ports:
+      - "13306:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [music-net]
+
+  redis:
+    image: redis:7-alpine
+    container_name: music-redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - /www/projects/music/data/redis:/data
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [music-net]
+
+  minio:
+    image: minio/minio:latest
+    container_name: music-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - /www/projects/music/data/minio:/data
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [music-net]
+
+  shazam:
+    build:
+      context: ../../shazamIO
+      dockerfile: Dockerfile
+    container_name: music-shazam
+    restart: always
+    environment:
+      TZ: ${TZ}
+      SHAZAM_HOST: 0.0.0.0
+      SHAZAM_PORT: 8000
+      SHAZAM_CORS_ORIGINS: ${SHAZAM_CORS_ORIGINS}
+      SHAZAM_MAX_UPLOAD_MB: ${SHAZAM_MAX_UPLOAD_MB}
+    ports:
+      - "127.0.0.1:18000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [music-net]
+
+  music-server:
+    build:
+      context: ../../musicServer
+      dockerfile: Dockerfile
+    container_name: music-server
+    restart: always
+    environment:
+      TZ: ${TZ}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SERVER_PORT: ${SERVER_PORT}
+      JAVA_OPTS: ${JAVA_OPTS}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=utf-8&useSSL=false
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESSKEY: ${MINIO_ROOT_USER}
+      MINIO_SECRETKEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      TTS_API_URL: ${TTS_API_URL}
+      SHAZAM_API_URL: ${SHAZAM_API_URL}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      shazam:
+        condition: service_healthy
+    ports:
+      - "18080:8080"
+    networks: [music-net]
+
+networks:
+  music-net:
+    driver: bridge
+

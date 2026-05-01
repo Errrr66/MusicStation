@@ -1,22 +1,22 @@
 server:
-  port: 8080 # 更改为 8081，避免与 Nginx 的 8080 端口冲突 (Change to 8081 to avoid conflict with Nginx)
+  port: ${SERVER_PORT:8080}
 
 spring:
   # 配置数据源
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/vibe_music?useUnicode=true&characterEncoding=utf-8&useSSL=false # 推荐使用 127.0.0.1 提高各服务间连接速度和安全性 (Use localhost for speed and security)
-    username: root # 修改你的 MySQL 用户名
-    password: 123456 # 修改你的 MySQL 密码
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/vibe_music?useUnicode=true&characterEncoding=utf-8&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
     type: com.alibaba.druid.pool.DruidDataSource # 配置连接池
 
   # Redis服务连接配置
   data:
     redis:
       database: 1
-      host: 127.0.0.1 # 推荐使用 127.0.0.1 (Use localhost)
-      port: 6379
-      password:
+      host: ${SPRING_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
 
   servlet:
     multipart:
@@ -32,8 +32,8 @@ spring:
   mail:
     # 配置邮箱账户和密码
     host: smtp.qq.com # 修改你的 SMTP 服务器地址
-    username: 193685658@qq.com # 修改你的邮箱账号
-    password: fwioabwopnotcbeh # 修改你的邮箱应用密码或授权码
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
     protocol: smtp
     properties:
       mail:
@@ -54,12 +54,15 @@ spring:
 
 # DeepSeek API Configuration
 deepseek:
-  api-key: ${DEEPSEEK_API_KEY:sk-576b0d5ae1d34c5db797d9e530381768}
+  api-key: ${DEEPSEEK_API_KEY:}
   base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
   model: deepseek-v3.2
 
 tts:
   api-url: ${TTS_API_URL:http://127.0.0.1:5000/voice}
+
+shazam:
+  api-url: ${SHAZAM_API_URL:http://127.0.0.1:8000/recognize}
 
 agent:
   search:
@@ -125,10 +128,10 @@ role-path-permissions:
       - "/feedback/"
 
 minio:
-  endpoint: http://127.0.0.1:9000 # 修改你的 MinIO 端点
-  accessKey: minioadmin # 修改你的 MinIO Access Key
-  secretKey: minioadmin # 修改你的 MinIO Secret Key
-  bucket: vibe-music-data # 确认 Bucket 名称与你创建的一致
+  endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+  accessKey: ${MINIO_ACCESSKEY:minioadmin}
+  secretKey: ${MINIO_SECRETKEY:minioadmin}
+  bucket: ${MINIO_BUCKET:vibe-music-data}
 
 
 # 确保已经安装并启动了 MySQL 数据库。

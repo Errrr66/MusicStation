@@ -15,8 +15,11 @@ import { getToken, formatToken } from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
+const runtimeBaseUrl =
+  (import.meta.env.VITE_API_URL as string) || "http://127.0.0.1:8080";
+
 const defaultConfig: AxiosRequestConfig = {
-  baseURL: "http://127.0.0.1:8080", // 指向后端
+  baseURL: runtimeBaseUrl,
   // 请求超时时间
   timeout: 10000,
   headers: {

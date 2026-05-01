@@ -12,11 +12,11 @@ html.dark {
 .el-message-box {
   background-color: #282828 !important;
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
-  padding: 24px !important;
-  max-width: 340px !important;
-  width: 340px !important;
+  padding: 20px 24px !important;
+  max-width: 400px !important;
+  width: 90vw !important;
 }
 
 .el-message-box__header {
@@ -65,11 +65,11 @@ html.dark {
 
 .el-message-box__input .el-input__wrapper.is-focus {
   background: transparent !important;
-  border-color: #fff !important;
+  border-color: #ffffff !important;
 }
 
 .el-message-box__input .el-input__inner {
-  color: #fff !important;
+  color: #ffffff !important;
   font-size: 14px !important;
 }
 
@@ -84,10 +84,10 @@ html.dark {
 
 .el-message-box__headerbtn {
   position: absolute !important;
-  top: 12px !important;
-  right: 12px !important;
-  width: 28px !important;
-  height: 28px !important;
+  top: 20px !important;
+  right: 24px !important;
+  width: 32px !important;
+  height: 32px !important;
   padding: 0 !important;
   border: none !important;
   border-radius: 50% !important;
@@ -97,11 +97,12 @@ html.dark {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: color 200ms ease !important;
+  transition: background-color 200ms ease, color 200ms ease !important;
 }
 
 .el-message-box__headerbtn:hover {
-  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }
 
 .el-message-box__headerbtn .el-icon {
@@ -204,7 +205,8 @@ html.dark {
 }
 
 :root:not(.dark) .el-message-box__headerbtn:hover {
-  color: #000 !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #000000 !important;
 }
 
 :root:not(.dark) .el-message-box__btns .el-button:not(.el-button--primary) {
