@@ -21,6 +21,18 @@ public interface UserFollowMapper extends BaseMapper<UserFollow> {
     @Select("SELECT COUNT(1) FROM tb_user_follow WHERE follow_user_id = #{userId}")
     Long countFollowers(@Param("userId") Long userId);
 
+    /**
+     * 批量查询某用户关注的所有目标用户 ID 集合
+     */
+    @Select("SELECT follow_user_id FROM tb_user_follow WHERE user_id = #{userId}")
+    List<Long> listFollowingIds(@Param("userId") Long userId);
+
+    /**
+     * 批量查询关注某用户的所有粉丝 ID 集合
+     */
+    @Select("SELECT user_id FROM tb_user_follow WHERE follow_user_id = #{userId}")
+    List<Long> listFollowersIds(@Param("userId") Long userId);
+
     @Select("""
             SELECT u.id AS userId,
                    u.username,

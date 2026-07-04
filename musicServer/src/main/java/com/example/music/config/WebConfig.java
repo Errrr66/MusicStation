@@ -18,11 +18,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(loginInterceptor)
                 .addPathPatterns("/**") // 拦截所有请求
                 .excludePathPatterns(
-                        "/admin/login", "/admin/logout", "/admin/register",
+                        "/admin/login", "/admin/logout",
                         "/user/login", "/user/logout", "/user/register",
                         "/user/sendVerificationCode", "/user/resetUserPassword",
                         "/chat/health",
-                        "/chat/ask", "/chat/agent", "/chat/agent/stream",
                         "/search/all",
                         "/banner/getBannerList",
                         "/playlist/getAllPlaylists", "/playlist/getRecommendedPlaylists", "/playlist/getPlaylistDetail/**",

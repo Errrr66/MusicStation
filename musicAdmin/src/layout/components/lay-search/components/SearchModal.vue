@@ -251,9 +251,10 @@ function handleDrag(item: dragItem) {
   historyPath.value = reorderedItem.path;
 }
 
-onKeyStroke("Enter", handleEnter);
-onKeyStroke("ArrowUp", handleUp);
-onKeyStroke("ArrowDown", handleDown);
+// 限定键盘监听在搜索输入框内，避免全局常驻影响其他页面
+onKeyStroke("Enter", handleEnter, { target: inputRef });
+onKeyStroke("ArrowUp", handleUp, { target: inputRef });
+onKeyStroke("ArrowDown", handleDown, { target: inputRef });
 </script>
 
 <template>

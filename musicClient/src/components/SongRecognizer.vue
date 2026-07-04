@@ -8,6 +8,14 @@ const isRecording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const audioChunks = ref<Blob[]>([])
 const recognitionState = ref<'idle' | 'recording' | 'analyzing'>('idle')
+let recordTimer: ReturnType<typeof setTimeout> | null = null
+
+const clearRecordTimer = () => {
+  if (recordTimer !== null) {
+    clearTimeout(recordTimer)
+    recordTimer = null
+  }
+}
 
 const startRecording = async () => {
   if (recognitionState.value !== 'idle') return
@@ -30,10 +38,9 @@ const startRecording = async () => {
     mediaRecorder.value.start()
     isRecording.value = true
     recognitionState.value = 'recording'
-    console.log("识别中...")
 
     // 录音5秒自动停止并识别
-    setTimeout(() => {
+    recordTimer = setTimeout(() => {
       stopRecording()
     }, 5000)
   } catch (error) {
@@ -44,15 +51,16 @@ const startRecording = async () => {
 }
 
 const stopRecording = () => {
+  clearRecordTimer()
   if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
-    mediaRecorder.value.stop()
+    // 使用 once 避免重复绑定
     mediaRecorder.value.addEventListener("stop", () => {
       const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' })
       // 停止所有轨道以释放麦克风
       mediaRecorder.value?.stream.getTracks().forEach(track => track.stop())
       sendAudioForRecognition(audioBlob)
-    })
-    console.log("录音结束")
+    }, { once: true })
+    mediaRecorder.value.stop()
     isRecording.value = false
     recognitionState.value = 'analyzing'
   }
@@ -77,7 +85,6 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
     }
 
     const result = await response.json()
-    console.log("识别结果:", result)
     recognitionState.value = 'idle'
     if (result.track) {
       emit('success', result)
@@ -91,34 +98,42 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
     ElMessage.error('识别服务请求失败')
   }
 }
+
+onUnmounted(() => {
+  clearRecordTimer()
+  if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
+    mediaRecorder.value.stream.getTracks().forEach(track => track.stop())
+    mediaRecorder.value.stop()
+  }
+})
 </script>
 
 <template>
   <button
     @click="startRecording"
-    class="spotify-recognizer-btn"
+    class="mr-recognizer-btn"
     :disabled="recognitionState !== 'idle'"
     :title="recognitionState === 'idle' ? '听歌识曲' : '正在识别...'"
   >
     <Icon
       v-if="recognitionState === 'analyzing'"
       icon="mdi:loading"
-      class="spotify-recognizer-icon spotify-recognizer-loading"
+      class="mr-recognizer-icon mr-recognizer-loading"
     />
     <Icon
       v-else
       icon="mdi:microphone"
-      class="spotify-recognizer-icon"
-      :class="{ 'spotify-recognizer-recording': recognitionState === 'recording' }"
+      class="mr-recognizer-icon"
+      :class="{ 'mr-recognizer-recording': recognitionState === 'recording' }"
     />
 
-    <span v-if="recognitionState === 'recording'" class="spotify-recognizer-text">正在录音...</span>
-    <span v-else-if="recognitionState === 'analyzing'" class="spotify-recognizer-text">正在识别...</span>
+    <span v-if="recognitionState === 'recording'" class="mr-recognizer-text">正在录音...</span>
+    <span v-else-if="recognitionState === 'analyzing'" class="mr-recognizer-text">正在识别...</span>
   </button>
 </template>
 
 <style scoped>
-.spotify-recognizer-btn {
+.mr-recognizer-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -130,36 +145,36 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
   transition: background-color 200ms ease;
 }
 
-.spotify-recognizer-btn:hover:not(:disabled) {
+.mr-recognizer-btn:hover:not(:disabled) {
   background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-recognizer-btn:disabled {
+.mr-recognizer-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.spotify-recognizer-icon {
+.mr-recognizer-icon {
   font-size: 1.25rem;
   color: var(--text-subdued, #b3b3b3);
   transition: color 200ms ease;
 }
 
-.spotify-recognizer-btn:hover:not(:disabled) .spotify-recognizer-icon {
+.mr-recognizer-btn:hover:not(:disabled) .mr-recognizer-icon {
   color: var(--text-base, #fff);
 }
 
-.spotify-recognizer-loading {
+.mr-recognizer-loading {
   color: #3b82f6;
   animation: spin 1s linear infinite;
 }
 
-.spotify-recognizer-recording {
+.mr-recognizer-recording {
   color: #ef4444;
   animation: pulse 1s ease-in-out infinite;
 }
 
-.spotify-recognizer-text {
+.mr-recognizer-text {
   font-size: 0.875rem;
   color: var(--text-base, #fff);
 }
@@ -183,19 +198,19 @@ const sendAudioForRecognition = async (audioBlob: Blob) => {
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-recognizer-btn:hover:not(:disabled) {
+:root:not(.dark) .mr-recognizer-btn:hover:not(:disabled) {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-recognizer-icon {
+:root:not(.dark) .mr-recognizer-icon {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-recognizer-btn:hover:not(:disabled) .spotify-recognizer-icon {
+:root:not(.dark) .mr-recognizer-btn:hover:not(:disabled) .mr-recognizer-icon {
   color: #000000;
 }
 
-:root:not(.dark) .spotify-recognizer-text {
+:root:not(.dark) .mr-recognizer-text {
   color: #000000;
 }
 </style>

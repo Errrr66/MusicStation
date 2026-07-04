@@ -1,5 +1,6 @@
 package com.example.music.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.io.Serial;
@@ -7,6 +8,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+@JsonIgnoreProperties({"handler", "hibernateLazyInitializer"})
 public class PlaylistDetailVO implements Serializable {
 
     @Serial

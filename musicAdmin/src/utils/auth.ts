@@ -125,44 +125,76 @@ export function setToken(data: DataInfo<Date>) {
 
   expires > 0
     ? Cookies.set(TokenKey, cookieString, {
-        expires: (expires - Date.now()) / 86400000
+        expires: (expires - Date.now()) / 86400000,
+        secure: import.meta.env.PROD,
+        sameSite: "Lax"
       })
-    : Cookies.set(TokenKey, cookieString);
+    : Cookies.set(TokenKey, cookieString, {
+        secure: import.meta.env.PROD,
+        sameSite: "Lax"
+      });
 
   Cookies.set(
     multipleTabsKey,
     "true",
     isRemembered
       ? {
-          expires: loginDay
+          expires: loginDay,
+          secure: import.meta.env.PROD,
+          sameSite: "Lax"
         }
-      : {}
+      : {
+          secure: import.meta.env.PROD,
+          sameSite: "Lax"
+        }
   );
 
-  function setUserKey({ username, roles }) {
+  const avatar = data.avatar ?? "";
+  const nickname = data.nickname ?? "";
+  const permissions = data.permissions ?? [];
+
+  function setUserKey({ username, roles, avatar, nickname, permissions }) {
+    useUserStoreHook().SET_AVATAR(avatar);
     useUserStoreHook().SET_USERNAME(username);
+    useUserStoreHook().SET_NICKNAME(nickname);
     useUserStoreHook().SET_ROLES(roles);
+    useUserStoreHook().SET_PERMS(permissions);
     storageLocal().setItem(userKey, {
       refreshToken,
       expires,
+      avatar,
       username,
-      roles
+      nickname,
+      roles,
+      permissions
     });
   }
 
   if (username && roles) {
     setUserKey({
       username,
-      roles
+      roles,
+      avatar,
+      nickname,
+      permissions
     });
   } else {
     const username =
       storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? "";
     const roles =
       storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [];
+    const avatar =
+      storageLocal().getItem<DataInfo<number>>(userKey)?.avatar ?? "";
+    const nickname =
+      storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? "";
+    const permissions =
+      storageLocal().getItem<DataInfo<number>>(userKey)?.permissions ?? [];
     setUserKey({
       username,
-      roles
+      roles,
+      avatar,
+      nickname,
+      permissions
     });
   }
 }

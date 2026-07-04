@@ -60,7 +60,7 @@ defineExpose({ getRef });
             v-model="newFormInline.artistId"
             clearable
             disabled
-            placeholder="newFormInline.artistId"
+            placeholder="系统自动生成"
           />
         </el-form-item>
       </re-col>
@@ -76,7 +76,7 @@ defineExpose({ getRef });
             v-model="newFormInline.artistName"
             clearable
             disabled
-            placeholder="newFormInline.artistName"
+            placeholder="系统自动生成"
           />
         </el-form-item>
       </re-col>
@@ -92,7 +92,7 @@ defineExpose({ getRef });
             v-model="newFormInline.songId"
             clearable
             disabled
-            placeholder="newFormInline.songId"
+            placeholder="系统自动生成"
           />
         </el-form-item>
       </re-col>

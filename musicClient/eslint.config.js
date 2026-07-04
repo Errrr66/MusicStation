@@ -49,7 +49,8 @@ export default [
           // endOfLine: "auto"
         },
       ],
-      '@typescript-eslint/no-explicit-any': ['off'],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
   // 忽略文件

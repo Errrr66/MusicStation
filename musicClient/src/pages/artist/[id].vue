@@ -6,6 +6,7 @@ import { useArtistStore } from '@/stores/modules/artist'
 import { ElMessage } from 'element-plus'
 import { useRoute } from 'vue-router'
 import { fixUrl } from '@/utils'
+import { extractDominantColor } from '@/utils/imageUtils'
 import defaultArtistAvatar from '@/assets/user.jpg'
 
 interface ArtistDetailResponse {
@@ -33,59 +34,6 @@ const firstSongCover = computed(() => {
   return fixUrl(firstSong?.coverUrl)
 })
 
-const extractDominantColor = (imageUrl: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        reject(new Error('Canvas context not available'))
-        return
-      }
-
-      const sampleWidth = 50
-      const sampleHeight = 50
-      canvas.width = sampleWidth
-      canvas.height = sampleHeight
-      ctx.drawImage(img, 0, 0, sampleWidth, sampleHeight)
-      const pixels = ctx.getImageData(0, 0, sampleWidth, sampleHeight).data
-
-      let r = 0
-      let g = 0
-      let b = 0
-      let count = 0
-      for (let i = 0; i < pixels.length; i += 4) {
-        const alpha = pixels[i + 3]
-        if (alpha > 16) {
-          r += pixels[i]
-          g += pixels[i + 1]
-          b += pixels[i + 2]
-          count++
-        }
-      }
-
-      if (!count) {
-        reject(new Error('No valid pixel'))
-        return
-      }
-
-      const avgR = Math.round(r / count)
-      const avgG = Math.round(g / count)
-      const avgB = Math.round(b / count)
-      // 略微压暗，避免顶部过亮影响文字可读性
-      const darken = 0.72
-      const finalR = Math.max(0, Math.round(avgR * darken))
-      const finalG = Math.max(0, Math.round(avgG * darken))
-      const finalB = Math.max(0, Math.round(avgB * darken))
-      resolve(`rgb(${finalR}, ${finalG}, ${finalB})`)
-    }
-    img.onerror = () => reject(new Error('Image load failed'))
-    img.src = imageUrl
-  })
-}
-
 const handleArtistAvatarError = (event: Event) => {
   const target = event.target as HTMLImageElement | null
   if (target && target.src !== defaultArtistAvatar) {
@@ -103,8 +51,6 @@ const fetchArtistDetail = async () => {
 
     if (res.code === 0 && res.data) {
       const artistData = res.data as ArtistDetailResponse
-      console.log('艺人详情数据:', artistData)
-      console.log('歌曲列表:', artistData.songs)
       artistStore.setArtistInfo({
         artistId: artistData.artistId,
         artistName: artistData.artistName || '未知艺人',
@@ -140,15 +86,10 @@ watch(
       return
     }
 
-    try {
-      const color = await extractDominantColor(coverUrl)
-      if (taskId === latestColorTaskId) {
-        gradientColor.value = color
-      }
-    } catch {
-      if (taskId === latestColorTaskId) {
-        gradientColor.value = '#1e3a5f'
-      }
+    // extractDominantColor 永远 resolve，失败时返回默认色，无需 try/catch
+    const color = await extractDominantColor(coverUrl)
+    if (taskId === latestColorTaskId) {
+      gradientColor.value = color
     }
   },
   { immediate: true }
@@ -162,38 +103,38 @@ const formatBirth = (birth: string) => {
 </script>
 
 <template>
-  <div class="spotify-artist-page" :style="{ '--gradient-color': gradientColor }">
+  <div class="mr-artist-page" :style="{ '--gradient-color': gradientColor }">
     <!-- Artist Header -->
-    <div class="spotify-artist-header">
-      <div class="spotify-artist-avatar">
+    <div class="mr-artist-header">
+      <div class="mr-artist-avatar">
         <img
           :src="artistAvatar"
           :alt="artistInfo?.artistName"
-          class="spotify-artist-avatar-img"
+          class="mr-artist-avatar-img"
           @error="handleArtistAvatarError"
         />
       </div>
-      <div class="spotify-artist-info">
-        <span class="spotify-artist-type">艺人</span>
-        <h1 class="spotify-artist-name">{{ artistInfo?.artistName }}</h1>
-        <div class="spotify-artist-meta">
-          <span v-if="artistInfo?.birth" class="spotify-meta-item">
+      <div class="mr-artist-info">
+        <span class="mr-artist-type">艺人</span>
+        <h1 class="mr-artist-name">{{ artistInfo?.artistName }}</h1>
+        <div class="mr-artist-meta">
+          <span v-if="artistInfo?.birth" class="mr-meta-item">
             生日：{{ formatBirth(artistInfo.birth) }}
           </span>
-          <span v-if="artistInfo?.area" class="spotify-meta-item">
+          <span v-if="artistInfo?.area" class="mr-meta-item">
             地区：{{ artistInfo.area }}
           </span>
         </div>
-        <p v-if="artistInfo?.introduction" class="spotify-artist-bio">
+        <p v-if="artistInfo?.introduction" class="mr-artist-bio">
           {{ artistInfo.introduction }}
         </p>
       </div>
     </div>
 
     <!-- Songs Section -->
-    <div class="spotify-artist-songs">
-      <h2 class="spotify-songs-title">所有歌曲</h2>
-      <div class="spotify-songs-table">
+    <div class="mr-artist-songs">
+      <h2 class="mr-songs-title">所有歌曲</h2>
+      <div class="mr-songs-table">
         <Table :data="artistInfo?.songs" />
       </div>
     </div>
@@ -201,7 +142,7 @@ const formatBirth = (birth: string) => {
 </template>
 
 <style scoped>
-.spotify-artist-page {
+.mr-artist-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -209,7 +150,7 @@ const formatBirth = (birth: string) => {
   background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 300px);
 }
 
-.spotify-artist-header {
+.mr-artist-header {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -218,7 +159,7 @@ const formatBirth = (birth: string) => {
   text-align: center;
 }
 
-.spotify-artist-avatar {
+.mr-artist-avatar {
   width: 232px;
   height: 232px;
   border-radius: 50%;
@@ -226,17 +167,17 @@ const formatBirth = (birth: string) => {
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
 }
 
-.spotify-artist-avatar-img {
+.mr-artist-avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.spotify-artist-info {
+.mr-artist-info {
   max-width: 600px;
 }
 
-.spotify-artist-type {
+.mr-artist-type {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -246,7 +187,7 @@ const formatBirth = (birth: string) => {
   display: block;
 }
 
-.spotify-artist-name {
+.mr-artist-name {
   font-size: 4rem;
   font-weight: 900;
   color: var(--text-base, #fff);
@@ -254,7 +195,7 @@ const formatBirth = (birth: string) => {
   margin-bottom: 24px;
 }
 
-.spotify-artist-meta {
+.mr-artist-meta {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -262,12 +203,12 @@ const formatBirth = (birth: string) => {
   margin-bottom: 16px;
 }
 
-.spotify-meta-item {
+.mr-meta-item {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-artist-bio {
+.mr-artist-bio {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
   line-height: 1.6;
@@ -277,7 +218,7 @@ const formatBirth = (birth: string) => {
   overflow: hidden;
 }
 
-.spotify-artist-songs {
+.mr-artist-songs {
   flex: 1;
   min-height: 0;
   padding: 0 24px 24px;
@@ -285,7 +226,7 @@ const formatBirth = (birth: string) => {
   flex-direction: column;
 }
 
-.spotify-songs-title {
+.mr-songs-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-base, #fff);
@@ -293,63 +234,63 @@ const formatBirth = (birth: string) => {
   flex-shrink: 0;
 }
 
-.spotify-songs-table {
+.mr-songs-table {
   flex: 1;
   min-height: 300px;
   overflow: hidden;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-artist-page {
+:root:not(.dark) .mr-artist-page {
   --bg-surface: #f0f0f0;
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --gradient-color: #e8f4f8;
 }
 
-:root:not(.dark) .spotify-artist-avatar {
+:root:not(.dark) .mr-artist-avatar {
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.15);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .spotify-artist-page {
-    padding-bottom: 80px;
+  .mr-artist-page {
+    padding-bottom: 140px;
   }
   
-  .spotify-artist-header {
+  .mr-artist-header {
     padding: 16px 16px;
     gap: 16px;
   }
   
-  .spotify-artist-avatar {
+  .mr-artist-avatar {
     width: 140px;
     height: 140px;
   }
   
-  .spotify-artist-name {
+  .mr-artist-name {
     font-size: 1.75rem;
     margin-bottom: 12px;
   }
   
-  .spotify-artist-meta {
+  .mr-artist-meta {
     gap: 8px;
   }
   
-  .spotify-meta-item {
+  .mr-meta-item {
     font-size: 0.8125rem;
   }
   
-  .spotify-artist-bio {
+  .mr-artist-bio {
     font-size: 0.8125rem;
     -webkit-line-clamp: 2;
   }
   
-  .spotify-artist-songs {
+  .mr-artist-songs {
     padding: 0 12px 16px;
   }
   
-  .spotify-songs-title {
+  .mr-songs-title {
     font-size: 1.25rem;
     margin-bottom: 12px;
   }

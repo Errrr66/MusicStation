@@ -83,21 +83,7 @@ export const useUserStore = defineStore({
       resetRouter();
       router.push("/login");
     }
-    /** 刷新`token` */
-    // async handRefreshToken(data) {
-    //   return new Promise<RefreshTokenResult>((resolve, reject) => {
-    //     refreshTokenApi(data)
-    //       .then(data => {
-    //         if (data) {
-    //           setToken(data.data);
-    //           resolve(data);
-    //         }
-    //       })
-    //       .catch(error => {
-    //         reject(error);
-    //       });
-    //   });
-    // }
+    /** 刷新`token`：当前项目未实现刷新接口，token 过期由 http 拦截器统一跳转登录页 */
   }
 });
 

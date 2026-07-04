@@ -57,13 +57,27 @@ function animate(currentTime: number) {
 
 onMounted(() => {
   animationId = requestAnimationFrame(animate);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
 onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId);
   }
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = undefined;
+    }
+  } else if (!animationId) {
+    startTime = 0;
+    animationId = requestAnimationFrame(animate);
+  }
+}
 
 const animatedFrame = computed(() => {
   const result: number[][] = [];

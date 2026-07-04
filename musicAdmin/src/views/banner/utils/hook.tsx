@@ -82,17 +82,12 @@ export function useBanner(formData: any, tableRef: Ref) {
 
   function onChange(row, index, newValue) {
     ElMessageBox.confirm(
-      `确认要<strong>${
-        newValue === 1 ? "禁用" : "启用"
-      }</strong><strong style='color:var(--el-color-primary)'> 编号:${
-        row.bannerId
-      } </strong>的轮播图吗?`,
+      `确认要${newValue === 1 ? "禁用" : "启用"} 编号:${row.bannerId} 的轮播图吗?`,
       "系统提示",
       {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-        dangerouslyUseHTMLString: true,
         draggable: true
       }
     )
@@ -176,13 +171,12 @@ export function useBanner(formData: any, tableRef: Ref) {
     }
 
     ElMessageBox.confirm(
-      `确认要删除选中的 <strong>${selectionList.value.length}</strong> 条轮播图吗?`,
+      `确认要删除选中的 ${selectionList.value.length} 条轮播图吗?`,
       "系统提示",
       {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-        dangerouslyUseHTMLString: true,
         draggable: true
       }
     )
@@ -237,11 +231,9 @@ export function useBanner(formData: any, tableRef: Ref) {
     } catch (error) {
       console.error("请求失败：", error);
       message("会话过期，请重新登录", { type: "error" });
-    }
-
-    setTimeout(() => {
+    } finally {
       loading.value = false;
-    }, 500);
+    }
   }
 
   function handleUpload(row?: any) {

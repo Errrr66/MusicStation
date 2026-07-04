@@ -36,9 +36,17 @@ dataThemeChange(overallStyle.value);
 const { title } = useNav();
 
 const ruleForm = reactive({
-  username: "admin_1",
-  password: "123456abc"
+  username: "",
+  password: ""
 });
+
+// 仅开发环境注入测试账号，方便调试
+if (import.meta.env.DEV) {
+  ruleForm.username = "admin_1";
+  ruleForm.password = "123456abc";
+}
+
+const rememberMe = ref(false);
 
 // Animation refs
 const isTyping = ref(false);
@@ -54,6 +62,7 @@ const onLogin = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       loading.value = true;
+      useUserStoreHook().SET_ISREMEMBERED(rememberMe.value);
       useUserStoreHook()
         .loginByUsername({
           username: ruleForm.username,
@@ -236,7 +245,7 @@ onBeforeUnmount(() => {
           </el-form-item>
 
           <div class="flex items-center justify-between">
-            <el-checkbox>7天内免登录</el-checkbox>
+            <el-checkbox v-model="rememberMe">7天内免登录</el-checkbox>
           </div>
 
           <InteractiveHoverButton

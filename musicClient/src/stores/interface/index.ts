@@ -10,6 +10,9 @@ export interface userModel {
   avatarUrl: string // 头像
   username: string // 用户名
   userId: number // 用户id
+  phone?: string // 手机号
+  email?: string // 邮箱
+  introduction?: string // 简介
   token?: string // 用户token
 }
 
@@ -40,6 +43,7 @@ export interface MenuState {
   isMobileMenuOpen: boolean // 是否打开移动端菜单
   isRightAsideOpen: boolean // 是否打开移动端侧边栏（右）
   isSongDrawerOpen: boolean // 是否打开歌曲大抽屉
+  isMobileSearchOpen: boolean // 是否打开移动端搜索框
 }
 
 /* SettingState */

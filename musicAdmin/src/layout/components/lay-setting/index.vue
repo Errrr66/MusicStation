@@ -58,10 +58,8 @@ const toggleColorInvert = (value: boolean): void => {
   const htmlEl = document.documentElement;
   if (value) {
     htmlEl.classList.add("color-invert");
-    console.log("添加 color-invert 类名");
   } else {
     htmlEl.classList.remove("color-invert");
-    console.log("移除 color-invert 类名");
   }
   const storageConfigure = $storage.configure as Record<string, any>;
   storageConfigure.colorInvert = value;

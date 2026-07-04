@@ -39,29 +39,29 @@ const openFeedbackDialog = () => {
 <template>
   <el-dropdown
     v-if="user.userInfo && user.userInfo.userId"
-    class="spotify-avatar-dropdown"
+    class="mr-avatar-dropdown"
     trigger="click"
   >
-    <div class="spotify-avatar-trigger">
+    <div class="mr-avatar-trigger">
       <el-avatar
         :src="fixUrl(user.userInfo.avatarUrl) || defaultAvatar"
-        class="spotify-avatar"
+        class="mr-avatar"
         shape="circle"
         :size="32"
       />
     </div>
 
     <template #dropdown>
-      <div class="spotify-dropdown-menu">
-        <div class="spotify-dropdown-actions">
-          <div class="spotify-dropdown-action" @click="router.push('/user')" title="个人中心">
-            <Icon icon="mdi:account-outline" class="spotify-dropdown-action-icon" />
+      <div class="mr-dropdown-menu">
+        <div class="mr-dropdown-actions">
+          <div class="mr-dropdown-action" @click="router.push('/user')" title="个人中心">
+            <Icon icon="mdi:account-outline" class="mr-dropdown-action-icon" />
           </div>
-          <div class="spotify-dropdown-action" @click="openFeedbackDialog" title="意见反馈">
-            <Icon icon="mdi:message-text-outline" class="spotify-dropdown-action-icon" />
+          <div class="mr-dropdown-action" @click="openFeedbackDialog" title="意见反馈">
+            <Icon icon="mdi:message-text-outline" class="mr-dropdown-action-icon" />
           </div>
-          <div class="spotify-dropdown-action spotify-dropdown-action-logout" @click="handleLogout" title="退出登录">
-            <Icon icon="mdi:logout" class="spotify-dropdown-action-icon" />
+          <div class="mr-dropdown-action mr-dropdown-action-logout" @click="handleLogout" title="退出登录">
+            <Icon icon="mdi:logout" class="mr-dropdown-action-icon" />
           </div>
         </div>
       </div>
@@ -69,7 +69,7 @@ const openFeedbackDialog = () => {
   </el-dropdown>
   <button
     v-else
-    class="spotify-login-btn"
+    class="mr-login-btn"
     @click="showLogin = true"
   >
     <Icon icon="mdi:account-outline" class="text-lg" />
@@ -80,11 +80,11 @@ const openFeedbackDialog = () => {
 </template>
 
 <style scoped>
-.spotify-avatar-dropdown {
+.mr-avatar-dropdown {
   cursor: pointer;
 }
 
-.spotify-avatar-trigger {
+.mr-avatar-trigger {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,19 +97,19 @@ const openFeedbackDialog = () => {
   overflow: hidden;
 }
 
-.spotify-avatar-trigger:hover {
+.mr-avatar-trigger:hover {
   background-color: #4e4e4e;
 }
 
-.spotify-avatar {
+.mr-avatar {
   transition: transform 200ms ease;
 }
 
-.spotify-avatar-trigger:hover .spotify-avatar {
+.mr-avatar-trigger:hover .mr-avatar {
   transform: scale(1.05);
 }
 
-.spotify-dropdown-menu {
+.mr-dropdown-menu {
   background-color: #000000;
   border-radius: 8px;
   padding: 8px;
@@ -117,14 +117,14 @@ const openFeedbackDialog = () => {
   box-shadow: 0 16px 24px rgba(0, 0, 0, 0.3), 0 6px 8px rgba(0, 0, 0, 0.2);
 }
 
-.spotify-dropdown-actions {
+.mr-dropdown-actions {
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 8px 12px;
 }
 
-.spotify-dropdown-action {
+.mr-dropdown-action {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -136,25 +136,25 @@ const openFeedbackDialog = () => {
   transition: background-color 200ms ease, color 200ms ease;
 }
 
-.spotify-dropdown-action:hover {
+.mr-dropdown-action:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
 
-.spotify-dropdown-action-icon {
+.mr-dropdown-action-icon {
   font-size: 1.25rem;
 }
 
-.spotify-dropdown-action-logout {
+.mr-dropdown-action-logout {
   color: #b3b3b3;
 }
 
-.spotify-dropdown-action-logout:hover {
+.mr-dropdown-action-logout:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
 
-.spotify-login-btn {
+.mr-login-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -169,42 +169,42 @@ const openFeedbackDialog = () => {
   transition: transform 33ms ease;
 }
 
-.spotify-login-btn:hover {
+.mr-login-btn:hover {
   transform: scale(1.04);
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-avatar-trigger {
+:root:not(.dark) .mr-avatar-trigger {
   background-color: #f0f0f0;
 }
 
-:root:not(.dark) .spotify-avatar-trigger:hover {
+:root:not(.dark) .mr-avatar-trigger:hover {
   background-color: #e0e0e0;
 }
 
-:root:not(.dark) .spotify-dropdown-menu {
+:root:not(.dark) .mr-dropdown-menu {
   background-color: #ffffff;
 }
 
-:root:not(.dark) .spotify-dropdown-action {
+:root:not(.dark) .mr-dropdown-action {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-dropdown-action:hover {
+:root:not(.dark) .mr-dropdown-action:hover {
   background-color: rgba(0, 0, 0, 0.1);
   color: #000000;
 }
 
-:root:not(.dark) .spotify-dropdown-action-logout {
+:root:not(.dark) .mr-dropdown-action-logout {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-dropdown-action-logout:hover {
+:root:not(.dark) .mr-dropdown-action-logout:hover {
   background-color: rgba(0, 0, 0, 0.1);
   color: #000000;
 }
 
-:root:not(.dark) .spotify-login-btn {
+:root:not(.dark) .mr-login-btn {
   background-color: #000;
   color: #fff;
 }

@@ -2,6 +2,11 @@ package com.example.music.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.example.music.constant.JwtClaimsConstant;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Map;
@@ -9,10 +14,19 @@ import java.util.Map;
 /**
  * JWT 工具类
  */
+@Component
 public class JwtUtil {
 
-    // 密钥
-    private static final String SECRET_KEY = "VIBE_MUSIC"; // 更改为你的密钥
+    @Value("${jwt.secret:}")
+    private String secretConfig;
+
+    private static String SECRET_KEY;
+
+    @PostConstruct
+    public void init() {
+        SECRET_KEY = secretConfig;
+    }
+
     // 设置 JWT 的过期时间 6 小时
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 6;
 
@@ -41,6 +55,32 @@ public class JwtUtil {
                 .verify(token)
                 .getClaim("claims")
                 .asMap();
+    }
+
+    /**
+     * 从请求头中提取用于缓存 Key 的用户标识（避免把完整 JWT 放入缓存 Key）
+     *
+     * @param request HttpServletRequest
+     * @return 用户标识（userId 字符串），未登录返回 "guest"
+     */
+    public static String extractUserIdForCache(HttpServletRequest request) {
+        if (request == null) {
+            return "guest";
+        }
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        if (token == null || token.isEmpty()) {
+            return "guest";
+        }
+        try {
+            Map<String, Object> map = parseToken(token);
+            Object userId = map.get(JwtClaimsConstant.USER_ID);
+            return userId == null ? "guest" : userId.toString();
+        } catch (Exception e) {
+            return "guest";
+        }
     }
 
 }

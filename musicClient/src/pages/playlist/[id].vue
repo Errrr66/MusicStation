@@ -5,7 +5,8 @@ import {
   likeComment,
   deleteComment,
 } from '@/api/system'
-import { formatNumber, fixUrl } from '@/utils'
+import { formatNumber, fixUrl, durationToMs } from '@/utils'
+import { extractDominantColor } from '@/utils/imageUtils'
 import type { PlaylistDetail, Song } from '@/api/interface'
 import coverImg from '@/assets/cover.png'
 import { usePlaylistStore } from '@/stores/modules/playlist'
@@ -28,6 +29,7 @@ const { loadTrack, play } = useAudioPlayer()
 
 const dominantColor = ref('#1e3a5f')
 const hasShownSavedToast = ref(false)
+let latestColorTaskId = 0
 
 const maybeShowSavedToast = async () => {
   if (hasShownSavedToast.value) {
@@ -44,45 +46,15 @@ const maybeShowSavedToast = async () => {
   }
 }
 
-const extractDominantColor = (imageUrl: string): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'Anonymous'
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        resolve('#1e3a5f')
-        return
-      }
-      canvas.width = 50
-      canvas.height = 50
-      ctx.drawImage(img, 0, 0, 50, 50)
-      const imageData = ctx.getImageData(0, 0, 50, 50).data
-      let r = 0, g = 0, b = 0, count = 0
-      for (let i = 0; i < imageData.length; i += 4) {
-        r += imageData[i]
-        g += imageData[i + 1]
-        b += imageData[i + 2]
-        count++
-      }
-      r = Math.floor(r / count)
-      g = Math.floor(g / count)
-      b = Math.floor(b / count)
-      const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('')
-      resolve(hex)
-    }
-    img.onerror = () => resolve('#1e3a5f')
-    img.src = imageUrl
-  })
-}
-
 watch(
   () => songs.value,
   async (newSongs) => {
     if (newSongs && newSongs.length > 0 && newSongs[0].coverUrl) {
+      const taskId = ++latestColorTaskId
       const color = await extractDominantColor(newSongs[0].coverUrl + '?param=50y50')
-      dominantColor.value = color
+      if (taskId === latestColorTaskId) {
+        dominantColor.value = color
+      }
     }
   },
   { immediate: true }
@@ -315,7 +287,7 @@ const handlePlayAll = async () => {
     album: song.album,
     cover: song.coverUrl || coverImg, // coverUrl already fixed above
     url: song.audioUrl,
-    duration: parseFloat(song.duration) * 1000,
+    duration: durationToMs(song.duration),
     likeStatus: song.likeStatus,
   }))
 
@@ -326,13 +298,13 @@ const handlePlayAll = async () => {
 }
 </script>
 <template>
-  <div class="spotify-playlist-page" :style="{ '--gradient-color': dominantColor }">
+  <div class="mr-playlist-page" :style="{ '--gradient-color': dominantColor }">
     <!-- Playlist Header -->
-    <div class="spotify-playlist-header">
-      <div class="spotify-playlist-cover">
+    <div class="mr-playlist-header">
+      <div class="mr-playlist-cover">
         <img
           :alt="playlist?.name"
-          class="spotify-playlist-cover-img"
+          class="mr-playlist-cover-img"
           :src="
             (playlist?.coverImgUrl && playlist.coverImgUrl.startsWith('http')
               ? playlist.coverImgUrl + '?param=500y500'
@@ -340,31 +312,31 @@ const handlePlayAll = async () => {
           "
         />
       </div>
-      <div class="spotify-playlist-info">
-        <span class="spotify-playlist-type">歌单</span>
-        <h1 class="spotify-playlist-title">{{ playlist?.name }}</h1>
-        <p class="spotify-playlist-description" :title="playlist?.description">
+      <div class="mr-playlist-info">
+        <span class="mr-playlist-type">歌单</span>
+        <h1 class="mr-playlist-title">{{ playlist?.name }}</h1>
+        <p class="mr-playlist-description" :title="playlist?.description">
           {{ playlist?.description }}
         </p>
-        <div class="spotify-playlist-creator">
+        <div class="mr-playlist-creator">
           <img
-            class="spotify-creator-avatar"
+            class="mr-creator-avatar"
             :alt="playlist?.creator.nickname"
             :src="playlist?.creator.avatarUrl"
           />
-          <span class="spotify-creator-name">{{ playlist?.creator.nickname }}</span>
-          <span class="spotify-meta-separator">•</span>
-          <span class="spotify-meta-text">{{ playlist?.trackCount }} 首歌曲</span>
+          <span class="mr-creator-name">{{ playlist?.creator.nickname }}</span>
+          <span class="mr-meta-separator">•</span>
+          <span class="mr-meta-text">{{ playlist?.trackCount }} 首歌曲</span>
         </div>
-        <div class="spotify-playlist-actions">
-          <button @click="handlePlayAll" class="spotify-play-btn">
+        <div class="mr-playlist-actions">
+          <button @click="handlePlayAll" class="mr-play-btn">
             <Icon icon="mdi:play" class="text-xl" />
             <span>播放</span>
           </button>
-          <button @click="sharePlaylist" class="spotify-action-btn" title="分享给好友">
+          <button @click="sharePlaylist" class="mr-action-btn" title="分享给好友">
             <Icon icon="mdi:share-variant-outline" class="text-xl" />
           </button>
-          <button @click="toggleCollect" class="spotify-action-btn" :class="{ 'spotify-action-active': isCollected }">
+          <button @click="toggleCollect" class="mr-action-btn" :class="{ 'mr-action-active': isCollected }">
             <Icon :icon="isCollected ? 'mdi:check' : 'mdi:plus'" class="text-xl" />
           </button>
         </div>
@@ -372,7 +344,7 @@ const handlePlayAll = async () => {
     </div>
 
     <!-- Tabs -->
-    <div class="spotify-tabs">
+    <div class="mr-tabs">
       <button
         v-for="tab in [
           { name: '歌曲', value: 'songs' },
@@ -380,24 +352,24 @@ const handlePlayAll = async () => {
         ]"
         :key="tab.value"
         @click="activeTab = tab.value"
-        class="spotify-tab"
-        :class="{ 'spotify-tab-active': activeTab === tab.value }"
+        class="mr-tab"
+        :class="{ 'mr-tab-active': activeTab === tab.value }"
       >
         {{ tab.name }}
       </button>
     </div>
 
     <!-- Content -->
-    <div class="spotify-playlist-content">
+    <div class="mr-playlist-content">
       <!-- Songs Tab -->
-      <div v-show="activeTab === 'songs'" class="spotify-songs-content">
+      <div v-show="activeTab === 'songs'" class="mr-songs-content">
         <Table :data="songs" />
       </div>
 
       <!-- Comments Tab -->
-      <div v-show="activeTab === 'comments'" class="spotify-comments-content">
+      <div v-show="activeTab === 'comments'" class="mr-comments-content">
         <!-- Comment Input -->
-        <div class="spotify-comment-input">
+        <div class="mr-comment-input">
           <el-input
             v-model="commentContent"
             type="textarea"
@@ -407,11 +379,11 @@ const handlePlayAll = async () => {
             resize="none"
             show-word-limit
           />
-          <div class="spotify-comment-actions">
+          <div class="mr-comment-actions">
             <button
               @click="handleComment"
               :disabled="!commentContent.trim()"
-              class="spotify-comment-submit"
+              class="mr-comment-submit"
             >
               发布
             </button>
@@ -419,36 +391,36 @@ const handlePlayAll = async () => {
         </div>
 
         <!-- Comments List -->
-        <div class="spotify-comments-list">
-          <h3 class="spotify-comments-title">
+        <div class="mr-comments-list">
+          <h3 class="mr-comments-title">
             最新评论（{{ formatNumber(playlist?.commentCount ?? 0) }}）
           </h3>
           
-          <div v-if="comments.length" class="spotify-comments-items">
-            <div v-for="comment in comments" :key="comment.commentId" class="spotify-comment-item">
+          <div v-if="comments.length" class="mr-comments-items">
+            <div v-for="comment in comments" :key="comment.commentId" class="mr-comment-item">
               <img
                 :src="comment.userAvatar || coverImg"
                 alt="avatar"
-                class="spotify-comment-avatar"
+                class="mr-comment-avatar"
                 @click="goUserProfile(comment.userId)"
               />
-              <div class="spotify-comment-body">
-                <div class="spotify-comment-header">
-                  <span class="spotify-comment-username" @click="goUserProfile(comment.userId)">{{ comment.username }}</span>
+              <div class="mr-comment-body">
+                <div class="mr-comment-header">
+                  <span class="mr-comment-username" @click="goUserProfile(comment.userId)">{{ comment.username }}</span>
                 </div>
-                <p class="spotify-comment-content">{{ comment.content }}</p>
-                <div class="spotify-comment-footer">
-                  <span class="spotify-comment-time">{{ comment.createTime }}</span>
-                  <div class="spotify-comment-actions-row">
+                <p class="mr-comment-content">{{ comment.content }}</p>
+                <div class="mr-comment-footer">
+                  <span class="mr-comment-time">{{ comment.createTime }}</span>
+                  <div class="mr-comment-actions-row">
                     <button
                       v-if="comment.username === currentUsername"
-                      class="spotify-comment-action"
+                      class="mr-comment-action"
                       @click="handleDelete(comment)"
                     >
                       <Icon icon="mdi:delete-outline" />
                       <span>删除</span>
                     </button>
-                    <button class="spotify-comment-action" @click="handleLike(comment)">
+                    <button class="mr-comment-action" @click="handleLike(comment)">
                       <Icon icon="mdi:thumb-up-outline" />
                       <span>{{ formatNumber(comment.likeCount) }}</span>
                     </button>
@@ -458,7 +430,7 @@ const handlePlayAll = async () => {
             </div>
           </div>
           
-          <div v-else class="spotify-comments-empty">
+          <div v-else class="mr-comments-empty">
             <p>暂无评论，快来抢沙发吧~</p>
           </div>
         </div>
@@ -468,7 +440,7 @@ const handlePlayAll = async () => {
 </template>
 
 <style scoped>
-.spotify-playlist-page {
+.mr-playlist-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -476,7 +448,7 @@ const handlePlayAll = async () => {
   background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 300px);
 }
 
-.spotify-playlist-header {
+.mr-playlist-header {
   display: flex;
   align-items: flex-end;
   gap: 24px;
@@ -484,21 +456,21 @@ const handlePlayAll = async () => {
   padding-top: 48px;
 }
 
-.spotify-playlist-cover {
+.mr-playlist-cover {
   width: 232px;
   height: 232px;
   flex-shrink: 0;
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
 }
 
-.spotify-playlist-cover-img {
+.mr-playlist-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.spotify-playlist-info {
+.mr-playlist-info {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -506,7 +478,7 @@ const handlePlayAll = async () => {
   min-width: 0;
 }
 
-.spotify-playlist-type {
+.mr-playlist-type {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -515,7 +487,7 @@ const handlePlayAll = async () => {
   margin-bottom: 8px;
 }
 
-.spotify-playlist-title {
+.mr-playlist-title {
   font-size: 3rem;
   font-weight: 900;
   color: var(--text-base, #fff);
@@ -528,7 +500,7 @@ const handlePlayAll = async () => {
   -webkit-box-orient: vertical;
 }
 
-.spotify-playlist-description {
+.mr-playlist-description {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
   margin-bottom: 8px;
@@ -539,49 +511,49 @@ const handlePlayAll = async () => {
   -webkit-box-orient: vertical;
 }
 
-.spotify-playlist-creator {
+.mr-playlist-creator {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 24px;
 }
 
-.spotify-creator-avatar {
+.mr-creator-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.spotify-creator-name {
+.mr-creator-name {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-base, #fff);
 }
 
-.spotify-meta-separator {
+.mr-meta-separator {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-meta-text {
+.mr-meta-text {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-playlist-actions {
+.mr-playlist-actions {
   display: flex;
   align-items: center;
   gap: 24px;
 }
 
-.spotify-play-btn {
+.mr-play-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   height: 48px;
   padding: 0 32px;
-  background-color: #1db954;
+  background-color: var(--mr-accent);
   border: none;
   border-radius: 500px;
   color: #000;
@@ -591,16 +563,16 @@ const handlePlayAll = async () => {
   transition: transform 33ms ease, background-color 200ms ease;
 }
 
-.spotify-play-btn:hover {
+.mr-play-btn:hover {
   transform: scale(1.04);
-  background-color: #1ed760;
+  background-color: var(--mr-accent-hover);
 }
 
-.spotify-play-btn:active {
+.mr-play-btn:active {
   transform: scale(1);
 }
 
-.spotify-action-btn {
+.mr-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -614,31 +586,31 @@ const handlePlayAll = async () => {
   transition: border-color 200ms ease, color 200ms ease, background-color 200ms ease, transform 33ms ease;
 }
 
-.spotify-action-btn:hover {
+.mr-action-btn:hover {
   border-color: var(--text-base, #fff);
   color: var(--text-base, #fff);
   transform: scale(1.05);
 }
 
-.spotify-action-active {
-  background-color: #1db954;
-  border-color: #1db954;
+.mr-action-active {
+  background-color: var(--mr-accent);
+  border-color: var(--mr-accent);
   color: #000;
 }
 
-.spotify-action-active:hover {
-  background-color: #1ed760;
-  border-color: #1ed760;
+.mr-action-active:hover {
+  background-color: var(--mr-accent-hover);
+  border-color: var(--mr-accent-hover);
 }
 
-.spotify-tabs {
+.mr-tabs {
   display: flex;
   gap: 4px;
   padding: 0 24px;
   margin-bottom: 16px;
 }
 
-.spotify-tab {
+.mr-tab {
   padding: 12px 16px;
   background: transparent;
   border: none;
@@ -650,16 +622,16 @@ const handlePlayAll = async () => {
   transition: color 200ms ease, background-color 200ms ease;
 }
 
-.spotify-tab:hover {
+.mr-tab:hover {
   color: var(--text-base, #fff);
 }
 
-.spotify-tab-active {
+.mr-tab-active {
   color: var(--text-base, #fff);
   background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-playlist-content {
+.mr-playlist-content {
   flex: 1;
   min-height: 0;
   padding: 0 24px 24px;
@@ -667,36 +639,36 @@ const handlePlayAll = async () => {
   overflow-x: hidden;
 }
 
-.spotify-playlist-content::-webkit-scrollbar {
+.mr-playlist-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.spotify-playlist-content::-webkit-scrollbar-track {
+.mr-playlist-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.spotify-playlist-content::-webkit-scrollbar-thumb {
+.mr-playlist-content::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
 
-.spotify-playlist-content::-webkit-scrollbar-thumb:hover {
+.mr-playlist-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 
-.spotify-songs-content {
+.mr-songs-content {
   height: 100%;
 }
 
-.spotify-comments-content {
+.mr-comments-content {
   padding-top: 16px;
 }
 
-.spotify-comment-input {
+.mr-comment-input {
   margin-bottom: 24px;
 }
 
-.spotify-comment-input :deep(.el-textarea__inner) {
+.mr-comment-input :deep(.el-textarea__inner) {
   background-color: var(--bg-elevated, #242424);
   border: none;
   border-radius: 8px;
@@ -704,19 +676,19 @@ const handlePlayAll = async () => {
   font-size: 0.875rem;
 }
 
-.spotify-comment-input :deep(.el-textarea__inner::placeholder) {
+.mr-comment-input :deep(.el-textarea__inner::placeholder) {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-comment-actions {
+.mr-comment-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
 }
 
-.spotify-comment-submit {
+.mr-comment-submit {
   padding: 8px 24px;
-  background-color: #1db954;
+  background-color: var(--mr-accent);
   border: none;
   border-radius: 500px;
   color: #000;
@@ -726,40 +698,40 @@ const handlePlayAll = async () => {
   transition: transform 33ms ease, background-color 200ms ease;
 }
 
-.spotify-comment-submit:hover:not(:disabled) {
+.mr-comment-submit:hover:not(:disabled) {
   transform: scale(1.04);
-  background-color: #1ed760;
+  background-color: var(--mr-accent-hover);
 }
 
-.spotify-comment-submit:disabled {
+.mr-comment-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.spotify-comments-list {
+.mr-comments-list {
   margin-top: 24px;
 }
 
-.spotify-comments-title {
+.mr-comments-title {
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-base, #fff);
   margin-bottom: 16px;
 }
 
-.spotify-comments-items {
+.mr-comments-items {
   display: flex;
   flex-direction: column;
 }
 
-.spotify-comment-item {
+.mr-comment-item {
   display: flex;
   gap: 12px;
   padding: 16px 0;
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-comment-avatar {
+.mr-comment-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -768,41 +740,41 @@ const handlePlayAll = async () => {
   cursor: pointer;
 }
 
-.spotify-comment-body {
+.mr-comment-body {
   flex: 1;
   min-width: 0;
 }
 
-.spotify-comment-header {
+.mr-comment-header {
   margin-bottom: 4px;
 }
 
-.spotify-comment-username {
+.mr-comment-username {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-base, #fff);
   cursor: pointer;
 }
 
-.spotify-comment-content {
+.mr-comment-content {
   font-size: 0.875rem;
   color: var(--text-base, #fff);
   line-height: 1.5;
   margin-bottom: 8px;
 }
 
-.spotify-comment-footer {
+.mr-comment-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.spotify-comment-time {
+.mr-comment-time {
   font-size: 0.75rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-comment-actions-row {
+.mr-comment-actions-row {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -810,11 +782,11 @@ const handlePlayAll = async () => {
   transition: opacity 200ms ease;
 }
 
-.spotify-comment-item:hover .spotify-comment-actions-row {
+.mr-comment-item:hover .mr-comment-actions-row {
   opacity: 1;
 }
 
-.spotify-comment-action {
+.mr-comment-action {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -826,18 +798,18 @@ const handlePlayAll = async () => {
   transition: color 200ms ease;
 }
 
-.spotify-comment-action:hover {
+.mr-comment-action:hover {
   color: var(--text-base, #fff);
 }
 
-.spotify-comments-empty {
+.mr-comments-empty {
   text-align: center;
   padding: 48px 0;
   color: var(--text-subdued, #b3b3b3);
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-playlist-page {
+:root:not(.dark) .mr-playlist-page {
   --bg-surface: #f0f0f0;
   --bg-elevated: #e8e8e8;
   --bg-hover: rgba(0, 0, 0, 0.08);
@@ -847,43 +819,43 @@ const handlePlayAll = async () => {
   --gradient-color: #e8f4f8;
 }
 
-:root:not(.dark) .spotify-playlist-cover {
+:root:not(.dark) .mr-playlist-cover {
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.15);
 }
 
-:root:not(.dark) .spotify-action-btn {
+:root:not(.dark) .mr-action-btn {
   border-color: rgba(0, 0, 0, 0.25);
   color: #5a5a5a;
 }
 
-:root:not(.dark) .spotify-action-btn:hover {
+:root:not(.dark) .mr-action-btn:hover {
   border-color: rgba(0, 0, 0, 0.5);
   color: #000000;
 }
 
-:root:not(.dark) .spotify-action-active {
-  background-color: #1db954;
-  border-color: #1db954;
+:root:not(.dark) .mr-action-active {
+  background-color: var(--mr-accent);
+  border-color: var(--mr-accent);
   color: #000000;
 }
 
-:root:not(.dark) .spotify-action-active:hover {
-  background-color: #1ed760;
-  border-color: #1ed760;
+:root:not(.dark) .mr-action-active:hover {
+  background-color: var(--mr-accent-hover);
+  border-color: var(--mr-accent-hover);
   color: #000000;
 }
 
-:root:not(.dark) .spotify-comment-input :deep(.el-textarea__inner) {
+:root:not(.dark) .mr-comment-input :deep(.el-textarea__inner) {
   background-color: #f5f5f5;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .spotify-playlist-page {
-    padding-bottom: 80px;
+  .mr-playlist-page {
+    padding-bottom: 140px;
   }
   
-  .spotify-playlist-header {
+  .mr-playlist-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -891,68 +863,68 @@ const handlePlayAll = async () => {
     padding-top: 16px;
   }
   
-  .spotify-playlist-cover {
+  .mr-playlist-cover {
     width: 160px;
     height: 160px;
   }
   
-  .spotify-playlist-info {
+  .mr-playlist-info {
     align-items: center;
   }
   
-  .spotify-playlist-title {
+  .mr-playlist-title {
     font-size: 1.5rem;
     margin-bottom: 8px;
   }
   
-  .spotify-playlist-description {
+  .mr-playlist-description {
     font-size: 0.8125rem;
   }
   
-  .spotify-playlist-creator {
+  .mr-playlist-creator {
     justify-content: center;
     margin-bottom: 16px;
   }
   
-  .spotify-playlist-actions {
+  .mr-playlist-actions {
     justify-content: center;
     gap: 16px;
   }
   
-  .spotify-play-btn {
+  .mr-play-btn {
     height: 40px;
     padding: 0 24px;
     font-size: 0.875rem;
   }
   
-  .spotify-action-btn {
+  .mr-action-btn {
     width: 36px;
     height: 36px;
   }
   
-  .spotify-tabs {
+  .mr-tabs {
     padding: 0 12px;
   }
   
-  .spotify-tab {
+  .mr-tab {
     padding: 10px 12px;
     font-size: 0.8125rem;
   }
   
-  .spotify-playlist-content {
+  .mr-playlist-content {
     padding: 0 12px 16px;
   }
   
-  .spotify-comment-item {
+  .mr-comment-item {
     padding: 12px 0;
   }
   
-  .spotify-comment-avatar {
+  .mr-comment-avatar {
     width: 32px;
     height: 32px;
   }
   
-  .spotify-comment-actions-row {
+  .mr-comment-actions-row {
     opacity: 1;
   }
 }

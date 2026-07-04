@@ -15,6 +15,9 @@ RUN pnpm build
 FROM nginx:stable-alpine as production-stage
 
 COPY --from=build-stage /app/dist /usr/share/nginx/html
-EXPOSE 80
+COPY nginx.conf /etc/nginx/nginx.conf
+# 以非 root 用户运行 nginx，监听 8080 端口（非特权端口）
+EXPOSE 8080
+USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]

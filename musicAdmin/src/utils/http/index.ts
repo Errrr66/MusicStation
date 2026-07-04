@@ -11,8 +11,10 @@ import type {
 } from "./types.d";
 import { stringify } from "qs";
 import NProgress from "../progress";
-import { getToken, formatToken } from "@/utils/auth";
+import { getToken, formatToken, removeToken } from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
+import { router } from "@/router";
+import { message } from "@/utils/message";
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
 const runtimeBaseUrl =
@@ -78,49 +80,24 @@ class PureHttp {
         }
         /** 请求白名单，放置一些不需要`token`的接口（通过设置请求白名单，防止`token`过期后再请求造成的死循环问题） */
         const whiteList = ["/refresh-token", "/login"];
-        return whiteList.some(url => config.url.endsWith(url))
-          ? config
-          : new Promise(resolve => {
-              const data = getToken();
-              if (data) {
-                const now = new Date().getTime();
-                const expired = parseInt(data.expires) - now <= 0;
-                if (expired) {
-                  if (!PureHttp.isRefreshing) {
-                    PureHttp.isRefreshing = true;
-                    // token过期刷新（当前项目未实现刷新接口时，回退为继续使用当前token）
-                    const userStore = useUserStoreHook() as any;
-                    if (typeof userStore.handRefreshToken === "function") {
-                      userStore
-                        .handRefreshToken({ refreshToken: data.refreshToken })
-                        .then(res => {
-                          const token = res.data.accessToken;
-                          config.headers["Authorization"] = formatToken(token);
-                          PureHttp.requests.forEach(cb => cb(token));
-                          PureHttp.requests = [];
-                        })
-                        .finally(() => {
-                          PureHttp.isRefreshing = false;
-                        });
-                    } else {
-                      config.headers["Authorization"] = formatToken(data.accessToken);
-                      PureHttp.requests = [];
-                      PureHttp.isRefreshing = false;
-                      resolve(config);
-                      return;
-                    }
-                  }
-                  resolve(PureHttp.retryOriginalRequest(config));
-                } else {
-                  config.headers["Authorization"] = formatToken(
-                    data.accessToken
-                  );
-                  resolve(config);
-                }
-              } else {
-                resolve(config);
-              }
-            });
+        if (whiteList.some(url => config.url.endsWith(url))) {
+          return config;
+        }
+        const data = getToken();
+        if (data) {
+          const now = new Date().getTime();
+          const expired = parseInt(data.expires) - now <= 0;
+          if (expired) {
+            // token 过期：清除登录态并跳转登录页，避免并发请求 Promise 永不 resolve
+            removeToken();
+            if (router.currentRoute.value.path !== "/login") {
+              router.push("/login");
+            }
+            return Promise.reject(new Error("token expired, please login again"));
+          }
+          config.headers["Authorization"] = formatToken(data.accessToken);
+        }
+        return config;
       },
       error => {
         return Promise.reject(error);
@@ -152,6 +129,19 @@ class PureHttp {
         $error.isCancelRequest = Axios.isCancel($error);
         // 关闭进度条动画
         NProgress.done();
+        // 统一处理常见 HTTP 错误状态码
+        const status = $error?.response?.status;
+        if (status === 401) {
+          // 未授权：清除登录态并跳转登录页
+          removeToken();
+          if (router.currentRoute.value.path !== "/login") {
+            router.push("/login");
+          }
+        } else if (status === 403) {
+          message("无权限访问该资源", { type: "error" });
+        } else if (status && status >= 500) {
+          message("服务器异常，请稍后重试", { type: "error" });
+        }
         // 所有的响应异常 区分来源为取消请求/非取消请求
         return Promise.reject($error);
       }

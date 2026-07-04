@@ -30,6 +30,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @Service
 public class MusicAgentService {
 
@@ -998,7 +1001,8 @@ public class MusicAgentService {
                     return names;
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("MusicAgentService 异常：{}", e.getMessage(), e);
         }
         return Arrays.asList("摇滚", "流行", "民谣", "电子", "古风", "治愈", "说唱", "轻音乐", "欧美", "日系", "爵士");
     }
@@ -1152,7 +1156,8 @@ public class MusicAgentService {
                     fuzzyRows.stream().filter(item -> item != null && item > 0).forEach(artistIds::add);
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("MusicAgentService 异常：{}", e.getMessage(), e);
         }
         return artistIds;
     }
@@ -1174,7 +1179,8 @@ public class MusicAgentService {
                         .filter(item -> item != null && !item.trim().isEmpty())
                         .forEach(names::add);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("MusicAgentService 异常：{}", e.getMessage(), e);
         }
         return names.stream().limit(limit).toList();
     }
@@ -1215,7 +1221,8 @@ public class MusicAgentService {
                         .map(String::trim)
                         .forEach(aliases::add);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("MusicAgentService 异常：{}", e.getMessage(), e);
         }
 
         String lower = value.toLowerCase(Locale.ROOT);
@@ -1411,7 +1418,8 @@ public class MusicAgentService {
                 String chinese = parsed.getOrDefault("chinese", raw);
                 String japanese = parsed.getOrDefault("japanese", "");
                 return new TextPair(chinese, japanese);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+            log.warn("MusicAgentService 异常：{}", e.getMessage(), e);
                 return new TextPair(raw, "");
             }
         }
@@ -1557,7 +1565,8 @@ public class MusicAgentService {
         try {
             String cacheValue = objectMapper.writeValueAsString(cards);
             stringRedisTemplate.opsForValue().set(cacheKey, cacheValue, searchCacheTtlSeconds, TimeUnit.SECONDS);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("MusicAgentService 异常：{}", e.getMessage(), e);
         }
     }
 

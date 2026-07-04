@@ -85,7 +85,8 @@ useResizeObserver(appWrapperRef, entries => {
   const entry = entries[0];
   const [{ inlineSize: width, blockSize: height }] = entry.borderBoxSize;
   useAppStoreHook().setViewportSize({ width, height });
-  setTheme("horizontal");
+  // 宽屏使用横向布局，窄屏使用纵向布局
+  setTheme(width >= 1200 ? "horizontal" : "vertical");
 });
 
 onMounted(() => {

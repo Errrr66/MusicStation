@@ -1,6 +1,9 @@
 import { removeToken, setToken, type DataInfo } from "./auth";
 import { subBefore, getQueryMap } from "@pureadmin/utils";
 
+// ⚠️ 安全警告：此模块信任 URL 参数（username、roles、accessToken），存在提权风险。
+// 任意用户可通过构造 URL 自行指定 admin 角色与 token 绕过登录。
+// 启用前必须改造为后端 code 换 token 模式：前端仅携带一次性 code，由后端校验并下发 token。
 /**
  * 简版前端单点登录，根据实际业务自行编写，平台启动后本地可以跳后面这个链接进行测试 http://localhost:8848/#/permission/page/index?username=sso&roles=admin&accessToken=eyJhbGciOiJIUzUxMiJ9.admin
  * 划重点：

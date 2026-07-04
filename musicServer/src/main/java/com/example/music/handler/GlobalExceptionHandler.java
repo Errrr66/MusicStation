@@ -81,4 +81,17 @@ public class GlobalExceptionHandler {
     //    String message = StringUtils.hasLength(ex.getMessage()) ? ex.getMessage() : MessageConstant.UNKNOWN_ERROR;
     //    return errorResult(message);
     //}
+
+    /**
+     * 处理其他未知异常（兜底）
+     *
+     * @param ex
+     * @return
+     */
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Result handleException(Exception ex) {
+        log.error("未知异常：{}", ex.getMessage(), ex);
+        return errorResult(MessageConstant.UNKNOWN_ERROR);
+    }
 }

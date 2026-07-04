@@ -25,13 +25,13 @@ const closeRightAside = () => {
 </script>
 <template>
   <!-- <BG /> -->
-  <div class="spotify-app-container">
-    <div class="spotify-main-wrapper">
+  <div class="mr-app-container">
+    <div class="mr-main-wrapper">
       <!-- Navbar -->
       <Header />
       
       <!-- Main Content Area -->
-      <div class="spotify-content-wrapper">
+      <div class="mr-content-wrapper">
         <!-- Left Sidebar - Library -->
         <Aside />
         
@@ -42,7 +42,7 @@ const closeRightAside = () => {
             size="85%"
             :with-header="false"
             :show-close="false"
-            class="spotify-mobile-drawer spotify-mobile-drawer-left"
+            class="mr-mobile-drawer mr-mobile-drawer-left"
         >
           <Aside :is-mobile="true" @close="closeMobileMenu" />
         </el-drawer>
@@ -54,7 +54,7 @@ const closeRightAside = () => {
             size="85%"
             :with-header="false"
             :show-close="false"
-            class="spotify-mobile-drawer spotify-mobile-drawer-right"
+            class="mr-mobile-drawer mr-mobile-drawer-right"
         >
           <RightAside :is-mobile="true" @close="closeRightAside" />
         </el-drawer>
@@ -78,7 +78,7 @@ const closeRightAside = () => {
 <style scoped>
 @use '../style/spotify-variables.scss' as *;
 
-.spotify-app-container {
+.mr-app-container {
   width: 100%;
   height: 100vh;
   overflow: hidden;
@@ -86,7 +86,7 @@ const closeRightAside = () => {
   transition: background-color 200ms ease;
 }
 
-.spotify-main-wrapper {
+.mr-main-wrapper {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -94,7 +94,7 @@ const closeRightAside = () => {
   gap: 8px;
 }
 
-.spotify-content-wrapper {
+.mr-content-wrapper {
   display: flex;
   flex: 1;
   overflow: hidden;
@@ -102,35 +102,35 @@ const closeRightAside = () => {
   min-height: 0;
 }
 
-:deep(.spotify-mobile-drawer.el-drawer) {
+:deep(.mr-mobile-drawer.el-drawer) {
   background-color: var(--bg-surface, #121212);
 }
 
-:deep(.spotify-mobile-drawer-left.el-drawer) {
+:deep(.mr-mobile-drawer-left.el-drawer) {
   border-top-right-radius: 12px;
   border-bottom-right-radius: 12px;
   overflow: hidden;
 }
 
-:deep(.spotify-mobile-drawer-right.el-drawer) {
+:deep(.mr-mobile-drawer-right.el-drawer) {
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
   overflow: hidden;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-app-container {
+:root:not(.dark) .mr-app-container {
   --bg-base: #f5f5f5;
   --bg-surface: #f0f0f0;
 }
 
 @media (max-width: 768px) {
-  .spotify-main-wrapper {
+  .mr-main-wrapper {
     padding: 0;
     gap: 0;
   }
   
-  .spotify-content-wrapper {
+  .mr-content-wrapper {
     gap: 0;
   }
 }

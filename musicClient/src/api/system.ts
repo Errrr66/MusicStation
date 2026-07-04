@@ -242,7 +242,7 @@ export const searchAll = (keyword: string, limit = 20) => {
   return http<{
     code: number
     message: string
-    data?: { songs: any[]; artists: any[]; playlists: any[]; users: UserSimple[] }
+    data?: { songs: Song[]; artists: Artist[]; playlists: PlaylistDetail[]; users: UserSimple[] }
   }>('get', '/search/all', { params: { keyword, limit } })
 }
 

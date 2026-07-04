@@ -8,7 +8,7 @@ const { volume, setVolume } = useAudioPlayer()
 const isMuted = computed(() => volume.value === 0)
 
 const toggleVolume = () => {
-  setVolume(isMuted.value ? 0.5 : 0)
+  setVolume(isMuted.value ? 50 : 0)
 }
 
 const volumeIcon = computed(() => {
@@ -19,26 +19,26 @@ const volumeIcon = computed(() => {
 })
 </script>
 <template>
-  <div class="spotify-playing-bar-right">
-    <div class="spotify-volume-control">
+  <div class="mr-playing-bar-right">
+    <div class="mr-volume-control">
       <button
-        class="spotify-extra-btn"
+        class="mr-extra-btn"
         @click="toggleVolume"
       >
-        <Icon :icon="volumeIcon" class="spotify-extra-icon" />
+        <Icon :icon="volumeIcon" class="mr-extra-icon" />
       </button>
-      <div class="spotify-volume-wrapper">
-        <div class="spotify-volume-bar">
+      <div class="mr-volume-wrapper">
+        <div class="mr-volume-bar">
           <div 
-            class="spotify-volume-fill" 
+            class="mr-volume-fill" 
             :style="{ width: volume + '%' }"
           >
-            <div class="spotify-volume-handle"></div>
+            <div class="mr-volume-handle"></div>
           </div>
         </div>
         <input
           type="range"
-          class="spotify-volume-input"
+          class="mr-volume-input"
           :value="volume"
           max="100"
           step="1"
@@ -50,7 +50,7 @@ const volumeIcon = computed(() => {
 </template>
 
 <style scoped>
-.spotify-playing-bar-right {
+.mr-playing-bar-right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -59,7 +59,7 @@ const volumeIcon = computed(() => {
   width: 30%;
 }
 
-.spotify-extra-btn {
+.mr-extra-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,26 +73,26 @@ const volumeIcon = computed(() => {
   transition: color 200ms ease, transform 33ms ease;
 }
 
-.spotify-extra-btn:hover {
+.mr-extra-btn:hover {
   color: var(--text-base, #fff);
   transform: scale(1.1);
 }
 
-.spotify-extra-btn:active {
+.mr-extra-btn:active {
   transform: scale(1);
 }
 
-.spotify-extra-icon {
+.mr-extra-icon {
   font-size: 1rem;
 }
 
-.spotify-volume-control {
+.mr-volume-control {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.spotify-volume-wrapper {
+.mr-volume-wrapper {
   position: relative;
   width: 120px;
   height: 24px;
@@ -100,7 +100,7 @@ const volumeIcon = computed(() => {
   align-items: center;
 }
 
-.spotify-volume-bar {
+.mr-volume-bar {
   width: 100%;
   height: 6px;
   background-color: var(--volume-bg, #4d4d4d);
@@ -108,7 +108,7 @@ const volumeIcon = computed(() => {
   overflow: hidden;
 }
 
-.spotify-volume-fill {
+.mr-volume-fill {
   height: 100%;
   background-color: var(--volume-fill, #fff);
   border-radius: 2px;
@@ -116,7 +116,7 @@ const volumeIcon = computed(() => {
   transition: background-color 200ms ease;
 }
 
-.spotify-volume-handle {
+.mr-volume-handle {
   position: absolute;
   right: -6px;
   top: 50%;
@@ -130,15 +130,15 @@ const volumeIcon = computed(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.spotify-volume-wrapper:hover .spotify-volume-fill {
-  background-color: var(--volume-hover, #1db954);
+.mr-volume-wrapper:hover .mr-volume-fill {
+  background-color: var(--volume-hover, var(--mr-accent));
 }
 
-.spotify-volume-wrapper:hover .spotify-volume-handle {
+.mr-volume-wrapper:hover .mr-volume-handle {
   opacity: 1;
 }
 
-.spotify-volume-input {
+.mr-volume-input {
   position: absolute;
   top: 0;
   left: 0;
@@ -150,16 +150,16 @@ const volumeIcon = computed(() => {
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-playing-bar-right {
+:root:not(.dark) .mr-playing-bar-right {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --volume-bg: #c0c0c0;
   --volume-fill: #000000;
-  --volume-hover: #1db954;
+  --volume-hover: var(--mr-accent);
 }
 
 @media (max-width: 768px) {
-  .spotify-playing-bar-right {
+  .mr-playing-bar-right {
     display: none;
   }
 }

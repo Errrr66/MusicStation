@@ -8,25 +8,14 @@
         <result column="title" property="title"/>
         <result column="coverUrl" property="coverUrl"/>
         <result column="introduction" property="introduction"/>
-        <collection property="songs" ofType="com.example.music.model.vo.SongVO">
-            <id column="songId" property="songId"/>
-            <result column="songName" property="songName"/>
-            <result column="artistName" property="artistName"/>
-            <result column="album" property="album"/>
-            <result column="duration" property="duration"/>
-            <result column="songCoverUrl" property="coverUrl"/>
-            <result column="audioUrl" property="audioUrl"/>
-            <result column="releaseTime" property="releaseTime"/>
-        </collection>
-        <collection property="comments" ofType="com.example.music.model.vo.CommentVO">
-            <id column="commentId" property="commentId"/>
-            <result column="userId" property="userId"/>
-            <result column="username" property="username"/>
-            <result column="userAvatar" property="userAvatar"/>
-            <result column="content" property="content"/>
-            <result column="createTime" property="createTime"/>
-            <result column="likeCount" property="likeCount"/>
-        </collection>
+        <!-- 歌曲改为独立子查询，避免与评论 JOIN 产生笛卡尔积 -->
+        <collection property="songs" ofType="com.example.music.model.vo.SongVO"
+                    select="com.example.music.mapper.PlaylistMapper.listPlaylistSongs"
+                    column="playlistId" fetchType="lazy"/>
+        <!-- 评论改为独立子查询，避免与歌曲 JOIN 产生笛卡尔积 -->
+        <collection property="comments" ofType="com.example.music.model.vo.CommentVO"
+                    select="com.example.music.mapper.CommentMapper.listPlaylistComments"
+                    column="playlistId" fetchType="lazy"/>
     </resultMap>
 
     <!-- 查询歌单详情 -->
@@ -34,29 +23,26 @@
         SELECT p.id           AS playlistId,
                p.title        AS title,
                p.cover_url    AS coverUrl,
-               p.introduction AS introduction,
-               pb.song_id     AS songId,
+               p.introduction AS introduction
+        FROM tb_playlist p
+        WHERE p.id = #{playlistId}
+    </select>
+
+    <!-- 查询歌单下的歌曲列表（独立查询） -->
+    <select id="listPlaylistSongs" resultType="com.example.music.model.vo.SongVO">
+        SELECT s.id           AS songId,
                s.name         AS songName,
                s.album        AS album,
                s.duration     AS duration,
-               s.cover_url    AS songCoverUrl,
+               s.cover_url    AS coverUrl,
                s.audio_url    AS audioUrl,
                s.release_time AS releaseTime,
-               a.name         AS artistName,
-               c.id           AS commentId,
-               c.content      AS content,
-               c.create_time  AS createTime,
-               c.like_count   AS likeCount,
-                c.user_id      AS userId,
-               u.username     AS username,
-               u.user_avatar  AS userAvatar
-        FROM tb_playlist p
-                 LEFT JOIN tb_playlist_binding pb ON p.id = pb.playlist_id
+               a.name         AS artistName
+        FROM tb_playlist_binding pb
                  LEFT JOIN tb_song s ON pb.song_id = s.id
                  LEFT JOIN tb_artist a ON s.artist_id = a.id
-                 LEFT JOIN tb_comment c ON p.id = c.playlist_id AND c.type = 1
-                 LEFT JOIN tb_user u ON c.user_id = u.id
-        WHERE p.id = #{playlistId}
+        WHERE pb.playlist_id = #{playlistId}
+        ORDER BY s.id DESC
     </select>
 
     <!-- 获取用户收藏歌单的风格 -->
@@ -81,7 +67,7 @@
         <foreach item="id" collection="favoritePlaylistIds" open="(" separator="," close=")">
             #{id}
         </foreach>
-        ORDER BY RAND()
+        ORDER BY id DESC
         LIMIT #{limit}
     </select>
 

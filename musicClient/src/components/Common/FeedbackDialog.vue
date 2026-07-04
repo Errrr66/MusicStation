@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { addFeedback } from '@/api/system'
@@ -8,6 +8,20 @@ import { Icon } from '@iconify/vue'
 const dialogVisible = ref(false)
 const loading = ref(false)
 const formRef = ref<FormInstance>()
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 const formData = reactive({
   content: '',
@@ -60,47 +74,47 @@ defineExpose({ openDialog })
 <template>
   <el-dialog
     v-model="dialogVisible"
-    width="480px"
+    :width="isMobile ? '90%' : '480px'"
     :close-on-click-modal="false"
     :show-close="false"
-    class="spotify-feedback-dialog"
+    class="mr-feedback-dialog"
     @close="closeDialog"
   >
     <template #header>
-      <div class="spotify-dialog-header">
-        <div class="spotify-dialog-title-wrapper">
-          <Icon icon="mdi:message-text-outline" class="spotify-dialog-icon" />
-          <span class="spotify-dialog-title">意见反馈</span>
+      <div class="mr-dialog-header">
+        <div class="mr-dialog-title-wrapper">
+          <Icon icon="mdi:message-text-outline" class="mr-dialog-icon" />
+          <span class="mr-dialog-title">意见反馈</span>
         </div>
-        <button class="spotify-dialog-close" @click="closeDialog">
+        <button class="mr-dialog-close" @click="closeDialog">
           <Icon icon="mdi:close" />
         </button>
       </div>
     </template>
 
-    <div class="spotify-dialog-content">
-      <p class="spotify-dialog-desc">我们非常重视您的意见，请告诉我们您的想法和建议。</p>
+    <div class="mr-dialog-content">
+      <p class="mr-dialog-desc">我们非常重视您的意见，请告诉我们您的想法和建议。</p>
       
       <el-form ref="formRef" :model="formData" :rules="rules" label-width="0px">
         <el-form-item prop="content">
           <el-input
             v-model="formData.content"
             type="textarea"
-            :rows="6"
+            :rows="isMobile ? 4 : 6"
             placeholder="请输入您的宝贵意见或建议（10-200字）"
             maxlength="200"
             show-word-limit
-            class="spotify-textarea"
+            class="mr-textarea"
           />
         </el-form-item>
       </el-form>
     </div>
 
     <template #footer>
-      <div class="spotify-dialog-footer">
-        <button class="spotify-btn-cancel" @click="closeDialog">取消</button>
+      <div class="mr-dialog-footer">
+        <button class="mr-btn-cancel" @click="closeDialog">取消</button>
         <button
-          class="spotify-btn-submit"
+          class="mr-btn-submit"
           :disabled="loading"
           @click="handleSubmit"
         >
@@ -113,26 +127,26 @@ defineExpose({ openDialog })
 </template>
 
 <style scoped>
-.spotify-feedback-dialog :deep(.el-dialog) {
+.mr-feedback-dialog :deep(.el-dialog) {
   background-color: #282828;
   border-radius: 12px;
   overflow: hidden;
 }
 
-.spotify-feedback-dialog :deep(.el-dialog__header) {
+.mr-feedback-dialog :deep(.el-dialog__header) {
   padding: 0;
   margin: 0;
 }
 
-.spotify-feedback-dialog :deep(.el-dialog__body) {
+.mr-feedback-dialog :deep(.el-dialog__body) {
   padding: 0 24px;
 }
 
-.spotify-feedback-dialog :deep(.el-dialog__footer) {
+.mr-feedback-dialog :deep(.el-dialog__footer) {
   padding: 0 24px 24px;
 }
 
-.spotify-dialog-header {
+.mr-dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -140,24 +154,24 @@ defineExpose({ openDialog })
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.spotify-dialog-title-wrapper {
+.mr-dialog-title-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.spotify-dialog-icon {
+.mr-dialog-icon {
   font-size: 1.5rem;
-  color: #1db954;
+  color: var(--mr-accent);
 }
 
-.spotify-dialog-title {
+.mr-dialog-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: #fff;
 }
 
-.spotify-dialog-close {
+.mr-dialog-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,23 +186,23 @@ defineExpose({ openDialog })
   transition: background-color 200ms ease, color 200ms ease;
 }
 
-.spotify-dialog-close:hover {
+.mr-dialog-close:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.spotify-dialog-content {
+.mr-dialog-content {
   padding-top: 16px;
 }
 
-.spotify-dialog-desc {
+.mr-dialog-desc {
   font-size: 0.875rem;
   color: #b3b3b3;
   margin-bottom: 16px;
   line-height: 1.5;
 }
 
-.spotify-textarea :deep(.el-textarea__inner) {
+.mr-textarea :deep(.el-textarea__inner) {
   background-color: #3e3e3e;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -200,31 +214,31 @@ defineExpose({ openDialog })
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-.spotify-textarea :deep(.el-textarea__inner::placeholder) {
+.mr-textarea :deep(.el-textarea__inner::placeholder) {
   color: #6a6a6a;
 }
 
-.spotify-textarea :deep(.el-textarea__inner:hover) {
+.mr-textarea :deep(.el-textarea__inner:hover) {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.spotify-textarea :deep(.el-textarea__inner:focus) {
-  border-color: #1db954;
-  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+.mr-textarea :deep(.el-textarea__inner:focus) {
+  border-color: var(--mr-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-base, #fff) 20%, transparent);
 }
 
-.spotify-textarea :deep(.el-input__count) {
+.mr-textarea :deep(.el-input__count) {
   background: transparent;
   color: #6a6a6a;
 }
 
-.spotify-dialog-footer {
+.mr-dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
 }
 
-.spotify-btn-cancel {
+.mr-btn-cancel {
   padding: 12px 24px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -236,18 +250,18 @@ defineExpose({ openDialog })
   transition: all 200ms ease;
 }
 
-.spotify-btn-cancel:hover {
+.mr-btn-cancel:hover {
   border-color: #fff;
   transform: scale(1.02);
 }
 
-.spotify-btn-submit {
+.mr-btn-submit {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 12px 32px;
-  background-color: #1db954;
+  background-color: var(--mr-accent);
   border: none;
   border-radius: 500px;
   color: #000;
@@ -257,106 +271,116 @@ defineExpose({ openDialog })
   transition: all 200ms ease;
 }
 
-.spotify-btn-submit:hover:not(:disabled) {
-  background-color: #1ed760;
+.mr-btn-submit:hover:not(:disabled) {
+  background-color: var(--mr-accent-hover);
   transform: scale(1.02);
 }
 
-.spotify-btn-submit:disabled {
+.mr-btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-feedback-dialog :deep(.el-dialog) {
+:root:not(.dark) .mr-feedback-dialog :deep(.el-dialog) {
   background-color: #fff;
 }
 
-:root:not(.dark) .spotify-dialog-header {
+:root:not(.dark) .mr-dialog-header {
   border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-dialog-title {
+:root:not(.dark) .mr-dialog-title {
   color: #000;
 }
 
-:root:not(.dark) .spotify-dialog-close {
+:root:not(.dark) .mr-dialog-close {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-dialog-close:hover {
+:root:not(.dark) .mr-dialog-close:hover {
   background-color: rgba(0, 0, 0, 0.08);
   color: #000;
 }
 
-:root:not(.dark) .spotify-dialog-desc {
+:root:not(.dark) .mr-dialog-desc {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-textarea :deep(.el-textarea__inner) {
+:root:not(.dark) .mr-textarea :deep(.el-textarea__inner) {
   background-color: #f5f5f5;
   color: #000;
 }
 
-:root:not(.dark) .spotify-textarea :deep(.el-textarea__inner::placeholder) {
+:root:not(.dark) .mr-textarea :deep(.el-textarea__inner::placeholder) {
   color: #9a9a9a;
 }
 
-:root:not(.dark) .spotify-textarea :deep(.el-textarea__inner:hover) {
+:root:not(.dark) .mr-textarea :deep(.el-textarea__inner:hover) {
   border-color: rgba(0, 0, 0, 0.2);
 }
 
-:root:not(.dark) .spotify-textarea :deep(.el-input__count) {
+:root:not(.dark) .mr-textarea :deep(.el-input__count) {
   color: #9a9a9a;
 }
 
-:root:not(.dark) .spotify-btn-cancel {
+:root:not(.dark) .mr-btn-cancel {
   border-color: rgba(0, 0, 0, 0.2);
   color: #000;
 }
 
-:root:not(.dark) .spotify-btn-cancel:hover {
+:root:not(.dark) .mr-btn-cancel:hover {
   border-color: #000;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .spotify-feedback-dialog :deep(.el-dialog) {
-    width: 95vw !important;
-    margin: 0 auto;
+  .mr-feedback-dialog :deep(.el-dialog) {
+    max-height: 85vh;
+    margin: 5vh auto 0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
   }
   
-  .spotify-dialog-header {
+  .mr-dialog-header {
     padding: 16px 20px;
+    flex-shrink: 0;
   }
   
-  .spotify-dialog-title {
+  .mr-dialog-title {
     font-size: 1rem;
   }
   
-  .spotify-feedback-dialog :deep(.el-dialog__body) {
+  .mr-dialog-icon {
+    font-size: 1.25rem;
+  }
+  
+  .mr-feedback-dialog :deep(.el-dialog__body) {
     padding: 0 16px;
+    overflow-y: auto;
   }
   
-  .spotify-feedback-dialog :deep(.el-dialog__footer) {
-    padding: 0 16px 16px;
+  .mr-feedback-dialog :deep(.el-dialog__footer) {
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+    flex-shrink: 0;
   }
   
-  .spotify-dialog-desc {
+  .mr-dialog-desc {
     font-size: 0.8125rem;
   }
   
-  .spotify-textarea :deep(.el-textarea__inner) {
+  .mr-textarea :deep(.el-textarea__inner) {
     padding: 10px 12px;
     font-size: 0.875rem;
   }
   
-  .spotify-dialog-footer {
+  .mr-dialog-footer {
     flex-direction: column;
   }
   
-  .spotify-btn-cancel,
-  .spotify-btn-submit {
+  .mr-btn-cancel,
+  .mr-btn-submit {
     width: 100%;
     justify-content: center;
   }

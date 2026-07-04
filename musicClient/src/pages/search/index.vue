@@ -100,7 +100,7 @@ onMounted(runSearch)
 .title { color: var(--text-base, #fff); margin-bottom: 12px; }
 .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
 .tab { border: 0; border-radius: 999px; padding: 6px 14px; background: var(--bg-elevated, #242424); color: var(--text-subdued, #b3b3b3); cursor: pointer; }
-.tab.active { background: #1db954; color: #000; }
+.tab.active { background: var(--mr-accent); color: #000; }
 .card { background: var(--bg-elevated, #1d1d1d); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
 .item { border: 0; background: var(--bg-surface, #121212); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px; color: inherit; cursor: pointer; text-align: left; }
 .item img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; }
@@ -108,5 +108,19 @@ onMounted(runSearch)
 .item p { color: var(--text-base, #fff); font-size: .9rem; }
 .item span { color: var(--text-subdued, #b3b3b3); font-size: .75rem; }
 .empty { color: var(--text-subdued, #b3b3b3); text-align: center; padding: 24px 0; }
+
+@media (max-width: 768px) {
+  .search-page { padding: 12px; padding-top: 56px; padding-bottom: 140px; }
+  .title { font-size: 1.1rem; margin-bottom: 10px; }
+  .tabs { gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tab { padding: 5px 12px; font-size: 0.8125rem; }
+  .card { padding: 10px; border-radius: 10px; }
+  .item { padding: 8px; gap: 8px; }
+  .item img { width: 38px; height: 38px; border-radius: 6px; }
+  .item p { font-size: 0.85rem; }
+  .item span { font-size: 0.7rem; }
+  .item div { min-width: 0; }
+  .item p, .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
 </style>
 

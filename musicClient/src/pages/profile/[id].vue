@@ -212,9 +212,9 @@ onMounted(loadProfile)
 .profile-name { font-size: 1.4rem; color: var(--text-base, #fff); margin-bottom: 6px; }
 .profile-intro { color: var(--text-subdued, #b3b3b3); margin-bottom: 8px; }
 .profile-counts { display: flex; gap: 14px; color: var(--text-subdued, #b3b3b3); margin-bottom: 10px; }
-.follow-btn { border: 1px solid #1db954; background: transparent; color: #1db954; padding: 6px 16px; border-radius: 999px; cursor: pointer; }
-.follow-btn.active { background: #1db954; color: #000; }
-.follow-btn.active:hover { background: #1db954; border-color: #1db954; color: #000; }
+.follow-btn { border: 1px solid var(--mr-accent); background: transparent; color: var(--mr-accent); padding: 6px 16px; border-radius: 999px; cursor: pointer; }
+.follow-btn.active { background: var(--mr-accent); color: #000; }
+.follow-btn.active:hover { background: var(--mr-accent); border-color: var(--mr-accent); color: #000; }
 .follow-btn.loading { opacity: 0.8; cursor: wait; }
 .follow-btn:disabled { cursor: not-allowed; }
 .follow-btn-inner { display: inline-flex; align-items: center; gap: 6px; }
@@ -224,7 +224,7 @@ onMounted(loadProfile)
 .message-btn:hover { border-color: var(--text-base, #fff); }
 .tab-row { margin: 14px 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .tab-btn { border: 0; border-radius: 999px; padding: 6px 14px; background: var(--bg-elevated, #242424); color: var(--text-subdued, #b3b3b3); cursor: pointer; }
-.tab-btn.active { background: #1db954; color: #000; }
+.tab-btn.active { background: var(--mr-accent); color: #000; }
 .content-card { border-radius: 12px; background: var(--bg-elevated, #1d1d1d); padding: 16px; }
 .list-grid, .user-grid { display: grid; gap: 10px; }
 .list-item, .user-item { display: flex; gap: 10px; align-items: center; border: 0; border-radius: 10px; background: var(--bg-surface, #121212); padding: 10px; color: inherit; cursor: pointer; text-align: left; }
@@ -254,7 +254,7 @@ onMounted(loadProfile)
 }
 
 :root:not(.dark) .tab-btn.active {
-  background: #1db954;
+  background: var(--mr-accent);
   color: #000;
 }
 
@@ -262,6 +262,25 @@ onMounted(loadProfile)
 :root:not(.dark) .user-item {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 768px) {
+  .profile-page { padding: 12px; padding-top: 56px; }
+  .profile-header { flex-direction: column; align-items: center; text-align: center; padding: 16px; gap: 12px; }
+  .profile-avatar { width: 72px; height: 72px; }
+  .profile-name { font-size: 1.2rem; }
+  .profile-intro { font-size: 0.85rem; }
+  .profile-counts { justify-content: center; font-size: 0.85rem; }
+  .profile-actions { justify-content: center; }
+  .tab-row { gap: 6px; margin: 12px 0; }
+  .tab-btn { padding: 5px 12px; font-size: 0.8125rem; }
+  .content-card { padding: 12px; }
+  .list-item, .user-item { padding: 8px; gap: 8px; }
+  .list-item img, .user-item img { width: 38px; height: 38px; border-radius: 6px; }
+  .title { font-size: 0.85rem; }
+  .sub { font-size: 0.7rem; }
+  .list-item div, .user-item div { min-width: 0; text-align: left; }
+  .title, .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 </style>
 

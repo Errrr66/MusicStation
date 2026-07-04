@@ -3,7 +3,7 @@ import Left from './left.vue'
 import Right from './right.vue'
 import { getSongDetail } from '@/api/system'
 import type { SongDetail } from '@/api/interface'
-import { ref, provide, watch, computed } from 'vue'
+import { ref, provide, watch, computed, type Ref } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { Icon } from '@iconify/vue'
 import { fixUrl } from '@/utils'
@@ -12,6 +12,8 @@ import defaultAlbum from '@/assets/default_album.jpg'
 
 const showDrawer = defineModel<boolean>()
 const songDetail = ref<SongDetail | null>(null)
+const activeRightTab = ref<'lyric' | 'comment'>('lyric')
+const drawerScrollRef = ref<HTMLElement | null>(null)
 let latestDetailRequestId = 0
 
 const { currentTrack } = useAudioPlayer()
@@ -19,6 +21,30 @@ const audioStore = AudioStore()
 const drawerCover = computed(() => fixUrl(currentTrack.value.cover) || defaultAlbum)
 const stableDrawerCover = ref(defaultAlbum)
 let latestCoverProbeId = 0
+
+provide('songDetail', songDetail)
+provide('drawerCover', stableDrawerCover)
+provide('activeRightTab', activeRightTab)
+provide('switchRightTab', (tab: 'lyric' | 'comment') => {
+  activeRightTab.value = tab
+  if (drawerScrollRef.value) {
+    drawerScrollRef.value.scrollTo({
+      left: drawerScrollRef.value.clientWidth,
+      behavior: 'smooth',
+    })
+  }
+})
+provide('goBackToLeft', () => {
+  if (drawerScrollRef.value) {
+    drawerScrollRef.value.scrollTo({
+      left: 0,
+      behavior: 'smooth',
+    })
+  }
+})
+provide('closeDrawer', () => {
+  showDrawer.value = false
+})
 
 const probeImage = (url: string): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -107,9 +133,6 @@ watch(
   },
   { immediate: true }
 )
-
-provide('songDetail', songDetail)
-provide('drawerCover', stableDrawerCover)
 </script>
 
 <template>
@@ -122,27 +145,27 @@ provide('drawerCover', stableDrawerCover)
     size="100%"
     :modal="false"
     :showClose="false"
-    class="spotify-drawer"
+    class="mr-drawer"
     :with-header="false"
   >
-    <div class="spotify-drawer-content">
-      <div class="spotify-drawer-header">
-        <button @click="showDrawer = false" class="spotify-drawer-close">
+    <div class="mr-drawer-content">
+      <div class="mr-drawer-header">
+        <button @click="showDrawer = false" class="mr-drawer-close">
           <Icon icon="mdi:chevron-down" />
         </button>
-        <div class="spotify-drawer-title">
-          <span class="spotify-drawer-song">{{ currentTrack.title }}</span>
-          <span class="spotify-drawer-artist">{{ currentTrack.artist }}</span>
+        <div class="mr-drawer-title">
+          <span class="mr-drawer-song">{{ currentTrack.title }}</span>
+          <span class="mr-drawer-artist">{{ currentTrack.artist }}</span>
         </div>
         <div class="w-10"></div>
       </div>
 
-      <main class="spotify-drawer-main">
-        <div class="spotify-drawer-scroll">
-          <div class="spotify-drawer-left">
+      <main class="mr-drawer-main">
+        <div ref="drawerScrollRef" class="mr-drawer-scroll">
+          <div class="mr-drawer-left">
             <Left />
           </div>
-          <div class="spotify-drawer-right">
+          <div class="mr-drawer-right">
             <Right />
           </div>
         </div>
@@ -152,7 +175,7 @@ provide('drawerCover', stableDrawerCover)
 </template>
 
 <style scoped>
-.spotify-drawer :deep(.el-drawer) {
+.mr-drawer :deep(.el-drawer) {
   overflow: hidden;
   margin: 0 !important;
   width: 100% !important;
@@ -161,18 +184,18 @@ provide('drawerCover', stableDrawerCover)
   max-height: 100% !important;
 }
 
-.spotify-drawer :deep(.el-overlay) {
+.mr-drawer :deep(.el-overlay) {
   background-color: transparent;
 }
 
-.spotify-drawer :deep(.el-drawer__body) {
+.mr-drawer :deep(.el-drawer__body) {
   padding: 0;
   margin: 0;
   height: 100%;
   overflow: hidden;
 }
 
-.spotify-drawer-content {
+.mr-drawer-content {
   height: 100%;
   width: 100%;
   display: flex;
@@ -183,7 +206,7 @@ provide('drawerCover', stableDrawerCover)
   position: relative;
 }
 
-.spotify-drawer-content::before {
+.mr-drawer-content::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -195,7 +218,7 @@ provide('drawerCover', stableDrawerCover)
   z-index: -1;
 }
 
-.spotify-drawer-header {
+.mr-drawer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -203,7 +226,7 @@ provide('drawerCover', stableDrawerCover)
   flex-shrink: 0;
 }
 
-.spotify-drawer-close {
+.mr-drawer-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -218,12 +241,12 @@ provide('drawerCover', stableDrawerCover)
   transition: background-color 200ms ease, transform 33ms ease;
 }
 
-.spotify-drawer-close:hover {
+.mr-drawer-close:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
 }
 
-.spotify-drawer-title {
+.mr-drawer-title {
   flex: 1;
   text-align: center;
   display: flex;
@@ -231,24 +254,24 @@ provide('drawerCover', stableDrawerCover)
   gap: 2px;
 }
 
-.spotify-drawer-song {
+.mr-drawer-song {
   font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
 }
 
-.spotify-drawer-artist {
+.mr-drawer-artist {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.spotify-drawer-main {
+.mr-drawer-main {
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-.spotify-drawer-scroll {
+.mr-drawer-scroll {
   height: 100%;
   width: 100%;
   display: flex;
@@ -258,11 +281,11 @@ provide('drawerCover', stableDrawerCover)
   -ms-overflow-style: none;
 }
 
-.spotify-drawer-scroll::-webkit-scrollbar {
+.mr-drawer-scroll::-webkit-scrollbar {
   display: none;
 }
 
-.spotify-drawer-left {
+.mr-drawer-left {
   width: 100%;
   flex-shrink: 0;
   scroll-snap-align: center;
@@ -273,7 +296,7 @@ provide('drawerCover', stableDrawerCover)
   padding: 0 24px;
 }
 
-.spotify-drawer-right {
+.mr-drawer-right {
   width: 100%;
   flex-shrink: 0;
   scroll-snap-align: center;
@@ -284,16 +307,16 @@ provide('drawerCover', stableDrawerCover)
 }
 
 @media (min-width: 768px) {
-  .spotify-drawer-scroll {
+  .mr-drawer-scroll {
     overflow-x: hidden;
   }
   
-  .spotify-drawer-left {
+  .mr-drawer-left {
     width: 50%;
     padding: 0 48px;
   }
   
-  .spotify-drawer-right {
+  .mr-drawer-right {
     width: 50%;
     padding: 0 48px;
   }

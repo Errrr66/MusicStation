@@ -4,6 +4,7 @@ import com.example.music.model.deepseek.ChatCompletionRequest;
 import com.example.music.model.deepseek.ChatCompletionResponse;
 import com.example.music.model.dto.ChatRequestDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class DeepSeekService {
 
@@ -97,12 +99,14 @@ public class DeepSeekService {
                 return response.getBody().getChoices().get(0).getMessage().getContent();
             }
         } catch (HttpClientErrorException.Unauthorized e) {
-            return "配置错误：DeepSeek API 鉴权失败(401)。请检查 DEEPSEEK_API_KEY 与 deepseek.base-url 是否匹配。";
+            log.error("DeepSeek API 鉴权失败(401)：{}", e.getMessage(), e);
+            return "AI 服务暂时不可用，请稍后重试";
         } catch (Exception e) {
-            return "Server Error: " + e.getMessage();
+            log.error("DeepSeek 调用异常：{}", e.getMessage(), e);
+            return "AI 服务暂时不可用，请稍后重试";
         }
 
-        return "No response from AI.";
+        return "AI 服务暂时不可用，请稍后重试";
     }
 
     // Removed translateToJapanese to save tokens by using single pass logic

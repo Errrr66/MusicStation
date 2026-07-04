@@ -10,6 +10,15 @@ export interface PlaylistSong {
   releaseTime: string | null
 }
 
+export interface Artist {
+  artistId: number
+  artistName: string
+  avatar: string | null
+  birth: string | null
+  area: string | null
+  introduction: string | null
+}
+
 export interface PlaylistComment {
   commentId: number
   userId?: number

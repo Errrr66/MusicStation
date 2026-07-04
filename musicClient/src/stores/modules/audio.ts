@@ -26,22 +26,33 @@ export const AudioStore = defineStore({
     },
     // 新增歌曲或歌曲数组到 trackList
     addTracks(newTracks: trackModel | trackModel[]) {
+      // 将参数归一化为数组
+      const tracksToAdd = Array.isArray(newTracks) ? newTracks : [newTracks]
       // 收集现有歌曲的ID
       const existingIds = new Set(
         this.trackList.map((track: { id: any }) => track.id)
       )
-      // 将参数归一化为数组
-      const tracksToAdd = Array.isArray(newTracks) ? newTracks : [newTracks]
+      let firstDupIndex = -1
+      const newIds = new Set()
       for (const track of tracksToAdd) {
         if (existingIds.has(track.id)) {
-          this.currentSongIndex = this.trackList.findIndex(
-            (existingTrack: { id: string }) => existingTrack.id === track.id
-          )
-          break
-        } else {
+          // 重复歌曲：仅定位第一个出现的位置
+          if (firstDupIndex === -1) {
+            firstDupIndex = this.trackList.findIndex(
+              (existingTrack: { id: any }) => existingTrack.id === track.id
+            )
+          }
+        } else if (!newIds.has(track.id)) {
+          // 新歌：全部追加
           this.trackList.push(track)
-          this.currentSongIndex = this.trackList.length - 1
+          newIds.add(track.id)
         }
+      }
+      // 定位播放索引：优先定位第一个重复，否则播放第一首新歌
+      if (firstDupIndex !== -1) {
+        this.currentSongIndex = firstDupIndex
+      } else if (newIds.size > 0) {
+        this.currentSongIndex = this.trackList.length - newIds.size
       }
     },
     // 删除指定歌曲

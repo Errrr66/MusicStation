@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<Props>(), {
   barWidth: 3,
   borderRadius: 2,
   color: 'rgba(255, 255, 255, 0.3)',
-  activeColor: '#1db954'
+  activeColor: 'var(--mr-accent)'
 })
 
 const { isPlaying, initAnalyser, getAnalyser } = useAudioPlayer()
@@ -152,6 +152,6 @@ onUnmounted(() => {
 }
 
 .visualizer-bar-active {
-  background-color: var(--visualizer-bar-active-color, #1db954);
+  background-color: var(--visualizer-bar-active-color, var(--mr-accent));
 }
 </style>

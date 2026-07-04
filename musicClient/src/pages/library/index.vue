@@ -63,16 +63,16 @@ watch(
 </script>
 
 <template>
-  <div class="spotify-library-page">
-    <Table :data="tableData?.items" class="spotify-library-table" />
-    <div class="spotify-pagination">
+  <div class="mr-library-page">
+    <Table :data="tableData?.items" class="mr-library-table" />
+    <div class="mr-pagination">
       <el-pagination
         v-model:page-size="pageSize"
         v-model:currentPage="currentPage"
         v-bind="state"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        class="spotify-pagination-desktop"
+        class="mr-pagination-desktop"
       />
       <el-pagination
         v-model:page-size="pageSize"
@@ -81,7 +81,7 @@ watch(
         :total="state.total"
         :pager-count="5"
         @current-change="handleCurrentChange"
-        class="spotify-pagination-mobile"
+        class="mr-pagination-mobile"
         small
         background
       />
@@ -90,19 +90,19 @@ watch(
 </template>
 
 <style scoped>
-.spotify-library-page {
+.mr-library-page {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
 
-.spotify-library-table {
+.mr-library-table {
   flex: 1;
   overflow-x: hidden;
 }
 
-.spotify-pagination {
+.mr-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -110,25 +110,25 @@ watch(
   gap: 8px;
 }
 
-.spotify-pagination-desktop {
+.mr-pagination-desktop {
   display: none;
 }
 
-.spotify-pagination-mobile {
+.mr-pagination-mobile {
   display: flex;
 }
 
 /* Spotify Style Pagination */
-.spotify-pagination :deep(.el-pagination) {
+.mr-pagination :deep(.el-pagination) {
   --el-pagination-bg-color: transparent;
-  --el-pagination-hover-color: #1db954;
+  --el-pagination-hover-color: var(--mr-accent);
   --el-pagination-button-bg-color: transparent;
   --el-pagination-button-color: #b3b3b3;
   --el-pagination-button-disabled-bg-color: transparent;
   --el-pagination-button-disabled-color: #535353;
 }
 
-.spotify-pagination :deep(.el-pagination .el-pager li) {
+.mr-pagination :deep(.el-pagination .el-pager li) {
   background-color: transparent;
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
@@ -141,18 +141,18 @@ watch(
   transition: all 200ms ease;
 }
 
-.spotify-pagination :deep(.el-pagination .el-pager li:hover) {
+.mr-pagination :deep(.el-pagination .el-pager li:hover) {
   color: var(--text-base, #fff);
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-pagination :deep(.el-pagination .el-pager li.is-active) {
-  background-color: #1db954;
+.mr-pagination :deep(.el-pagination .el-pager li.is-active) {
+  background-color: var(--mr-accent);
   color: #000;
 }
 
-.spotify-pagination :deep(.el-pagination .btn-prev),
-.spotify-pagination :deep(.el-pagination .btn-next) {
+.mr-pagination :deep(.el-pagination .btn-prev),
+.mr-pagination :deep(.el-pagination .btn-next) {
   background-color: transparent;
   color: var(--text-subdued, #b3b3b3);
   width: 32px;
@@ -161,19 +161,19 @@ watch(
   transition: all 200ms ease;
 }
 
-.spotify-pagination :deep(.el-pagination .btn-prev:hover),
-.spotify-pagination :deep(.el-pagination .btn-next:hover) {
+.mr-pagination :deep(.el-pagination .btn-prev:hover),
+.mr-pagination :deep(.el-pagination .btn-next:hover) {
   color: var(--text-base, #fff);
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-pagination :deep(.el-pagination .el-pagination__total),
-.spotify-pagination :deep(.el-pagination .el-pagination__jump) {
+.mr-pagination :deep(.el-pagination .el-pagination__total),
+.mr-pagination :deep(.el-pagination .el-pagination__jump) {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
 }
 
-.spotify-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
+.mr-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
   background-color: var(--bg-elevated, #242424);
   border: none;
   border-radius: 4px;
@@ -181,60 +181,60 @@ watch(
   min-height: 28px;
 }
 
-.spotify-pagination :deep(.el-pagination .el-select .el-select__selected-item) {
+.mr-pagination :deep(.el-pagination .el-select .el-select__selected-item) {
   color: var(--text-base, #fff);
 }
 
-.spotify-pagination :deep(.el-pagination .el-input-number .el-input__wrapper) {
+.mr-pagination :deep(.el-pagination .el-input-number .el-input__wrapper) {
   background-color: var(--bg-elevated, #242424);
   border: none;
   border-radius: 4px;
   box-shadow: none;
 }
 
-.spotify-pagination :deep(.el-pagination .el-input-number .el-input__inner) {
+.mr-pagination :deep(.el-pagination .el-input-number .el-input__inner) {
   color: var(--text-base, #fff);
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-pagination :deep(.el-pagination .el-pager li) {
+:root:not(.dark) .mr-pagination :deep(.el-pagination .el-pager li) {
   --text-subdued: #6a6a6a;
   --text-base: #000000;
 }
 
-:root:not(.dark) .spotify-pagination :deep(.el-pagination .el-pager li:hover) {
+:root:not(.dark) .mr-pagination :deep(.el-pagination .el-pager li:hover) {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-pagination :deep(.el-pagination .btn-prev:hover),
-:root:not(.dark) .spotify-pagination :deep(.el-pagination .btn-next:hover) {
+:root:not(.dark) .mr-pagination :deep(.el-pagination .btn-prev:hover),
+:root:not(.dark) .mr-pagination :deep(.el-pagination .btn-next:hover) {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
+:root:not(.dark) .mr-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
   background-color: #f0f0f0;
 }
 
-:root:not(.dark) .spotify-pagination :deep(.el-pagination .el-input-number .el-input__wrapper) {
+:root:not(.dark) .mr-pagination :deep(.el-pagination .el-input-number .el-input__wrapper) {
   background-color: #f0f0f0;
 }
 
 @media (min-width: 768px) {
-  .spotify-pagination-desktop {
+  .mr-pagination-desktop {
     display: flex;
   }
   
-  .spotify-pagination-mobile {
+  .mr-pagination-mobile {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .spotify-library-page {
-    padding-bottom: 80px;
+  .mr-library-page {
+    padding-bottom: 140px;
   }
   
-  .spotify-pagination {
+  .mr-pagination {
     padding: 16px 0;
   }
 }

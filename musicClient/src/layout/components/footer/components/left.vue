@@ -124,38 +124,38 @@ const handleLike = async () => {
 </script>
 
 <template>
-  <div class="spotify-playing-bar-left">
+  <div class="mr-playing-bar-left">
     <div
-      class="spotify-playing-bar-track"
+      class="mr-playing-bar-track"
       @click="showDrawerMusic = !showDrawerMusic"
     >
-      <div class="spotify-playing-bar-cover">
+      <div class="mr-playing-bar-cover">
         <img
           :src="appendImageParam(currentTrack.cover, '90y90') || fixUrl(currentTrack.cover) || defaultAlbum"
           :alt="currentTrack.title"
-          class="spotify-playing-bar-img"
+          class="mr-playing-bar-img"
         />
       </div>
-      <div class="spotify-playing-bar-info">
-        <div class="spotify-playing-bar-title" :title="currentTrack.title">
+      <div class="mr-playing-bar-info">
+        <div class="mr-playing-bar-title" :title="currentTrack.title">
           {{ currentTrack.title }}
         </div>
-        <div class="spotify-playing-bar-artist">
+        <div class="mr-playing-bar-artist">
           {{ currentTrack.artist }}
         </div>
       </div>
     </div>
 
     <button
-      class="spotify-playing-bar-like"
+      class="mr-playing-bar-like"
       @click.stop="handleLike"
     >
       <Icon
         icon="mdi:cards-heart-outline"
         v-if="currentSongLikeStatus === 0"
-        class="spotify-like-icon"
+        class="mr-like-icon"
       />
-      <Icon icon="mdi:cards-heart" v-else class="spotify-like-icon spotify-like-active" />
+      <Icon icon="mdi:cards-heart" v-else class="mr-like-icon mr-like-active" />
     </button>
 
     <AudioVisualizer 
@@ -172,7 +172,7 @@ const handleLike = async () => {
 </template>
 
 <style scoped>
-.spotify-playing-bar-left {
+.mr-playing-bar-left {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -180,7 +180,7 @@ const handleLike = async () => {
   width: 30%;
 }
 
-.spotify-playing-bar-track {
+.mr-playing-bar-track {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -190,30 +190,30 @@ const handleLike = async () => {
   transition: background-color 200ms ease;
 }
 
-.spotify-playing-bar-track:hover {
+.mr-playing-bar-track:hover {
   background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-playing-bar-cover {
+.mr-playing-bar-cover {
   width: 56px;
   height: 56px;
   flex-shrink: 0;
   position: relative;
 }
 
-.spotify-playing-bar-img {
+.mr-playing-bar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.spotify-playing-bar-info {
+.mr-playing-bar-info {
   min-width: 0;
   flex: 1;
 }
 
-.spotify-playing-bar-title {
+.mr-playing-bar-title {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-base, #fff);
@@ -222,7 +222,7 @@ const handleLike = async () => {
   white-space: nowrap;
 }
 
-.spotify-playing-bar-artist {
+.mr-playing-bar-artist {
   font-size: 0.75rem;
   color: var(--text-subdued, #b3b3b3);
   overflow: hidden;
@@ -231,7 +231,7 @@ const handleLike = async () => {
   margin-top: 2px;
 }
 
-.spotify-playing-bar-like {
+.mr-playing-bar-like {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -244,29 +244,29 @@ const handleLike = async () => {
   transition: transform 33ms ease;
 }
 
-.spotify-playing-bar-like:hover {
+.mr-playing-bar-like:hover {
   transform: scale(1.1);
 }
 
-.spotify-playing-bar-like:active {
+.mr-playing-bar-like:active {
   transform: scale(1);
 }
 
-.spotify-like-icon {
+.mr-like-icon {
   font-size: 1.25rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-playing-bar-like:hover .spotify-like-icon {
+.mr-playing-bar-like:hover .mr-like-icon {
   color: var(--text-base, #fff);
 }
 
-.spotify-like-active {
-  color: var(--text-accent, #1db954);
+.mr-like-active {
+  color: var(--text-accent, var(--mr-accent));
 }
 
-.spotify-playing-bar-like:hover .spotify-like-active {
-  color: var(--text-accent-hover, #1ed760);
+.mr-playing-bar-like:hover .mr-like-active {
+  color: var(--text-accent-hover, var(--mr-accent-hover));
 }
 
 .left-visualizer {
@@ -275,11 +275,11 @@ const handleLike = async () => {
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-playing-bar-left {
+:root:not(.dark) .mr-playing-bar-left {
   --bg-hover: rgba(0, 0, 0, 0.08);
   --text-base: #000000;
   --text-subdued: #6a6a6a;
-  --text-accent: #1db954;
-  --text-accent-hover: #1ed760;
+  --text-accent: var(--mr-accent);
+  --text-accent-hover: var(--mr-accent-hover);
 }
 </style>

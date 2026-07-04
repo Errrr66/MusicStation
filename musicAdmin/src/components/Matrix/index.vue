@@ -159,13 +159,31 @@ onMounted(() => {
   if (props.autoplay && props.frames && props.frames.length > 0) {
     frameId = requestAnimationFrame(animate);
   }
+  // 页面隐藏时暂停 rAF，可见时恢复，避免后台持续渲染
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
 onUnmounted(() => {
   if (frameId) {
     cancelAnimationFrame(frameId);
   }
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    if (frameId) {
+      cancelAnimationFrame(frameId);
+      frameId = undefined;
+    }
+  } else if (isPlaying.value && props.frames && props.frames.length > 0) {
+    lastTime = 0;
+    accumulator = 0;
+    if (!frameId) {
+      frameId = requestAnimationFrame(animate);
+    }
+  }
+}
 
 watch(
   () => props.frames,

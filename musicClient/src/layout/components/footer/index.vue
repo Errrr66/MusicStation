@@ -27,20 +27,20 @@ const handleClick = (e: MouseEvent) => {
 }
 </script>
 <template>
-  <footer class="spotify-playing-bar">
+  <footer class="mr-playing-bar">
     <div 
-      class="spotify-progress-top"
+      class="mr-progress-top"
       @click="handleClick"
     >
-      <div class="spotify-progress-top-fill" :style="{ width: progressPercent + '%' }">
-        <div class="spotify-progress-top-handle">
-          <div class="spotify-progress-tooltip">
+      <div class="mr-progress-top-fill" :style="{ width: progressPercent + '%' }">
+        <div class="mr-progress-top-handle">
+          <div class="mr-progress-tooltip">
             {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
           </div>
         </div>
       </div>
     </div>
-    <div class="spotify-playing-bar-content">
+    <div class="mr-playing-bar-content">
       <Left />
       <Center />
       <Right />
@@ -50,7 +50,7 @@ const handleClick = (e: MouseEvent) => {
 </template>
 
 <style scoped>
-.spotify-playing-bar {
+.mr-playing-bar {
   display: flex;
   flex-direction: column;
   background-color: #000000;
@@ -60,7 +60,7 @@ const handleClick = (e: MouseEvent) => {
   height: 90px;
 }
 
-.spotify-playing-bar-content {
+.mr-playing-bar-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -69,7 +69,7 @@ const handleClick = (e: MouseEvent) => {
   height: 90px;
 }
 
-.spotify-progress-top {
+.mr-progress-top {
   position: absolute;
   top: 0;
   left: 0;
@@ -82,7 +82,7 @@ const handleClick = (e: MouseEvent) => {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-progress-top-fill {
+.mr-progress-top-fill {
   height: 4px;
   background-color: #fff;
   border-radius: 2px;
@@ -90,12 +90,12 @@ const handleClick = (e: MouseEvent) => {
   transition: background-color 200ms ease, height 200ms ease;
 }
 
-.spotify-progress-top:hover .spotify-progress-top-fill {
-  background-color: #1db954;
+.mr-progress-top:hover .mr-progress-top-fill {
+  background-color: var(--mr-accent);
   height: 6px;
 }
 
-.spotify-progress-top-handle {
+.mr-progress-top-handle {
   position: absolute;
   right: -6px;
   top: 50%;
@@ -109,11 +109,11 @@ const handleClick = (e: MouseEvent) => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.spotify-progress-top:hover .spotify-progress-top-handle {
+.mr-progress-top:hover .mr-progress-top-handle {
   opacity: 1;
 }
 
-.spotify-progress-tooltip {
+.mr-progress-tooltip {
   position: absolute;
   bottom: 20px;
   left: 50%;
@@ -130,7 +130,7 @@ const handleClick = (e: MouseEvent) => {
   transition: opacity 200ms ease;
 }
 
-.spotify-progress-tooltip::after {
+.mr-progress-tooltip::after {
   content: '';
   position: absolute;
   bottom: -4px;
@@ -141,66 +141,66 @@ const handleClick = (e: MouseEvent) => {
   border-top: 4px solid #000;
 }
 
-.spotify-progress-top:hover .spotify-progress-tooltip {
+.mr-progress-top:hover .mr-progress-tooltip {
   opacity: 1;
 }
 
-:root:not(.dark) .spotify-progress-tooltip {
+:root:not(.dark) .mr-progress-tooltip {
   background-color: #fff;
   color: #000;
 }
 
-:root:not(.dark) .spotify-progress-tooltip::after {
+:root:not(.dark) .mr-progress-tooltip::after {
   border-top-color: #fff;
 }
 
-:root:not(.dark) .spotify-playing-bar {
+:root:not(.dark) .mr-playing-bar {
   background-color: #ffffff;
 }
 
-:root:not(.dark) .spotify-progress-top {
+:root:not(.dark) .mr-progress-top {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-progress-top-fill {
+:root:not(.dark) .mr-progress-top-fill {
   background-color: #000000;
 }
 
-:root:not(.dark) .spotify-progress-top:hover .spotify-progress-top-fill {
-  background-color: #1db954;
+:root:not(.dark) .mr-progress-top:hover .mr-progress-top-fill {
+  background-color: var(--mr-accent);
 }
 
-:root:not(.dark) .spotify-progress-top-handle {
+:root:not(.dark) .mr-progress-top-handle {
   background-color: #000000;
 }
 
 @media (max-width: 768px) {
-  .spotify-playing-bar {
+  .mr-playing-bar {
     height: auto;
   }
   
-  .spotify-playing-bar-content {
+  .mr-playing-bar-content {
     display: none;
   }
   
-  .spotify-progress-top {
+  .mr-progress-top {
     position: relative;
     height: 4px;
   }
   
-  .spotify-progress-top-fill {
+  .mr-progress-top-fill {
     height: 4px;
   }
   
-  .spotify-progress-top:hover .spotify-progress-top-fill {
+  .mr-progress-top:hover .mr-progress-top-fill {
     height: 4px;
   }
   
-  .spotify-progress-top-handle {
+  .mr-progress-top-handle {
     display: none;
   }
   
-  .spotify-progress-tooltip {
+  .mr-progress-tooltip {
     display: none;
   }
 }

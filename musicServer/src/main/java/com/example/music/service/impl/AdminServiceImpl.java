@@ -9,12 +9,13 @@ import com.example.music.model.entity.Admin;
 import com.example.music.result.Result;
 import com.example.music.service.IAdminService;
 import com.example.music.util.JwtUtil;
+import com.example.music.util.PasswordUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,15 +42,16 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
      * @return 结果
      */
     @Override
+    @Transactional
     public Result register(AdminDTO adminDTO) {
         Admin admin = adminMapper.selectOne(new QueryWrapper<Admin>().eq("username", adminDTO.getUsername()));
         if (admin != null) {
             return Result.error(MessageConstant.USERNAME + MessageConstant.ALREADY_EXISTS);
         }
 
-        String passwordMD5 = DigestUtils.md5DigestAsHex(adminDTO.getPassword().getBytes());
+        String passwordEncoded = PasswordUtils.encode(adminDTO.getPassword());
         Admin adminRegister = new Admin();
-        adminRegister.setUsername(adminDTO.getUsername()).setPassword(passwordMD5);
+        adminRegister.setUsername(adminDTO.getUsername()).setPassword(passwordEncoded);
 
         if (adminMapper.insert(adminRegister) == 0) {
             return Result.error(MessageConstant.REGISTER + MessageConstant.FAILED);
@@ -70,7 +72,12 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
             return Result.error(MessageConstant.USERNAME + MessageConstant.ERROR);
         }
 
-        if (DigestUtils.md5DigestAsHex(adminDTO.getPassword().getBytes()).equals(admin.getPassword())) {
+        if (PasswordUtils.matches(adminDTO.getPassword(), admin.getPassword())) {
+            // 兼容旧 MD5 密码：登录成功后迁移到 BCrypt
+            if (PasswordUtils.isLegacyMd5(admin.getPassword())) {
+                adminMapper.update(new Admin().setPassword(PasswordUtils.encode(adminDTO.getPassword())),
+                        new QueryWrapper<Admin>().eq("id", admin.getAdminId()));
+            }
             // 登录成功
             Map<String, Object> claims = new HashMap<>();
             claims.put(JwtClaimsConstant.ROLE, RoleEnum.ADMIN.getRole());
@@ -95,6 +102,9 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
      */
     @Override
     public Result logout(String token) {
+        if (token == null || token.isEmpty()) {
+            return Result.success(MessageConstant.LOGOUT + MessageConstant.SUCCESS);
+        }
         // 注销token
         Boolean result = stringRedisTemplate.delete(token);
         if (result != null && result) {

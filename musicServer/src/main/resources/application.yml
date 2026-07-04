@@ -51,12 +51,84 @@ spring:
           connectiontimeout: 5000
           timeout: 3000
           writetimeout: 5000
+  ai:
+    openai:
+          api-key: ${DEEPSEEK_API_KEY:sk-576b0d5ae1d34c5db797d9e530381768}
+          base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+          chat:
+            options:
+              model: ${AI_CHAT_MODEL:deepseek-v4-flash}
+              temperature: ${AI_CHAT_TEMPERATURE:0.7}
+              max-tokens: ${AI_CHAT_MAX_TOKENS:2048}
+              top-p: ${AI_CHAT_TOP_P:1.0}
+            completions-path: /chat/completions
+          embedding:
+            options:
+              model: ${AI_EMBEDDING_MODEL:text-embedding-v3}
+            embeddings-path: /embeddings
 
-# DeepSeek API Configuration
+# DeepSeek API Configuration（保留兼容旧 DeepSeekService）
 deepseek:
-  api-key: ${DEEPSEEK_API_KEY:}
+  api-key: ${DEEPSEEK_API_KEY:sk-576b0d5ae1d34c5db797d9e530381768}
   base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: deepseek-v3.2
+  model: deepseek-v4-flash
+
+# Spring AI 配置（OpenAI 兼容协议，指向阿里云 DashScope）
+
+# 统一 AI 服务配置
+ai:
+  service:
+    # 默认 Provider：openai-compatible（DashScope 兼容）
+    default-provider: ${AI_DEFAULT_PROVIDER:openai-compatible}
+    # 请求超时（秒）
+    connect-timeout-seconds: ${AI_CONNECT_TIMEOUT:10}
+    read-timeout-seconds: ${AI_READ_TIMEOUT:60}
+    # 重试配置
+    retry:
+      max-attempts: ${AI_RETRY_MAX_ATTEMPTS:3}
+      backoff-millis: ${AI_RETRY_BACKOFF_MILLIS:1000}
+    # 熔断配置
+    circuit-breaker:
+      failure-rate-threshold: ${AI_CB_FAILURE_RATE:0.5}
+      slow-call-rate-threshold: ${AI_CB_SLOW_CALL_RATE:0.5}
+      slow-call-duration-threshold-seconds: ${AI_CB_SLOW_CALL_SECONDS:30}
+      wait-duration-seconds: ${AI_CB_WAIT_SECONDS:60}
+      sliding-window-size: ${AI_CB_WINDOW_SIZE:10}
+    # 降级响应
+    fallback:
+      enabled: ${AI_FALLBACK_ENABLED:true}
+      message: "AI 服务暂时不可用，请稍后重试"
+    # 全链路日志
+    logging:
+      enabled: ${AI_LOGGING_ENABLED:true}
+      log-request-body: ${AI_LOG_REQUEST_BODY:true}
+      log-response-body: ${AI_LOG_RESPONSE_BODY:false}
+  # Spring AI RAG 配置（阶段7：基于 EmbeddingModel + SimpleVectorStore 的语义检索）
+  rag:
+    # 是否在启动时自动索引歌曲/歌手到向量库
+    auto-index: ${AI_RAG_AUTO_INDEX:false}
+    # 单批写入向量库的文档块数量
+    index-batch-size: ${AI_RAG_INDEX_BATCH_SIZE:100}
+    # 文档分块字符长度
+    chunk-size: ${AI_RAG_CHUNK_SIZE:500}
+    # 相邻分块重叠字符数
+    chunk-overlap: ${AI_RAG_CHUNK_OVERLAP:100}
+    # 检索返回 topK
+    top-k: ${AI_RAG_TOP_K:4}
+
+# 真流式 SSE 端点开关（阶段6：/chat/agent/stream/v2）
+chat:
+  stream:
+    v2:
+      enabled: ${CHAT_STREAM_V2_ENABLED:true}
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:wOZR8iLf7tNqXpKvYhJkLmNoPqRsTuVwXyZ0123456789ABCDEF}
+
+# CORS 配置
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
 
 tts:
   api-url: ${TTS_API_URL:http://127.0.0.1:5000/voice}
@@ -99,7 +171,7 @@ agent:
 
 # 配置 mybatis-plus
 mybatis-plus:
-  type-aliases-package:   com.example.pojo # 实体类所在的包，允许用实体类类名作为别名
+  type-aliases-package:   com.example.music.model.entity # 实体类所在的包，允许用实体类类名作为别名
 
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 配置日志

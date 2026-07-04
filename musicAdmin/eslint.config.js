@@ -57,7 +57,7 @@ export default defineFlatConfig([
     rules: {
       ...configPrettier.rules,
       ...pluginPrettier.configs.recommended.rules,
-      "no-debugger": "off",
+      "no-debugger": "error",
       "no-unused-vars": [
         "error",
         {
@@ -90,7 +90,7 @@ export default defineFlatConfig([
       "@typescript-eslint/ban-types": "off",
       "@typescript-eslint/no-redeclare": "error",
       "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/prefer-as-const": "warn",
       "@typescript-eslint/no-empty-function": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
@@ -162,7 +162,7 @@ export default defineFlatConfig([
       ...pluginVue.configs["vue3-recommended"].rules,
       "no-undef": "off",
       "no-unused-vars": "off",
-      "vue/no-v-html": "off",
+      "vue/no-v-html": "error",
       "vue/require-default-prop": "off",
       "vue/require-explicit-emits": "off",
       "vue/multi-word-component-names": "off",

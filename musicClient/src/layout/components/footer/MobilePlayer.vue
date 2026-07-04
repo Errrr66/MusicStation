@@ -3,18 +3,16 @@ import { computed } from 'vue'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import DrawerMusic from '@/components/DrawerMusic/index.vue'
 import { Icon } from '@iconify/vue'
-import { UserStore } from '@/stores/modules/user'
-import { AudioStore } from '@/stores/modules/audio'
-import { collectSong, cancelCollectSong } from '@/api/system'
-import { ElMessage } from 'element-plus'
 import { MenuStore } from '@/stores/modules/menu'
+import { UserStore } from '@/stores/modules/user'
 import defaultAlbum from '@/assets/default_album.jpg'
 import { appendImageParam, fixUrl } from '@/utils'
 
-const { currentTrack, isPlaying, togglePlayPause, nextTrack, prevTrack, currentTime, duration, playMode, togglePlayMode } = useAudioPlayer()
+const { currentTrack, isPlaying, togglePlayPause, currentTime, duration } = useAudioPlayer()
 const userStore = UserStore()
-const audioStore = AudioStore()
 const menuStore = MenuStore()
+const router = useRouter()
+const route = useRoute()
 const showDrawerMusic = computed({
   get: () => menuStore.isSongDrawerOpen,
   set: (value: boolean) => menuStore.setSongDrawerOpen(value),
@@ -25,99 +23,95 @@ const progressPercent = computed(() => {
   return (currentTime.value / duration.value) * 100
 })
 
-const modeIcon = computed(() => {
-  const map = {
-    order: 'ri:order-play-line',
-    shuffle: 'ri:shuffle-line',
-    loop: 'ri:repeat-2-line',
-    single: 'ri:repeat-one-line'
-  }
-  return map[playMode.value]
-})
+const ringRadius = 20
+const ringCircumference = 2 * Math.PI * ringRadius
+const ringStyle = computed(() => ({
+  strokeDasharray: `${ringCircumference} ${ringCircumference}`,
+  strokeDashoffset: ringCircumference - (progressPercent.value / 100) * ringCircumference,
+}))
 
-const currentSongLikeStatus = computed(() => {
-  const currentTrack = audioStore.trackList[audioStore.currentSongIndex]
-  return currentTrack?.likeStatus || 0
-})
+const openQueue = () => {
+  menuStore.setPlaylistOpen(true)
+}
 
-const handleLike = async () => {
-  if (!userStore.isLoggedIn) {
-    ElMessage.warning('请先登录')
-    return
-  }
+const openNowPlaying = () => {
+  menuStore.setRightAsideOpen(true)
+}
 
-  const currentTrack = audioStore.trackList[audioStore.currentSongIndex]
-  if (!currentTrack) return
+const navItems = [
+  { label: '首页', icon: 'mdi:home-outline', path: '/' },
+  { label: 'AI', icon: 'mdi:chat-processing-outline', path: '/chat' },
+  { label: '发现', icon: 'mdi:compass-outline', path: '/search' },
+  { label: '我的', icon: 'mdi:account-outline', path: () => (userStore.userInfo?.userId ? `/profile/${userStore.userInfo.userId}` : '/login') },
+]
 
-  try {
-    const songId = Number(currentTrack.id)
-    if (currentSongLikeStatus.value === 0) {
-      const res = await collectSong(songId)
-      if (res.code === 0) {
-        currentTrack.likeStatus = 1
-        ElMessage.success('已添加到我的喜欢')
-      }
-    } else {
-      const res = await cancelCollectSong(songId)
-      if (res.code === 0) {
-        currentTrack.likeStatus = 0
-        ElMessage.success('已取消喜欢')
-      }
-    }
-  } catch (error: any) {
-    ElMessage.error(error.message || '操作失败')
-  }
+const getNavPath = (path: string | (() => string)) => typeof path === 'function' ? path() : path
+
+const isNavActive = (path: string | (() => string)) => route.path === getNavPath(path)
+
+const goNav = (path: string | (() => string)) => {
+  const target = getNavPath(path)
+  if (target === route.path) return
+  router.push(target)
 }
 </script>
 
 <template>
-  <div class="spotify-mobile-player">
-    <div class="spotify-mobile-player-progress">
-      <div class="spotify-mobile-player-progress-bar" :style="{ width: progressPercent + '%' }"></div>
-    </div>
-    
-    <div class="spotify-mobile-player-content" @click="showDrawerMusic = true">
-      <div class="spotify-mobile-player-cover">
+  <div class="mr-mobile-player">
+    <div class="mr-mobile-player-content" @click="showDrawerMusic = true">
+      <div class="mr-mobile-player-cover" @click.stop="openNowPlaying">
         <img
           :src="appendImageParam(currentTrack.cover, '60y60') || fixUrl(currentTrack.cover) || defaultAlbum"
           :alt="currentTrack.title"
-          class="spotify-mobile-player-img"
+          class="mr-mobile-player-img"
         />
       </div>
-      
-      <div class="spotify-mobile-player-info">
-        <div class="spotify-mobile-player-title">{{ currentTrack.title }}</div>
-        <div class="spotify-mobile-player-artist">{{ currentTrack.artist }}</div>
+
+      <div class="mr-mobile-player-info">
+        <div class="mr-mobile-player-title">{{ currentTrack.title }}</div>
+        <div class="mr-mobile-player-artist">{{ currentTrack.artist }}</div>
       </div>
-      
-      <div class="spotify-mobile-player-actions" @click.stop>
-        <button class="spotify-mobile-player-btn spotify-mobile-player-btn-sm" @click="togglePlayMode" :title="playMode">
-          <Icon :icon="modeIcon" />
-        </button>
-        <button class="spotify-mobile-player-btn" @click="prevTrack">
-          <Icon icon="mdi:skip-previous" />
-        </button>
-        <button class="spotify-mobile-player-btn spotify-mobile-player-btn-play" @click="togglePlayPause">
-          <Icon :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" />
-        </button>
-        <button class="spotify-mobile-player-btn" @click="nextTrack">
-          <Icon icon="mdi:skip-next" />
-        </button>
-        <button class="spotify-mobile-player-btn spotify-mobile-player-btn-sm" @click="handleLike">
-          <Icon
-            :icon="currentSongLikeStatus === 0 ? 'mdi:cards-heart-outline' : 'mdi:cards-heart'"
-            :class="{ 'spotify-like-active': currentSongLikeStatus !== 0 }"
-          />
+
+      <div class="mr-mobile-player-actions" @click.stop>
+        <div class="mr-play-progress" @click.stop="togglePlayPause">
+          <svg class="mr-progress-ring" viewBox="0 0 44 44">
+            <circle class="mr-progress-ring-track" cx="22" cy="22" :r="ringRadius" />
+            <circle
+              class="mr-progress-ring-bar"
+              cx="22"
+              cy="22"
+              :r="ringRadius"
+              :style="ringStyle"
+            />
+          </svg>
+          <button class="mr-mobile-player-btn mr-mobile-player-btn-play">
+            <Icon :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" />
+          </button>
+        </div>
+        <button class="mr-mobile-player-btn mr-queue-btn" @click.stop="openQueue" title="播放队列">
+          <Icon icon="ri:play-list-2-fill" />
         </button>
       </div>
     </div>
-    
+
+    <nav class="mr-mobile-player-nav" @click.stop>
+      <button
+        v-for="item in navItems"
+        :key="item.label"
+        class="mr-nav-item"
+        :class="{ 'mr-nav-item-active': isNavActive(item.path) }"
+        @click="goNav(item.path)"
+      >
+        <Icon :icon="item.icon" class="mr-nav-icon" />
+      </button>
+    </nav>
+
     <DrawerMusic v-model="showDrawerMusic" />
   </div>
 </template>
 
 <style scoped>
-.spotify-mobile-player {
+.mr-mobile-player {
   display: none;
   flex-direction: column;
   background-color: var(--bg-playing-bar, #181818);
@@ -129,67 +123,104 @@ const handleLike = async () => {
   z-index: 100;
 }
 
-.spotify-mobile-player-progress {
-  height: 2px;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.spotify-mobile-player-progress-bar {
-  height: 100%;
-  background-color: #1db954;
-}
-
-.spotify-mobile-player-content {
+.mr-mobile-player-content {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 12px 12px;
+  margin: 0 12px 4px;
+  border-radius: 12px;
   cursor: pointer;
+  background: var(--bg-playing-bar, #181818);
 }
 
-.spotify-mobile-player-cover {
+.mr-mobile-player-cover {
   width: 48px;
   height: 48px;
   flex-shrink: 0;
 }
 
-.spotify-mobile-player-img {
+.mr-mobile-player-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.spotify-mobile-player-info {
+.mr-mobile-player-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-elevated, #242424);
 }
 
-.spotify-mobile-player-title {
+.mr-mobile-player-title {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-base, #fff);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 45%;
 }
 
-.spotify-mobile-player-artist {
+.mr-mobile-player-artist {
   font-size: 0.75rem;
   color: var(--text-subdued, #b3b3b3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-top: 2px;
+  min-width: 0;
+  max-width: 45%;
 }
 
-.spotify-mobile-player-actions {
+.mr-mobile-player-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
 }
 
-.spotify-mobile-player-btn {
+.mr-play-progress {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mr-progress-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.mr-progress-ring circle {
+  fill: none;
+  stroke-width: 2;
+}
+
+.mr-progress-ring-track {
+  stroke: rgba(128, 128, 128, 0.3);
+}
+
+.mr-progress-ring-bar {
+  stroke: var(--text-base, #fff);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 200ms linear;
+}
+
+.mr-mobile-player-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,38 +235,81 @@ const handleLike = async () => {
   transition: color 200ms ease, transform 33ms ease;
 }
 
-.spotify-mobile-player-btn:hover {
+.mr-mobile-player-btn:hover {
   color: var(--text-base, #fff);
 }
 
-.spotify-mobile-player-btn:active {
+.mr-mobile-player-btn:active {
   transform: scale(0.95);
 }
 
-.spotify-mobile-player-btn-play {
+.mr-mobile-player-btn-play {
   font-size: 1.75rem;
 }
 
-.spotify-mobile-player-btn-sm {
+.mr-mobile-player-btn-sm {
   width: 36px;
   height: 36px;
   font-size: 1.25rem;
 }
 
-.spotify-like-active {
-  color: #1db954;
+.mr-queue-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+}
+
+.mr-mobile-player-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  background: var(--bg-playing-bar, #181818);
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.mr-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  color: var(--text-subdued, #b3b3b3);
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.mr-nav-item:hover {
+  color: var(--text-base, #fff);
+}
+
+.mr-nav-item-active {
+  color: var(--text-base, #fff);
+}
+
+.mr-nav-icon {
+  font-size: 1.5rem;
+}
+
+/* Dark Theme - pure black for player & nav */
+.dark .mr-mobile-player {
+  --bg-playing-bar: #000000;
+  --border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-mobile-player {
-  --bg-playing-bar: #ffffff;
+:root:not(.dark) .mr-mobile-player {
+  --bg-playing-bar: #f0f0f0;
+  --bg-elevated: #ffffff;
   --border-color: rgba(0, 0, 0, 0.1);
   --text-base: #000000;
   --text-subdued: #6a6a6a;
 }
 
 @media (max-width: 768px) {
-  .spotify-mobile-player {
+  .mr-mobile-player {
     display: flex;
   }
 }

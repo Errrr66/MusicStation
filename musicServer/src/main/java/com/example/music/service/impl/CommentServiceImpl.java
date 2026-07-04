@@ -92,12 +92,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (comment == null) {
             return Result.error(MessageConstant.NOT_FOUND);
         }
-        if (comment.getLikeCount() == null) {
-            comment.setLikeCount(0L);
-        }
-        comment.setLikeCount(comment.getLikeCount() + 1);
-
-        if (commentMapper.updateById(comment) == 0) {
+        // 使用原子 SQL 避免并发竞态
+        if (commentMapper.incrementLikeCount(commentId) == 0) {
             return Result.error(MessageConstant.FAILED);
         }
         return Result.success(MessageConstant.SUCCESS);
@@ -116,12 +112,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (comment == null) {
             return Result.error(MessageConstant.NOT_FOUND);
         }
-        if (comment.getLikeCount() == null) {
-            comment.setLikeCount(0L);
-        }
-        comment.setLikeCount(comment.getLikeCount() - 1);
-
-        if (commentMapper.updateById(comment) == 0) {
+        // 使用原子 SQL 避免并发竞态
+        if (commentMapper.decrementLikeCount(commentId) == 0) {
             return Result.error(MessageConstant.FAILED);
         }
         return Result.success(MessageConstant.SUCCESS);

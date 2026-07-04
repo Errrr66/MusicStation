@@ -55,7 +55,8 @@ export const getLogin = async (data?: object) => {
 
   if (response.data) {
     const decodedToken: any = jwtDecode(response.data); // 解码 JWT
-    const { role, username } = decodedToken.claims; // 提取用户信息
+    const claims = decodedToken.claims ?? {};
+    const { role, username } = claims; // 提取用户信息
     const expires = new Date(decodedToken.exp * 1000); // 将时间戳转换为 Date 对象
 
     // 构建新的数据结构
@@ -64,7 +65,10 @@ export const getLogin = async (data?: object) => {
       expires,
       refreshToken: "", // 后端没有返回 refreshToken，这里设置为空字符串
       roles: [role], // 将 role 转换为数组
-      username
+      username,
+      avatar: claims.avatar ?? "",
+      nickname: claims.nickname ?? "",
+      permissions: claims.permissions ?? []
     };
 
     setToken(userData); // 调用 setToken 函数

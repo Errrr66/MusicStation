@@ -41,7 +41,7 @@ const selectedTag = ref('全部')
 const currentPage = ref(1) // 当前页
 const pageSize = ref(12) // 每页显示的数量
 const state = reactive({
-  size: 'default',
+  size: 'default' as 'default' | 'small' | 'large' | '',
   disabled: false,
   background: false,
   layout: 'total, sizes, prev, pager, next, jumper',
@@ -150,20 +150,20 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div class="spotify-playlist-page">
+  <div class="mr-playlist-page">
     <!-- Header -->
-    <div class="spotify-playlist-header">
-      <div class="spotify-search-wrapper">
-        <Icon icon="mdi:magnify" class="spotify-search-icon" />
+    <div class="mr-playlist-header">
+      <div class="mr-search-wrapper">
+        <Icon icon="mdi:magnify" class="mr-search-icon" />
         <input
           v-model="searchKeyword"
           @keydown="handleKeyPress"
-          class="spotify-search-input"
+          class="mr-search-input"
           placeholder="搜索歌单..."
           type="search"
         />
       </div>
-      <el-select class="spotify-tag-select" v-model="selectedTag" @change="getPlaylists">
+      <el-select class="mr-tag-select" v-model="selectedTag" @change="getPlaylists">
         <el-option
           v-for="item in playTags"
           :key="item.name"
@@ -174,13 +174,13 @@ onMounted(() => {
     </div>
 
     <!-- Tabs -->
-    <div class="spotify-tabs">
+    <div class="mr-tabs">
       <button
         v-for="playlist in playlistsList"
         :key="playlist.value"
         @click="selectPlaylist(playlist.value)"
-        class="spotify-tab"
-        :class="{ 'spotify-tab-active': selected === playlist.value }"
+        class="mr-tab"
+        :class="{ 'mr-tab-active': selected === playlist.value }"
       >
         {{ playlist.name }}
       </button>
@@ -189,39 +189,36 @@ onMounted(() => {
     <!-- Playlist Grid -->
     <div 
       ref="contentRef"
-      class="spotify-playlist-content"
+      class="mr-playlist-content"
       :class="{ 'show-scrollbar': showScrollbar }"
       @scroll="handleScroll"
     >
-      <div class="spotify-playlist-grid">
+      <div class="mr-playlist-grid">
         <div
           v-for="playlist in playlists"
           :key="playlist.id"
-          class="spotify-playlist-card"
+          class="mr-playlist-card"
           @click="router.push('/playlist/' + playlist.id)"
         >
-          <div class="spotify-playlist-cover">
+          <div class="mr-playlist-cover">
             <el-image
               lazy
               :alt="playlist.name"
-              class="spotify-playlist-img"
+              class="mr-playlist-img"
               :src="
                 (playlist.coverImgUrl && (playlist.coverImgUrl.startsWith('http') || playlist.coverImgUrl.startsWith('/minio')))
                   ? playlist.coverImgUrl + '?param=330y330'
                   : playlist.coverImgUrl
               "
             />
-            <button class="spotify-playlist-play-btn">
-              <Icon icon="mdi:play" class="text-2xl" />
-            </button>
           </div>
-          <h3 class="spotify-playlist-title">{{ playlist.name }}</h3>
+          <h3 class="mr-playlist-title">{{ playlist.name }}</h3>
         </div>
       </div>
     </div>
 
     <!-- Pagination -->
-    <div class="spotify-pagination">
+    <div class="mr-pagination">
       <el-pagination
         v-model:page-size="pageSize"
         v-model:currentPage="currentPage"
@@ -229,7 +226,7 @@ onMounted(() => {
         :layout="state.layout.replace('total, sizes, ', '').replace('jumper', '')"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        class="spotify-pagination-desktop"
+        class="mr-pagination-desktop"
       />
       <el-pagination
         v-model:page-size="pageSize"
@@ -238,7 +235,7 @@ onMounted(() => {
         :total="state.total"
         :pager-count="5"
         @current-change="handleCurrentChange"
-        class="spotify-pagination-mobile"
+        class="mr-pagination-mobile"
         small
       />
     </div>
@@ -246,7 +243,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.spotify-playlist-page {
+.mr-playlist-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -254,7 +251,7 @@ onMounted(() => {
   padding: 16px;
 }
 
-.spotify-playlist-header {
+.mr-playlist-header {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -262,12 +259,12 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.spotify-search-wrapper {
+.mr-search-wrapper {
   position: relative;
   flex: 1;
 }
 
-.spotify-search-icon {
+.mr-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -277,7 +274,7 @@ onMounted(() => {
   pointer-events: none;
 }
 
-.spotify-search-input {
+.mr-search-input {
   width: 100%;
   padding: 10px 12px 10px 44px;
   background-color: var(--bg-elevated, #242424);
@@ -288,20 +285,20 @@ onMounted(() => {
   transition: box-shadow 200ms ease;
 }
 
-.spotify-search-input::placeholder {
+.mr-search-input::placeholder {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-search-input:focus {
+.mr-search-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px #fff;
 }
 
-.spotify-tag-select {
+.mr-tag-select {
   width: 100%;
 }
 
-.spotify-tag-select :deep(.el-select__wrapper) {
+.mr-tag-select :deep(.el-select__wrapper) {
   background-color: var(--bg-elevated, #242424);
   border: none;
   border-radius: 500px;
@@ -310,31 +307,31 @@ onMounted(() => {
   min-height: 40px;
 }
 
-.spotify-tag-select :deep(.el-select__wrapper:hover) {
+.mr-tag-select :deep(.el-select__wrapper:hover) {
   box-shadow: none;
 }
 
-.spotify-tag-select :deep(.el-select__wrapper.is-focused) {
+.mr-tag-select :deep(.el-select__wrapper.is-focused) {
   box-shadow: 0 0 0 2px #fff;
 }
 
-.spotify-tag-select :deep(.el-select__placeholder) {
+.mr-tag-select :deep(.el-select__placeholder) {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-tag-select :deep(.el-select__selected-item) {
+.mr-tag-select :deep(.el-select__selected-item) {
   color: var(--text-base, #fff);
 }
 
-.spotify-tag-select :deep(.el-select__suffix) {
+.mr-tag-select :deep(.el-select__suffix) {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-tag-select :deep(.el-select__caret) {
+.mr-tag-select :deep(.el-select__caret) {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-tabs {
+.mr-tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
@@ -344,11 +341,11 @@ onMounted(() => {
   -ms-overflow-style: none;
 }
 
-.spotify-tabs::-webkit-scrollbar {
+.mr-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.spotify-tab {
+.mr-tab {
   padding: 8px 16px;
   background: transparent;
   border: none;
@@ -361,21 +358,21 @@ onMounted(() => {
   transition: all 200ms ease;
 }
 
-.spotify-tab:hover {
+.mr-tab:hover {
   color: var(--text-base, #fff);
 }
 
-.spotify-tab-active {
-  background-color: #1db954;
+.mr-tab-active {
+  background-color: var(--mr-accent);
   color: #000;
 }
 
-.spotify-tab-active:hover {
-  background-color: #1ed760;
+.mr-tab-active:hover {
+  background-color: var(--mr-accent-hover);
   color: #000;
 }
 
-.spotify-playlist-content {
+.mr-playlist-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -383,36 +380,36 @@ onMounted(() => {
   padding-right: 8px;
 }
 
-.spotify-playlist-content::-webkit-scrollbar {
+.mr-playlist-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.spotify-playlist-content::-webkit-scrollbar-track {
+.mr-playlist-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.spotify-playlist-content::-webkit-scrollbar-thumb {
+.mr-playlist-content::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 4px;
   transition: background 300ms ease;
 }
 
-.spotify-playlist-content.show-scrollbar::-webkit-scrollbar-thumb {
+.mr-playlist-content.show-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.spotify-playlist-content::-webkit-scrollbar-thumb:hover {
+.mr-playlist-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 
-.spotify-playlist-grid {
+.mr-playlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 24px;
   padding-bottom: 16px;
 }
 
-.spotify-playlist-card {
+.mr-playlist-card {
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -422,16 +419,11 @@ onMounted(() => {
   transition: background-color 200ms ease;
 }
 
-.spotify-playlist-card:hover {
+.mr-playlist-card:hover {
   background-color: var(--card-hover, #282828);
 }
 
-.spotify-playlist-card:hover .spotify-playlist-play-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.spotify-playlist-cover {
+.mr-playlist-cover {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
@@ -440,39 +432,14 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.spotify-playlist-img {
+.mr-playlist-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
-.spotify-playlist-play-btn {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 48px;
-  height: 48px;
-  background-color: #1db954;
-  border: none;
-  border-radius: 50%;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: all 200ms ease;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-.spotify-playlist-card:hover .spotify-playlist-play-btn:hover {
-  transform: translateY(0) scale(1.04);
-  background-color: #1ed760;
-}
-
-.spotify-playlist-title {
+.mr-playlist-title {
   font-size: 0.9375rem;
   font-weight: 700;
   color: var(--text-base, #fff);
@@ -481,7 +448,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.spotify-pagination {
+.mr-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -490,25 +457,25 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.spotify-pagination-desktop {
+.mr-pagination-desktop {
   display: none;
 }
 
-.spotify-pagination-mobile {
+.mr-pagination-mobile {
   display: flex;
 }
 
 /* Pagination Styles */
-.spotify-pagination :deep(.el-pagination) {
+.mr-pagination :deep(.el-pagination) {
   --el-pagination-bg-color: transparent;
-  --el-pagination-hover-color: #1db954;
+  --el-pagination-hover-color: var(--mr-accent);
   --el-pagination-button-bg-color: transparent;
   --el-pagination-button-color: #b3b3b3;
   --el-pagination-button-disabled-bg-color: transparent;
   --el-pagination-button-disabled-color: #535353;
 }
 
-.spotify-pagination :deep(.el-pagination .el-pager li) {
+.mr-pagination :deep(.el-pagination .el-pager li) {
   background-color: transparent;
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
@@ -521,18 +488,18 @@ onMounted(() => {
   transition: all 200ms ease;
 }
 
-.spotify-pagination :deep(.el-pagination .el-pager li:hover) {
+.mr-pagination :deep(.el-pagination .el-pager li:hover) {
   color: var(--text-base, #fff);
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-pagination :deep(.el-pagination .el-pager li.is-active) {
-  background-color: #1db954;
+.mr-pagination :deep(.el-pagination .el-pager li.is-active) {
+  background-color: var(--mr-accent);
   color: #000;
 }
 
-.spotify-pagination :deep(.el-pagination .btn-prev),
-.spotify-pagination :deep(.el-pagination .btn-next) {
+.mr-pagination :deep(.el-pagination .btn-prev),
+.mr-pagination :deep(.el-pagination .btn-next) {
   background-color: transparent;
   color: var(--text-subdued, #b3b3b3);
   width: 32px;
@@ -541,19 +508,19 @@ onMounted(() => {
   transition: all 200ms ease;
 }
 
-.spotify-pagination :deep(.el-pagination .btn-prev:hover),
-.spotify-pagination :deep(.el-pagination .btn-next:hover) {
+.mr-pagination :deep(.el-pagination .btn-prev:hover),
+.mr-pagination :deep(.el-pagination .btn-next:hover) {
   color: var(--text-base, #fff);
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-pagination :deep(.el-pagination .el-pagination__total),
-.spotify-pagination :deep(.el-pagination .el-pagination__jump) {
+.mr-pagination :deep(.el-pagination .el-pagination__total),
+.mr-pagination :deep(.el-pagination .el-pagination__jump) {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
 }
 
-.spotify-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
+.mr-pagination :deep(.el-pagination .el-select .el-select__wrapper) {
   background-color: var(--bg-elevated, #242424);
   border: none;
   border-radius: 4px;
@@ -561,12 +528,12 @@ onMounted(() => {
   min-height: 28px;
 }
 
-.spotify-pagination :deep(.el-pagination .el-select .el-select__selected-item) {
+.mr-pagination :deep(.el-pagination .el-select .el-select__selected-item) {
   color: var(--text-base, #fff);
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-playlist-page {
+:root:not(.dark) .mr-playlist-page {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
   --bg-elevated: #f0f0f0;
@@ -574,65 +541,108 @@ onMounted(() => {
   --card-hover: #e8e8e8;
 }
 
-:root:not(.dark) .spotify-playlist-img {
+:root:not(.dark) .mr-playlist-img {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-:root:not(.dark) .spotify-search-input:focus {
+:root:not(.dark) .mr-search-input:focus {
   box-shadow: 0 0 0 2px #000;
 }
 
-:root:not(.dark) .spotify-tag-select :deep(.el-select__wrapper) {
+:root:not(.dark) .mr-tag-select :deep(.el-select__wrapper) {
   background-color: #f0f0f0;
 }
 
-:root:not(.dark) .spotify-tag-select :deep(.el-select__wrapper.is-focused) {
+:root:not(.dark) .mr-tag-select :deep(.el-select__wrapper.is-focused) {
   box-shadow: 0 0 0 2px #000;
 }
 
-:root:not(.dark) .spotify-playlist-content.show-scrollbar::-webkit-scrollbar-thumb {
+:root:not(.dark) .mr-playlist-content.show-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
 }
 
-:root:not(.dark) .spotify-playlist-content::-webkit-scrollbar-thumb:hover {
+:root:not(.dark) .mr-playlist-content::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.4);
 }
 
 @media (min-width: 768px) {
-  .spotify-playlist-header {
+  .mr-playlist-header {
     flex-direction: row;
     align-items: center;
   }
   
-  .spotify-search-wrapper {
+  .mr-search-wrapper {
     max-width: 400px;
   }
   
-  .spotify-tag-select {
+  .mr-tag-select {
     width: 200px;
   }
   
-  .spotify-pagination-desktop {
+  .mr-pagination-desktop {
     display: flex;
   }
   
-  .spotify-pagination-mobile {
+  .mr-pagination-mobile {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .spotify-playlist-page {
-    padding-bottom: 80px;
+  .mr-playlist-page {
+    padding: 12px;
+    padding-bottom: 140px;
   }
-  
-  .spotify-playlist-grid {
+
+  .mr-playlist-header {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .mr-search-input {
+    padding: 8px 12px 8px 40px;
+    font-size: 0.8125rem;
+  }
+
+  .mr-tag-select :deep(.el-select__wrapper) {
+    min-height: 36px;
+  }
+
+  .mr-tabs {
+    margin-bottom: 16px;
+    gap: 6px;
+  }
+
+  .mr-tab {
+    padding: 6px 14px;
+    font-size: 0.8125rem;
+  }
+
+  .mr-playlist-content {
+    padding-right: 0;
+  }
+
+  .mr-playlist-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
   }
-  
-  .spotify-playlist-card {
+
+  .mr-playlist-card {
     padding: 8px;
+  }
+
+  .mr-playlist-title {
+    font-size: 0.8125rem;
+  }
+
+  .mr-pagination {
+    padding: 12px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .mr-playlist-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

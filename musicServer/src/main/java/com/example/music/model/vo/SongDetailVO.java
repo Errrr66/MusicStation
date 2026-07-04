@@ -1,6 +1,7 @@
 package com.example.music.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.io.Serial;
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
+@JsonIgnoreProperties({"handler", "objectFactory"})
 public class SongDetailVO implements Serializable {
 
     @Serial

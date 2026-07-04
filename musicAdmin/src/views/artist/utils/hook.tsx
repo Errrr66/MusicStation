@@ -146,7 +146,7 @@ export function useArtist(tableRef: Ref) {
   });
 
   function handleUpdate(row) {
-    console.log(row);
+    openDialog("修改", row);
   }
 
   function handleDelete(row) {
@@ -239,11 +239,9 @@ export function useArtist(tableRef: Ref) {
     } catch (error) {
       console.error("请求失败：", error);
       message("会话过期，请重新登录", { type: "error" });
-    }
-
-    setTimeout(() => {
+    } finally {
       loading.value = false;
-    }, 500);
+    }
   }
 
   const resetForm = formEl => {

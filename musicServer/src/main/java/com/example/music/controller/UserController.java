@@ -32,6 +32,7 @@ public class UserController {
 
     /**
      * 发送验证码
+     * TODO 限流：基于 Redis 实现 60 秒内同一邮箱只能发送 1 次验证码
      *
      * @param email 邮箱
      * @return 结果
@@ -67,6 +68,7 @@ public class UserController {
 
     /**
      * 登录
+     * TODO 限流：基于 Redis 实现登录失败 5 次锁定 15 分钟
      *
      * @param userLoginDTO  用户登录信息
      * @param bindingResult 绑定结果

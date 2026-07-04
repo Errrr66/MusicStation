@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Song } from '@/api/interface'
 import { AudioStore } from '@/stores/modules/audio'
-import { appendImageParam, formatMillisecondsToTime, fixUrl } from '@/utils'
+import { appendImageParam, formatMillisecondsToTime, fixUrl, durationToMs } from '@/utils'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
 import default_album from '@/assets/default_album.jpg'
@@ -18,11 +18,29 @@ const props = defineProps({
   },
 })
 
+// 分页：单页最多 50 条，避免一次渲染过多 DOM
+const PAGE_SIZE = 50
+const currentPage = ref(1)
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(props.data.length / PAGE_SIZE))
+)
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return props.data.slice(start, start + PAGE_SIZE)
+})
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
 // 监听数据变化，更新当前页面的歌曲列表
 watch(
   () => props.data,
   (newData) => {
     audio.setCurrentPageSongs(newData)
+    // 数据变化时重置到第一页
+    currentPage.value = 1
   },
   { immediate: true }
 )
@@ -41,7 +59,7 @@ const convertToTrackModel = (song: Song) => {
     album: song.album,
     cover: fixUrl(song.coverUrl) || default_album,
     url: fixUrl(song.audioUrl),
-    duration: Number(song.duration) || 0,
+    duration: durationToMs(song.duration),
     likeStatus: song.likeStatus || 0,
   }
 }
@@ -147,87 +165,87 @@ const isCurrentPlaying = (songId: number) => {
 </script>
 
 <template>
-  <div class="spotify-song-table">
+  <div class="mr-song-table">
     <!-- Table Header -->
-    <div class="spotify-table-header">
-      <div class="spotify-table-header-content">
-        <span class="spotify-table-num">#</span>
-        <span class="spotify-table-title">标题</span>
-        <span class="spotify-table-album">专辑</span>
-        <span class="spotify-table-date">发布日期</span>
-        <span class="spotify-table-duration">
+    <div class="mr-table-header">
+      <div class="mr-table-header-content">
+        <span class="mr-table-num">#</span>
+        <span class="mr-table-title">标题</span>
+        <span class="mr-table-album">专辑</span>
+        <span class="mr-table-date">发布日期</span>
+        <span class="mr-table-duration">
           <Icon icon="mdi:clock-outline" />
         </span>
       </div>
     </div>
 
     <!-- Table Body -->
-    <div class="spotify-table-body">
+    <div class="mr-table-body">
       <div
-        v-for="(row, index) in data"
+        v-for="(row, index) in paginatedData"
         :key="row.songId"
-        class="spotify-table-row"
-        :class="{ 'spotify-table-row-active': isCurrentPlaying(row.songId) }"
+        class="mr-table-row"
+        :class="{ 'mr-table-row-active': isCurrentPlaying(row.songId) }"
         @click="handlePlay(row)"
       >
-        <div class="spotify-table-cell spotify-table-num">
-          <span class="spotify-row-index">{{ index + 1 }}</span>
-          <div class="spotify-row-play">
+        <div class="mr-table-cell mr-table-num">
+          <span class="mr-row-index">{{ (currentPage - 1) * PAGE_SIZE + index + 1 }}</span>
+          <div class="mr-row-play">
             <Icon icon="mdi:play" />
           </div>
         </div>
 
-        <div class="spotify-table-cell spotify-table-title-cell">
-          <div class="spotify-song-cover">
+        <div class="mr-table-cell mr-table-title-cell">
+          <div class="mr-song-cover">
             <el-image
               :src="appendImageParam(row.coverUrl, '50y50') || fixUrl(row.coverUrl) || default_album"
               fit="cover"
               lazy
               :alt="row.songName"
-              class="spotify-song-img"
+              class="mr-song-img"
             >
               <template #error>
-                <div class="spotify-song-img-placeholder">
+                <div class="mr-song-img-placeholder">
                   <Icon icon="mdi:music-note" />
                 </div>
               </template>
             </el-image>
           </div>
-          <div class="spotify-song-info">
-            <div class="spotify-song-name" :title="row.songName">
+          <div class="mr-song-info">
+            <div class="mr-song-name" :title="row.songName">
               {{ row.songName }}
             </div>
-            <div class="spotify-song-artist" :title="row.artistName">
+            <div class="mr-song-artist" :title="row.artistName">
               {{ row.artistName }}
             </div>
           </div>
         </div>
 
-        <div class="spotify-table-cell spotify-table-album">
+        <div class="mr-table-cell mr-table-album">
           <span :title="row.album">{{ row.album }}</span>
         </div>
 
-        <div class="spotify-table-cell spotify-table-date">
+        <div class="mr-table-cell mr-table-date">
           <span>{{ row.releaseTime || '-' }}</span>
         </div>
 
-        <div class="spotify-table-cell spotify-table-duration-cell">
-          <div class="spotify-row-actions">
+        <div class="mr-table-cell mr-table-duration-cell">
+          <div class="mr-row-actions">
             <button
-              class="spotify-action-btn"
+              class="mr-action-btn"
               @click="handleLike(row, $event)"
               :title="row.likeStatus === 1 ? '取消喜欢' : '喜欢'"
             >
               <Icon
                 :icon="row.likeStatus === 1 ? 'mdi:cards-heart' : 'mdi:cards-heart-outline'"
-                :class="{ 'spotify-like-active': row.likeStatus === 1 }"
+                :class="{ 'mr-like-active': row.likeStatus === 1 }"
               />
             </button>
-            <span class="spotify-duration">
-              {{ formatMillisecondsToTime(Number(row.duration) * 1000) }}
+            <span class="mr-duration">
+              {{ formatMillisecondsToTime(durationToMs(row.duration)) }}
             </span>
             <button
-              class="spotify-action-btn"
+              class="mr-action-btn"
               @click.stop="downLoadMusic(row, $event)"
               title="下载"
             >
@@ -237,18 +255,37 @@ const isCurrentPlaying = (songId: number) => {
         </div>
       </div>
     </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="mr-table-pagination">
+      <button
+        class="mr-page-btn"
+        :disabled="currentPage === 1"
+        @click="goToPage(currentPage - 1)"
+      >
+        <Icon icon="mdi:chevron-left" />
+      </button>
+      <span class="mr-page-info">{{ currentPage }} / {{ totalPages }}</span>
+      <button
+        class="mr-page-btn"
+        :disabled="currentPage === totalPages"
+        @click="goToPage(currentPage + 1)"
+      >
+        <Icon icon="mdi:chevron-right" />
+      </button>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.spotify-song-table {
+.mr-song-table {
   width: 100%;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-.spotify-table-header {
+.mr-table-header {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -257,7 +294,7 @@ const isCurrentPlaying = (songId: number) => {
   padding: 0 16px;
 }
 
-.spotify-table-header-content {
+.mr-table-header-content {
   display: grid;
   grid-template-columns: 16px 4fr 2fr 1fr minmax(120px, 1fr);
   gap: 16px;
@@ -270,11 +307,11 @@ const isCurrentPlaying = (songId: number) => {
   letter-spacing: 0.1em;
 }
 
-.spotify-table-body {
+.mr-table-body {
   padding: 0 16px;
 }
 
-.spotify-table-row {
+.mr-table-row {
   display: grid;
   grid-template-columns: 16px 4fr 2fr 1fr minmax(120px, 1fr);
   gap: 16px;
@@ -285,42 +322,42 @@ const isCurrentPlaying = (songId: number) => {
   transition: background-color 200ms ease;
 }
 
-.spotify-table-row:hover {
+.mr-table-row:hover {
   background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-table-row:hover .spotify-row-index {
+.mr-table-row:hover .mr-row-index {
   display: none;
 }
 
-.spotify-table-row:hover .spotify-row-play {
+.mr-table-row:hover .mr-row-play {
   display: flex;
 }
 
-.spotify-table-row:hover .spotify-row-actions {
+.mr-table-row:hover .mr-row-actions {
   opacity: 1;
 }
 
-.spotify-table-row-active {
+.mr-table-row-active {
   background-color: var(--bg-active, rgba(255, 255, 255, 0.2));
 }
 
-.spotify-table-row-active .spotify-song-name {
-  color: var(--text-accent, #1db954);
+.mr-table-row-active .mr-song-name {
+  color: var(--text-accent, var(--mr-accent));
 }
 
-.spotify-table-row-active .spotify-row-index {
-  color: var(--text-accent, #1db954);
+.mr-table-row-active .mr-row-index {
+  color: var(--text-accent, var(--mr-accent));
 }
 
-.spotify-table-cell {
+.mr-table-cell {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.spotify-table-num {
+.mr-table-num {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -328,25 +365,25 @@ const isCurrentPlaying = (songId: number) => {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-row-index {
+.mr-row-index {
   display: flex;
 }
 
-.spotify-row-play {
+.mr-row-play {
   display: none;
   align-items: center;
   justify-content: center;
   color: var(--text-base, #fff);
 }
 
-.spotify-table-title-cell {
+.mr-table-title-cell {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
 
-.spotify-song-cover {
+.mr-song-cover {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
@@ -354,13 +391,13 @@ const isCurrentPlaying = (songId: number) => {
   overflow: hidden;
 }
 
-.spotify-song-img {
+.mr-song-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.spotify-song-img-placeholder {
+.mr-song-img-placeholder {
   width: 100%;
   height: 100%;
   background-color: var(--bg-elevated, #282828);
@@ -370,12 +407,12 @@ const isCurrentPlaying = (songId: number) => {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-song-info {
+.mr-song-info {
   flex: 1;
   min-width: 0;
 }
 
-.spotify-song-name {
+.mr-song-name {
   font-size: 0.9375rem;
   font-weight: 400;
   color: var(--text-base, #fff);
@@ -384,7 +421,7 @@ const isCurrentPlaying = (songId: number) => {
   white-space: nowrap;
 }
 
-.spotify-song-artist {
+.mr-song-artist {
   font-size: 0.8125rem;
   color: var(--text-subdued, #b3b3b3);
   overflow: hidden;
@@ -393,30 +430,30 @@ const isCurrentPlaying = (songId: number) => {
   margin-top: 2px;
 }
 
-.spotify-song-artist:hover {
+.mr-song-artist:hover {
   color: var(--text-base, #fff);
   text-decoration: underline;
 }
 
-.spotify-table-album,
-.spotify-table-date {
+.mr-table-album,
+.mr-table-date {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-table-album:hover,
-.spotify-table-date:hover {
+.mr-table-album:hover,
+.mr-table-date:hover {
   color: var(--text-base, #fff);
   text-decoration: underline;
 }
 
-.spotify-table-duration-cell {
+.mr-table-duration-cell {
   display: flex;
   align-items: center;
   justify-content: flex-end;
 }
 
-.spotify-row-actions {
+.mr-row-actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -424,7 +461,7 @@ const isCurrentPlaying = (songId: number) => {
   transition: opacity 200ms ease;
 }
 
-.spotify-action-btn {
+.mr-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,45 +475,86 @@ const isCurrentPlaying = (songId: number) => {
   transition: color 200ms ease, transform 33ms ease;
 }
 
-.spotify-action-btn:hover {
+.mr-action-btn:hover {
   color: var(--text-base, #fff);
   transform: scale(1.1);
 }
 
-.spotify-like-active {
-  color: var(--text-accent, #1db954) !important;
+.mr-like-active {
+  color: var(--text-accent, var(--mr-accent)) !important;
 }
 
-.spotify-duration {
+.mr-duration {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
   min-width: 40px;
   text-align: right;
 }
 
+.mr-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.mr-page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  color: var(--text-subdued, #b3b3b3);
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease;
+  font-size: 18px;
+}
+
+.mr-page-btn:hover:not(:disabled) {
+  color: var(--text-base, #fff);
+  border-color: var(--text-base, #fff);
+}
+
+.mr-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mr-page-info {
+  font-size: 0.875rem;
+  color: var(--text-subdued, #b3b3b3);
+  min-width: 60px;
+  text-align: center;
+}
+
 /* Light Theme */
-:root:not(.dark) .spotify-song-table {
+:root:not(.dark) .mr-song-table {
   --bg-surface: #f0f0f0;
   --bg-hover: rgba(0, 0, 0, 0.08);
   --bg-active: rgba(0, 0, 0, 0.12);
   --bg-elevated: #e8e8e8;
   --text-base: #000000;
   --text-subdued: #6a6a6a;
-  --text-accent: #1db954;
+  --text-accent: var(--mr-accent);
   --border-color: rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .spotify-table-header {
+  .mr-table-header {
     display: none;
   }
   
-  .spotify-table-body {
+  .mr-table-body {
     padding: 0 8px;
   }
   
-  .spotify-table-row {
+  .mr-table-row {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -486,60 +564,60 @@ const isCurrentPlaying = (songId: number) => {
     position: relative;
   }
   
-  .spotify-table-num {
+  .mr-table-num {
     display: none;
   }
   
-  .spotify-table-title-cell {
+  .mr-table-title-cell {
     flex: 1;
     min-width: 0;
     gap: 12px;
   }
   
-  .spotify-song-cover {
+  .mr-song-cover {
     width: 48px;
     height: 48px;
   }
   
-  .spotify-song-info {
+  .mr-song-info {
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
   
-  .spotify-song-name {
+  .mr-song-name {
     font-size: 0.9375rem;
     display: block;
   }
   
-  .spotify-song-artist {
+  .mr-song-artist {
     font-size: 0.8125rem;
     display: block;
   }
   
-  .spotify-table-album,
-  .spotify-table-date {
+  .mr-table-album,
+  .mr-table-date {
     display: none;
   }
   
-  .spotify-table-duration-cell {
+  .mr-table-duration-cell {
     position: absolute;
     right: 0;
     top: 50%;
     transform: translateY(-50%);
   }
   
-  .spotify-row-actions {
+  .mr-row-actions {
     opacity: 1;
     gap: 4px;
   }
   
-  .spotify-action-btn {
+  .mr-action-btn {
     width: 36px;
     height: 36px;
   }
   
-  .spotify-duration {
+  .mr-duration {
     display: none;
   }
 }

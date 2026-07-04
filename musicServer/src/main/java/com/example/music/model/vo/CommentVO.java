@@ -1,6 +1,7 @@
 package com.example.music.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.io.Serial;
@@ -8,6 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@JsonIgnoreProperties({"handler", "objectFactory"})
 public class CommentVO implements Serializable {
 
     @Serial

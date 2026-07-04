@@ -39,6 +39,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.net.URI;
@@ -47,6 +48,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -76,6 +78,11 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // 复用 HttpClient，配置连接超时 5s、读取超时 10s
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
+
     /**
      * 获取所有歌曲
      *
@@ -83,7 +90,8 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      * @return 歌曲列表
      */
     @Override
-    @Cacheable(key = "#songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.artistName + '-' + #songDTO.album + '-' + (#request.getHeader('Authorization') == null ? 'guest' : #request.getHeader('Authorization'))")
+    @Cacheable(key = "#songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.artistName + '-' + #songDTO.album + '-' + T(com.example.music.util.JwtUtil).extractUserIdForCache(#request)")
+    @Transactional(readOnly = true)
     public Result<PageResult<SongVO>> getAllSongs(SongDTO songDTO, HttpServletRequest request) {
         // 获取请求头中的 token
         String token = request.getHeader("Authorization");
@@ -145,6 +153,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @Cacheable(key = "#songDTO.pageNum + '-' + #songDTO.pageSize + '-' + #songDTO.songName + '-' + #songDTO.album + '-' + #songDTO.artistId")
+    @Transactional(readOnly = true)
     public Result<PageResult<SongAdminVO>> getAllSongsByArtist(SongAndArtistDTO songDTO) {
         // 分页查询
         Page<SongAdminVO> page = new Page<>(songDTO.getPageNum(), songDTO.getPageSize());
@@ -241,7 +250,8 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      * @return 歌曲详情
      */
     @Override
-    @Cacheable(key = "#songId + '-' + (#request.getHeader('Authorization') == null ? 'guest' : #request.getHeader('Authorization'))", unless = "#result == null || #result.data == null || #result.data.lyric == null || #result.data.lyric.isEmpty()")
+    @Cacheable(key = "#songId + '-' + T(com.example.music.util.JwtUtil).extractUserIdForCache(#request)", unless = "#result == null || #result.data == null || #result.data.lyric == null || #result.data.lyric.isEmpty()")
+    @Transactional
     public Result<SongDetailVO> getSongDetail(Long songId, HttpServletRequest request) {
         SongDetailVO songDetailVO = songMapper.getSongDetailById(songId);
         if (songDetailVO == null) {
@@ -315,6 +325,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      * @return 歌曲数量
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Long> getAllSongsCount(String style) {
         QueryWrapper<Song> queryWrapper = new QueryWrapper<>();
         if (style != null) {
@@ -332,6 +343,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @CacheEvict(cacheNames = "songCache", allEntries = true)
+    @Transactional
     public Result addSong(SongAddDTO songAddDTO) {
         Song song = new Song();
         BeanUtils.copyProperties(songAddDTO, song);
@@ -383,6 +395,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @CacheEvict(cacheNames = "songCache", allEntries = true)
+    @Transactional
     public Result updateSong(SongUpdateDTO songUpdateDTO) {
         // 查询数据库中是否存在该歌曲
         Song songInDB = songMapper.selectById(songUpdateDTO.getSongId());
@@ -431,8 +444,12 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @CacheEvict(cacheNames = "songCache", allEntries = true)
+    @Transactional
     public Result updateSongCover(Long songId, String coverUrl) {
         Song song = songMapper.selectById(songId);
+        if (song == null) {
+            return Result.error(MessageConstant.SONG + MessageConstant.NOT_FOUND);
+        }
         String cover = song.getCoverUrl();
         if (cover != null && !cover.isEmpty()) {
             minioService.deleteFile(cover);
@@ -456,8 +473,12 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @CacheEvict(cacheNames = "songCache", allEntries = true)
+    @Transactional
     public Result updateSongAudio(Long songId, String audioUrl, String lyric) {
         Song song = songMapper.selectById(songId);
+        if (song == null) {
+            return Result.error(MessageConstant.SONG + MessageConstant.NOT_FOUND);
+        }
         String audio = song.getAudioUrl();
         if (audio != null && !audio.isEmpty()) {
             minioService.deleteFile(audio);
@@ -482,6 +503,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @CacheEvict(cacheNames = "songCache", allEntries = true)
+    @Transactional
     public Result deleteSong(Long songId) {
         Song song = songMapper.selectById(songId);
         if (song == null) {
@@ -512,6 +534,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
      */
     @Override
     @CacheEvict(cacheNames = "songCache", allEntries = true)
+    @Transactional
     public Result deleteSongs(List<Long> songIds) {
         // 1. 查询歌曲信息，获取歌曲封面 URL 列表
         List<Song> songs = songMapper.selectByIds(songIds);
@@ -626,8 +649,8 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
             String searchUrl = "https://music.163.com/api/search/get/web?csrf_token=&s=" + encoded
                     + "&type=1&offset=0&total=true&limit=8";
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(searchUrl)).GET().build();
+            HttpClient client = HTTP_CLIENT;
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(searchUrl)).timeout(Duration.ofSeconds(10)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 return "";
@@ -644,7 +667,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
                 String artistName = item.path("artists").isArray() && !item.path("artists").isEmpty()
                         ? item.path("artists").get(0).path("name").asText("")
                         : "";
-                if (artistId != null && audioUrl != null && !audioUrl.isBlank()) {
+                if (artistId != null) {
                     // 优先按歌名 + 歌手候选命中，尽量避免歌词串歌
                     if (!artistName.isBlank()) {
                         songId = item.path("id").asLong(0L);
@@ -661,7 +684,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
             }
 
             String lyricUrl = "https://music.163.com/api/song/lyric?os=pc&id=" + songId + "&lv=-1&kv=-1&tv=-1";
-            HttpRequest lyricRequest = HttpRequest.newBuilder().uri(URI.create(lyricUrl)).GET().build();
+            HttpRequest lyricRequest = HttpRequest.newBuilder().uri(URI.create(lyricUrl)).timeout(Duration.ofSeconds(10)).GET().build();
             HttpResponse<String> lyricResponse = client.send(lyricRequest, HttpResponse.BodyHandlers.ofString());
             if (lyricResponse.statusCode() != 200) {
                 return "";

@@ -32,6 +32,9 @@ CREATE TABLE `tb_admin`  (
 
 -- ----------------------------
 -- Records of tb_admin
+-- 注意：以下管理员账号为开发环境测试数据，生产环境请勿使用！
+-- 生产环境应通过 /admin/register 接口创建管理员账号，并使用强密码。
+-- 密码字段为 MD5 明文（仅开发环境），生产环境使用 BCrypt 加密存储。
 -- ----------------------------
 INSERT INTO `tb_admin` VALUES (58, 'admin_172', 'df10ef8509dc176d733d59549e7dbfaf');
 INSERT INTO `tb_admin` VALUES (59, 'admin_888', 'df10ef8509dc176d733d59549e7dbfaf');

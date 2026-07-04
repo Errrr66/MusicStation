@@ -57,7 +57,7 @@ const switchToReset = () => {
 </script>
 
 <template>
-  <div class="spotify-form">
+  <div class="mr-form">
     <el-form
       ref="loginFormRef"
       :model="loginForm"
@@ -69,7 +69,7 @@ const switchToReset = () => {
         <el-input
           v-model="loginForm.email"
           placeholder="邮箱"
-          class="spotify-input"
+          class="mr-input"
         />
       </el-form-item>
 
@@ -79,22 +79,18 @@ const switchToReset = () => {
           type="password"
           placeholder="密码"
           show-password
-          class="spotify-input"
+          class="mr-input"
         />
       </el-form-item>
 
-      <div class="spotify-form-options">
-        <label class="spotify-checkbox">
-          <input type="checkbox" />
-          <span>记住我</span>
-        </label>
-        <a href="#" class="spotify-link" @click.prevent="switchToReset">忘记密码？</a>
+      <div class="mr-form-options">
+        <a href="#" class="mr-link" @click.prevent="switchToReset">忘记密码？</a>
       </div>
 
       <el-form-item>
         <button
           type="button"
-          class="spotify-btn-primary"
+          class="mr-btn-primary"
           :disabled="loading"
           @click="handleLogin"
         >
@@ -103,21 +99,21 @@ const switchToReset = () => {
       </el-form-item>
     </el-form>
 
-    <div class="spotify-divider"></div>
+    <div class="mr-divider"></div>
 
-    <div class="spotify-form-footer">
+    <div class="mr-form-footer">
       <span>还没有账户？</span>
-      <a href="#" class="spotify-link-highlight" @click.prevent="switchToRegister">注册</a>
+      <a href="#" class="mr-link-highlight" @click.prevent="switchToRegister">注册</a>
     </div>
   </div>
 </template>
 
 <style scoped>
-.spotify-form {
+.mr-form {
   width: 100%;
 }
 
-.spotify-input :deep(.el-input__wrapper) {
+.mr-input :deep(.el-input__wrapper) {
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -127,33 +123,33 @@ const switchToReset = () => {
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
-.spotify-input :deep(.el-input__wrapper:hover) {
+.mr-input :deep(.el-input__wrapper:hover) {
   background: transparent;
   border-color: #727272;
 }
 
-.spotify-input :deep(.el-input__wrapper.is-focus) {
+.mr-input :deep(.el-input__wrapper.is-focus) {
   background: transparent;
   border-color: #fff;
 }
 
-.spotify-input :deep(.el-input__inner) {
+.mr-input :deep(.el-input__inner) {
   color: #fff;
   font-size: 14px;
 }
 
-.spotify-input :deep(.el-input__inner::placeholder) {
+.mr-input :deep(.el-input__inner::placeholder) {
   color: #747474;
 }
 
-.spotify-form-options {
+.mr-form-options {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin: 12px 0 16px;
 }
 
-.spotify-checkbox {
+.mr-checkbox {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -162,25 +158,25 @@ const switchToReset = () => {
   cursor: pointer;
 }
 
-.spotify-checkbox input[type="checkbox"] {
+.mr-checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #1db954;
+  accent-color: var(--mr-accent);
 }
 
-.spotify-link {
+.mr-link {
   font-size: 13px;
   color: #b3b3b3;
   text-decoration: none;
   transition: color 200ms ease;
 }
 
-.spotify-link:hover {
+.mr-link:hover {
   color: #fff;
   text-decoration: underline;
 }
 
-.spotify-btn-primary {
+.mr-btn-primary {
   width: 100%;
   height: 48px;
   background-color: #fff;
@@ -193,35 +189,35 @@ const switchToReset = () => {
   transition: transform 33ms ease, background-color 200ms ease;
 }
 
-.spotify-btn-primary:hover:not(:disabled) {
+.mr-btn-primary:hover:not(:disabled) {
   transform: scale(1.04);
 }
 
-.spotify-btn-primary:active:not(:disabled) {
+.mr-btn-primary:active:not(:disabled) {
   transform: scale(1);
 }
 
-.spotify-btn-primary:disabled {
+.mr-btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.spotify-divider {
+.mr-divider {
   height: 1px;
   background-color: hsla(0, 0%, 100%, 0.1);
   margin: 20px 0;
 }
 
-.spotify-form-footer {
+.mr-form-footer {
   text-align: center;
 }
 
-.spotify-form-footer span {
+.mr-form-footer span {
   font-size: 14px;
   color: #b3b3b3;
 }
 
-.spotify-link-highlight {
+.mr-link-highlight {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
@@ -229,60 +225,60 @@ const switchToReset = () => {
   margin-left: 4px;
 }
 
-.spotify-link-highlight:hover {
+.mr-link-highlight:hover {
   text-decoration: underline;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-input :deep(.el-input__wrapper) {
+:root:not(.dark) .mr-input :deep(.el-input__wrapper) {
   background: transparent;
   border: 1px solid transparent;
 }
 
-:root:not(.dark) .spotify-input :deep(.el-input__wrapper:hover) {
+:root:not(.dark) .mr-input :deep(.el-input__wrapper:hover) {
   background: transparent;
   border-color: #d9d9d9;
 }
 
-:root:not(.dark) .spotify-input :deep(.el-input__wrapper.is-focus) {
+:root:not(.dark) .mr-input :deep(.el-input__wrapper.is-focus) {
   background: transparent;
   border-color: #000;
 }
 
-:root:not(.dark) .spotify-input :deep(.el-input__inner) {
+:root:not(.dark) .mr-input :deep(.el-input__inner) {
   color: #000;
 }
 
-:root:not(.dark) .spotify-input :deep(.el-input__inner::placeholder) {
+:root:not(.dark) .mr-input :deep(.el-input__inner::placeholder) {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-checkbox {
+:root:not(.dark) .mr-checkbox {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-link {
+:root:not(.dark) .mr-link {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-link:hover {
+:root:not(.dark) .mr-link:hover {
   color: #000;
 }
 
-:root:not(.dark) .spotify-btn-primary {
+:root:not(.dark) .mr-btn-primary {
   background-color: #000;
   color: #fff;
 }
 
-:root:not(.dark) .spotify-divider {
+:root:not(.dark) .mr-divider {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-form-footer span {
+:root:not(.dark) .mr-form-footer span {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-link-highlight {
+:root:not(.dark) .mr-link-highlight {
   color: #000;
 }
 </style>

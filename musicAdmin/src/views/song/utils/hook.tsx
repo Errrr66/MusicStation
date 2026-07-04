@@ -131,7 +131,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
   });
 
   function handleUpdate(row) {
-    console.log(row);
+    openDialog("修改", row);
   }
 
   function handleDelete(row) {
@@ -250,16 +250,14 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
         // 如果返回状态码不为 0 或 data.items 不存在
         dataList.value = [];
         pagination.total = 0;
-        message("未找到匹配的歌手信息", { type: "warning" });
+        message("未找到匹配的歌曲信息", { type: "warning" });
       }
     } catch (error) {
       console.error("请求失败：", error);
       message("请求失败，请稍后重试", { type: "error" });
-    }
-
-    setTimeout(() => {
+    } finally {
       loading.value = false;
-    }, 500);
+    }
   }
 
   /** 监听歌手变化，重新加载歌曲列表 */
@@ -320,7 +318,6 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
         }
         FormRef.validate(valid => {
           if (valid) {
-            console.log("curData", curData);
             // 表单规则校验通过
             if (title === "新增") {
               const submitData = {

@@ -16,40 +16,40 @@ html.light {
     background-color: #f5f5f5;
   }
   
-  .spotify-dark-bg {
+  .mr-dark-bg {
     background-color: $background-base !important;
   }
 
-  .spotify-input {
+  .mr-input {
     background-color: #f5f5f7;
     border: none;
     border-radius: 6px;
   }
 
-  .spotify-progress-bar {
+  .mr-progress-bar {
     background-color: #c0c0c0;
     
-    .spotify-progress-fill {
+    .mr-progress-fill {
       background-color: #000000;
     }
     
-    &:hover .spotify-progress-fill {
+    &:hover .mr-progress-fill {
       background-color: $spotify-green;
     }
     
-    .spotify-progress-handle {
+    .mr-progress-handle {
       background-color: #000000;
     }
   }
 
-  .spotify-volume-bar {
+  .mr-volume-bar {
     background-color: #c0c0c0;
     
-    .spotify-volume-fill {
+    .mr-volume-fill {
       background-color: #000000;
     }
     
-    &:hover .spotify-volume-fill {
+    &:hover .mr-volume-fill {
       background-color: $spotify-green;
     }
   }
@@ -66,15 +66,15 @@ html.light {
 .dark {
   background-color: $background-base;
   
-  .spotify-surface {
+  .mr-surface {
     background-color: $background-surface;
   }
   
-  .spotify-elevated {
+  .mr-elevated {
     background-color: $background-elevated;
   }
   
-  .spotify-tinted {
+  .mr-tinted {
     background-color: $background-tinted;
   }
 }
@@ -105,24 +105,24 @@ html.light {
   @include hide-scrollbar;
 }
 
-.spotify-container {
+.mr-container {
   border-radius: $container-border-radius;
   background-color: $background-surface;
   overflow: hidden;
 }
 
-.spotify-card {
+.mr-card {
   @include spotify-card;
   padding: $spacing-lg;
   
   &:hover {
-    .spotify-card-play-button {
+    .mr-card-play-button {
       opacity: 1;
       transform: translateY(0);
     }
   }
   
-  .spotify-card-image {
+  .mr-card-image {
     width: 100%;
     aspect-ratio: 1;
     border-radius: $container-border-radius;
@@ -135,7 +135,7 @@ html.light {
     }
   }
   
-  .spotify-card-title {
+  .mr-card-title {
     @include text-ellipsis;
     font-weight: $font-weight-bold;
     font-size: $font-size-base;
@@ -143,14 +143,14 @@ html.light {
     margin-bottom: $spacing-xs;
   }
   
-  .spotify-card-subtitle {
+  .mr-card-subtitle {
     @include text-clamp(2);
     font-size: $font-size-sm;
     color: $text-subdued;
     line-height: 1.4;
   }
   
-  .spotify-card-play-button {
+  .mr-card-play-button {
     position: absolute;
     right: $spacing-lg;
     bottom: $spacing-3xl;
@@ -160,19 +160,19 @@ html.light {
   }
 }
 
-.spotify-button-primary {
+.mr-button-primary {
   @include spotify-button-primary;
 }
 
-.spotify-button-secondary {
+.mr-button-secondary {
   @include spotify-button-secondary;
 }
 
-.spotify-input {
+.mr-input {
   @include spotify-input;
 }
 
-.spotify-chip {
+.mr-chip {
   font-weight: $font-weight-normal;
   background-color: transparent;
   border: 0;
@@ -210,7 +210,7 @@ html.light {
   }
 }
 
-.spotify-play-button {
+.mr-play-button {
   background-color: $spotify-green;
   border: none;
   border-radius: 50%;
@@ -245,7 +245,7 @@ html.light {
   }
 }
 
-.spotify-icon-button {
+.mr-icon-button {
   background: transparent;
   border: none;
   color: $text-subdued;
@@ -275,7 +275,7 @@ html.light {
   }
 }
 
-.spotify-progress-bar {
+.mr-progress-bar {
   width: 100%;
   height: 4px;
   background-color: $progress-bar-bg;
@@ -286,16 +286,16 @@ html.light {
   &:hover {
     height: 6px;
     
-    .spotify-progress-fill {
+    .mr-progress-fill {
       background-color: $progress-bar-fill-hover;
     }
     
-    .spotify-progress-handle {
+    .mr-progress-handle {
       opacity: 1;
     }
   }
   
-  .spotify-progress-fill {
+  .mr-progress-fill {
     height: 100%;
     background-color: $progress-bar-fill;
     border-radius: 2px;
@@ -303,7 +303,7 @@ html.light {
     transition: background-color $transition-normal;
   }
   
-  .spotify-progress-handle {
+  .mr-progress-handle {
     position: absolute;
     right: -6px;
     top: 50%;
@@ -318,7 +318,7 @@ html.light {
   }
 }
 
-.spotify-volume-bar {
+.mr-volume-bar {
   width: 100%;
   max-width: 120px;
   height: 4px;
@@ -327,12 +327,12 @@ html.light {
   cursor: pointer;
   
   &:hover {
-    .spotify-volume-fill {
+    .mr-volume-fill {
       background-color: $volume-bar-fill-hover;
     }
   }
   
-  .spotify-volume-fill {
+  .mr-volume-fill {
     height: 100%;
     background-color: $volume-bar-fill;
     border-radius: 2px;
@@ -340,7 +340,7 @@ html.light {
   }
 }
 
-.spotify-library-card {
+.mr-library-card {
   display: flex;
   align-items: center;
   gap: $spacing-md;
@@ -357,7 +357,7 @@ html.light {
     background-color: $library-card-bg;
   }
   
-  .spotify-library-card-image {
+  .mr-library-card-image {
     width: 48px;
     height: 48px;
     border-radius: 4px;
@@ -369,7 +369,7 @@ html.light {
     }
   }
   
-  .spotify-library-card-info {
+  .mr-library-card-info {
     flex: 1;
     min-width: 0;
     
@@ -388,7 +388,7 @@ html.light {
   }
 }
 
-.spotify-song-row {
+.mr-song-row {
   display: grid;
   grid-template-columns: 16px 4fr 2fr minmax(120px, 1fr);
   gap: $spacing-lg;
@@ -401,32 +401,32 @@ html.light {
   &:hover {
     background-color: hsla(0, 0%, 100%, 0.1);
     
-    .spotify-song-index {
+    .mr-song-index {
       display: none;
     }
     
-    .spotify-song-play {
+    .mr-song-play {
       display: flex;
     }
     
-    .spotify-song-actions {
+    .mr-song-actions {
       opacity: 1;
     }
   }
   
   &.active {
-    .spotify-song-title {
+    .mr-song-title {
       color: $spotify-green;
     }
   }
   
-  .spotify-song-index {
+  .mr-song-index {
     font-size: $font-size-sm;
     color: $text-subdued;
     text-align: right;
   }
   
-  .spotify-song-play {
+  .mr-song-play {
     display: none;
     align-items: center;
     justify-content: center;
@@ -436,26 +436,26 @@ html.light {
     }
   }
   
-  .spotify-song-info {
+  .mr-song-info {
     display: flex;
     align-items: center;
     gap: $spacing-md;
     min-width: 0;
     
-    .spotify-song-cover {
+    .mr-song-cover {
       width: 40px;
       height: 40px;
       border-radius: 4px;
       object-fit: cover;
     }
     
-    .spotify-song-title {
+    .mr-song-title {
       @include text-ellipsis;
       font-size: $font-size-base;
       color: $text-base;
     }
     
-    .spotify-song-artist {
+    .mr-song-artist {
       @include text-ellipsis;
       font-size: $font-size-sm;
       color: $text-subdued;
@@ -467,7 +467,7 @@ html.light {
     }
   }
   
-  .spotify-song-album {
+  .mr-song-album {
     @include text-ellipsis;
     font-size: $font-size-sm;
     color: $text-subdued;
@@ -478,13 +478,13 @@ html.light {
     }
   }
   
-  .spotify-song-duration {
+  .mr-song-duration {
     font-size: $font-size-sm;
     color: $text-subdued;
     text-align: right;
   }
   
-  .spotify-song-actions {
+  .mr-song-actions {
     opacity: 0;
     display: flex;
     align-items: center;
@@ -493,7 +493,7 @@ html.light {
   }
 }
 
-.spotify-dropdown {
+.mr-dropdown {
   background-color: $background-elevated;
   border-radius: 4px;
   box-shadow: 0 16px 24px rgba(0, 0, 0, 0.3), 0 6px 8px rgba(0, 0, 0, 0.2);
@@ -503,7 +503,7 @@ html.light {
   overflow-y: auto;
   padding: $spacing-xs;
   
-  .spotify-dropdown-item {
+  .mr-dropdown-item {
     border-radius: 2px;
     color: hsla(0, 0%, 100%, 0.9);
     cursor: pointer;
@@ -524,14 +524,14 @@ html.light {
     }
   }
   
-  .spotify-dropdown-divider {
+  .mr-dropdown-divider {
     background: hsla(0, 0%, 100%, 0.1);
     height: 1px;
     margin: $spacing-xs 0;
   }
 }
 
-.spotify-tooltip {
+.mr-tooltip {
   background-color: #282828;
   border-radius: 4px;
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.3);
@@ -541,7 +541,7 @@ html.light {
   white-space: nowrap;
 }
 
-.spotify-modal-overlay {
+.mr-modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.7);
@@ -552,7 +552,7 @@ html.light {
   animation: fade-in $transition-normal $easing-ease-in-out;
 }
 
-.spotify-modal {
+.mr-modal {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, $background-elevated 100%);
   border-radius: $container-border-radius;
   max-width: 90vw;
@@ -593,11 +593,11 @@ html.light {
   transform: scale(0.95);
 }
 
-.spotify-playing-bars {
+.mr-playing-bars {
   @include playing-animation;
 }
 
-.spotify-skeleton {
+.mr-skeleton {
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.05) 25%,
@@ -617,19 +617,19 @@ html.light {
   }
 }
 
-.spotify-ellipsis {
+.mr-ellipsis {
   @include text-ellipsis;
 }
 
-.spotify-clamp-1 {
+.mr-clamp-1 {
   @include text-clamp(1);
 }
 
-.spotify-clamp-2 {
+.mr-clamp-2 {
   @include text-clamp(2);
 }
 
-.spotify-clamp-3 {
+.mr-clamp-3 {
   @include text-clamp(3);
 }
 
@@ -701,10 +701,10 @@ html.light {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .spotify-card {
+  .mr-card {
     padding: $spacing-md;
     
-    .spotify-card-play-button {
+    .mr-card-play-button {
       width: 40px;
       height: 40px;
       opacity: 1;
@@ -712,40 +712,40 @@ html.light {
     }
   }
   
-  .spotify-button-primary {
+  .mr-button-primary {
     padding: 10px 24px;
   }
   
-  .spotify-song-row {
+  .mr-song-row {
     grid-template-columns: 48px 1fr;
     gap: $spacing-md;
     padding: $spacing-sm;
     
-    .spotify-song-index,
-    .spotify-song-album,
-    .spotify-song-duration,
-    .spotify-song-actions {
+    .mr-song-index,
+    .mr-song-album,
+    .mr-song-duration,
+    .mr-song-actions {
       display: none;
     }
     
-    .spotify-song-info {
-      .spotify-song-cover {
+    .mr-song-info {
+      .mr-song-cover {
         width: 48px;
         height: 48px;
       }
     }
   }
   
-  .spotify-modal {
+  .mr-modal {
     max-width: 95vw;
     border-radius: $container-border-radius;
   }
   
-  .spotify-dropdown {
+  .mr-dropdown {
     max-width: calc(100vw - 32px);
   }
   
-  .spotify-progress-bar {
+  .mr-progress-bar {
     height: 3px;
     
     &:hover {
@@ -753,24 +753,24 @@ html.light {
     }
   }
   
-  .spotify-volume-bar {
+  .mr-volume-bar {
     max-width: 80px;
   }
   
-  .spotify-library-card {
+  .mr-library-card {
     padding: $spacing-xs;
     
-    .spotify-library-card-image {
+    .mr-library-card-image {
       width: 40px;
       height: 40px;
     }
   }
   
-  .spotify-icon-button {
+  .mr-icon-button {
     padding: $spacing-xs;
   }
   
-  .spotify-play-button {
+  .mr-play-button {
     width: 40px;
     height: 40px;
     
@@ -789,7 +789,7 @@ html.light {
 /* Light Theme Mobile */
 @media (max-width: 768px) {
   html.light {
-    .spotify-card {
+    .mr-card {
       background-color: #f5f5f5;
       
       &:hover {
@@ -797,7 +797,7 @@ html.light {
       }
     }
     
-    .spotify-song-row:hover {
+    .mr-song-row:hover {
       background-color: rgba(0, 0, 0, 0.05);
     }
   }

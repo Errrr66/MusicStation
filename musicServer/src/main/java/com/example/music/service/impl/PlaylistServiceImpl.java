@@ -203,6 +203,9 @@ public class PlaylistServiceImpl extends ServiceImpl<PlaylistMapper, Playlist> i
     @Cacheable(key = "#playlistId + '-' + (#request.getHeader('Authorization') == null ? 'guest' : #request.getHeader('Authorization'))")
     public Result<PlaylistDetailVO> getPlaylistDetail(Long playlistId, HttpServletRequest request) {
         PlaylistDetailVO playlistDetailVO = playlistMapper.getPlaylistDetailById(playlistId);
+        if (playlistDetailVO == null) {
+            return Result.error(MessageConstant.PLAYLIST + MessageConstant.NOT_EXIST);
+        }
 
         // 设置默认状态
         List<SongVO> songVOList = playlistDetailVO.getSongs();
@@ -332,6 +335,9 @@ public class PlaylistServiceImpl extends ServiceImpl<PlaylistMapper, Playlist> i
     @CacheEvict(cacheNames = "playlistCache", allEntries = true)
     public Result updatePlaylistCover(Long playlistId, String coverUrl) {
         Playlist playlist = playlistMapper.selectById(playlistId);
+        if (playlist == null) {
+            return Result.error(MessageConstant.PLAYLIST + MessageConstant.NOT_FOUND);
+        }
         String cover = playlist.getCoverUrl();
         if (cover != null && !cover.isEmpty()) {
             minioService.deleteFile(cover);

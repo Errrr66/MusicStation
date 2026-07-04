@@ -9,6 +9,14 @@ import 'nprogress/nprogress.css'
 import { UserStore } from '@/stores/modules/user'
 import { ElMessage } from 'element-plus'
 
+/**
+ * 获取当前用户 token（供 axios 拦截器与 fetch 流式请求共用）
+ */
+export const getAuthToken = (): string | undefined => {
+  const userStore = UserStore()
+  return userStore.userInfo?.token
+}
+
 type HttpMeta = {
   silentProgress?: boolean
   silentError?: boolean
@@ -44,8 +52,7 @@ instance.interceptors.request.use(
     }
 
     // 从 pinia 中获取token
-    const userStore = UserStore()
-    const token = userStore.userInfo?.token
+    const token = getAuthToken()
 
     if (token) {
       // 确保headers对象存在并且是正确的类型
@@ -92,7 +99,7 @@ instance.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           // 如果不是登录请求，则清除用户信息
-          if (!error.config.url?.includes('/user/login')) {
+          if (!error.config?.url?.includes('/user/login')) {
             const userStore = UserStore()
             userStore.clearUserInfo()
             ElMessage.error('登录已过期，请重新登录')

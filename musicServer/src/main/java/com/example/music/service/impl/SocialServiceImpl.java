@@ -30,9 +30,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class SocialServiceImpl implements ISocialService {
@@ -202,11 +204,22 @@ public class SocialServiceImpl implements ISocialService {
         if (messageType == null || messageType.trim().isEmpty()) {
             messageType = "TEXT";
         }
+        messageType = messageType.toUpperCase();
+
+        if ("TEXT".equals(messageType) && (dto.getContent() == null || dto.getContent().trim().isEmpty())) {
+            return Result.error("文本消息内容不能为空");
+        }
+        if ("SONG".equals(messageType) && dto.getSongId() == null) {
+            return Result.error("分享歌曲不能为空");
+        }
+        if ("PLAYLIST".equals(messageType) && dto.getPlaylistId() == null) {
+            return Result.error("分享歌单不能为空");
+        }
 
         PrivateMessage message = new PrivateMessage();
         message.setFromUserId(userId);
         message.setToUserId(dto.getToUserId());
-        message.setMessageType(messageType.toUpperCase());
+        message.setMessageType(messageType);
         message.setContent(dto.getContent());
         message.setSongId(dto.getSongId());
         message.setPlaylistId(dto.getPlaylistId());
@@ -220,14 +233,26 @@ public class SocialServiceImpl implements ISocialService {
         if (list == null || list.isEmpty()) {
             return;
         }
+        // 批量查询当前登录用户关注的所有 userId，避免 N+1 查询
+        Set<Long> loginFollowingSet;
+        Set<Long> loginFollowerSet;
+        if (loginUserId == null) {
+            loginFollowingSet = Collections.emptySet();
+            loginFollowerSet = Collections.emptySet();
+        } else {
+            loginFollowingSet = new HashSet<>(userFollowMapper.listFollowingIds(loginUserId));
+            // 查询谁关注了当前登录用户，用于判断互相关注
+            loginFollowerSet = new HashSet<>(userFollowMapper.listFollowersIds(loginUserId));
+        }
         for (UserSimpleVO user : list) {
             if (loginUserId == null) {
                 user.setFollowing(false);
                 user.setMutualFollow(false);
                 continue;
             }
-            boolean following = isFollowing(loginUserId, user.getUserId());
-            boolean mutual = following && isFollowing(user.getUserId(), loginUserId);
+            boolean following = loginFollowingSet.contains(user.getUserId());
+            // 互相关注：我关注他 且 他关注我
+            boolean mutual = following && loginFollowerSet.contains(user.getUserId());
             user.setFollowing(following);
             user.setMutualFollow(mutual);
         }

@@ -10,6 +10,9 @@ public class TypeConversionUtil {
      * @throws IllegalArgumentException 如果对象类型不支持转换
      */
     public static Long toLong(Object obj) {
+        if (obj == null) {
+            return null;
+        }
         if (obj instanceof Long) {
             return (Long) obj;
         } else if (obj instanceof Integer) {

@@ -211,7 +211,13 @@ const sendShare = async () => {
     ElMessage.warning('需互相关注后才可私信')
     return
   }
-  if (!selectedFriendId.value) return
+  if (!selectedFriendId.value) {
+    ElMessage.warning('请先选择一位好友')
+    if (window.innerWidth <= 768) {
+      mobileConversationOpen.value = true
+    }
+    return
+  }
   if (!hasPendingShare.value) return
   const payload = pendingSongId.value
     ? { toUserId: selectedFriendId.value, messageType: 'SONG', songId: pendingSongId.value }
@@ -369,35 +375,35 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="spotify-message-page">
-    <aside class="spotify-conversation-panel" :class="{ 'spotify-conversation-hidden': !mobileConversationOpen }">
-      <div class="spotify-panel-title-row">
+  <div class="mr-message-page" :class="{ 'mr-conversation-open': mobileConversationOpen }">
+    <aside class="mr-conversation-panel" :class="{ 'mr-conversation-hidden': !mobileConversationOpen }">
+      <div class="mr-panel-title-row">
         <h3>私信</h3>
       </div>
 
-      <div v-if="!conversations.length" class="spotify-empty-panel">
+      <div v-if="!conversations.length" class="mr-empty-panel">
         <p>暂无会话，先去关注好友吧</p>
       </div>
 
       <button
         v-for="item in conversations"
         :key="item.friendUserId"
-        class="spotify-conversation-item"
-        :class="{ 'spotify-conversation-active': item.friendUserId === selectedFriendId }"
+        class="mr-conversation-item"
+        :class="{ 'mr-conversation-active': item.friendUserId === selectedFriendId }"
         @click="selectConversation(item.friendUserId)"
       >
         <img :src="fixUrl(item.friendAvatar) || defaultAvatar" alt="avatar" @click.stop="openProfile(item.friendUserId)" />
-        <div class="spotify-meta">
-          <div class="spotify-meta-top">
-            <p class="spotify-name" @click.stop="openProfile(item.friendUserId)">{{ item.friendUsername }}</p>
-            <span class="spotify-time">{{ formatTime(item.updatedAt) }}</span>
+        <div class="mr-meta">
+          <div class="mr-meta-top">
+            <p class="mr-name" @click.stop="openProfile(item.friendUserId)">{{ item.friendUsername }}</p>
+            <span class="mr-time">{{ formatTime(item.updatedAt) }}</span>
           </div>
-          <div class="spotify-meta-bottom">
-            <p class="spotify-last">{{ messagePreview(item) }}</p>
-            <div class="spotify-meta-actions">
-              <span v-if="!item.canChat" class="spotify-lock">待回关</span>
-              <span v-else-if="item.unreadCount" class="spotify-unread">{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</span>
-              <button class="spotify-profile-btn" title="访问主页" @click.stop="openProfile(item.friendUserId)">
+          <div class="mr-meta-bottom">
+            <p class="mr-last">{{ messagePreview(item) }}</p>
+            <div class="mr-meta-actions">
+              <span v-if="!item.canChat" class="mr-lock">待回关</span>
+              <span v-else-if="item.unreadCount" class="mr-unread">{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</span>
+              <button class="mr-profile-btn" title="访问主页" @click.stop="openProfile(item.friendUserId)">
                 <Icon icon="mdi:account-circle-outline" />
               </button>
             </div>
@@ -406,70 +412,70 @@ onUnmounted(() => {
       </button>
     </aside>
 
-    <section class="spotify-chat-panel">
-      <header class="spotify-chat-header">
-        <button class="spotify-back-btn" @click="mobileConversationOpen = true">
+    <section class="mr-chat-panel">
+      <header class="mr-chat-header">
+        <button class="mr-back-btn" @click="mobileConversationOpen = true">
           返回会话
         </button>
-        <h3 class="spotify-chat-title" @click="openProfile(selectedConversation?.friendUserId)">
+        <h3 class="mr-chat-title" @click="openProfile(selectedConversation?.friendUserId)">
           {{ selectedConversation?.friendUsername || '选择好友开始聊天' }}
         </h3>
 
-        <div v-if="hasPendingShare" class="spotify-share-row">
-          <span class="spotify-share-chip">
+        <div v-if="hasPendingShare" class="mr-share-row">
+          <span class="mr-share-chip">
             {{ pendingSongId ? `待分享歌曲 #${pendingSongId}` : `待分享歌单 #${pendingPlaylistId}` }}
           </span>
-          <button class="spotify-share-btn" @click="sendShare">发送分享</button>
-          <button class="spotify-share-clear-btn" @click="clearShare">取消</button>
+          <button class="mr-share-btn" @click="sendShare">发送分享</button>
+          <button class="mr-share-clear-btn" @click="clearShare">取消</button>
         </div>
       </header>
 
-      <div class="spotify-chat-body" v-loading="loading">
-        <div v-if="!selectedFriendId" class="spotify-empty-chat">
+      <div class="mr-chat-body" v-loading="loading">
+        <div v-if="!selectedFriendId" class="mr-empty-chat">
           <p>从左侧选择一个好友开始聊天</p>
         </div>
 
-        <div v-else-if="!canChatWithSelected" class="spotify-empty-chat">
+        <div v-else-if="!canChatWithSelected" class="mr-empty-chat">
           <p>你已关注对方，等待对方回关后即可私信</p>
         </div>
 
-        <div v-else-if="!messages.length" class="spotify-empty-chat">
+        <div v-else-if="!messages.length" class="mr-empty-chat">
           <p>还没有历史消息，打个招呼吧</p>
         </div>
 
-        <div v-else v-for="msg in messages" :key="msg.id" class="spotify-msg-row" :class="{ 'spotify-msg-me': isMe(msg) }">
-          <div v-if="msg.messageType === 'TEXT'" class="spotify-bubble">
+        <div v-else v-for="msg in messages" :key="msg.id" class="mr-msg-row" :class="{ 'mr-msg-me': isMe(msg) }">
+          <div v-if="msg.messageType === 'TEXT'" class="mr-bubble">
             <span>{{ bubbleText(msg) }}</span>
-            <span class="spotify-bubble-time">{{ formatTime(msg.createTime) }}</span>
+            <span class="mr-bubble-time">{{ formatTime(msg.createTime) }}</span>
           </div>
 
-          <div v-else class="spotify-share-card" @click="openSharedTarget(msg)">
+          <div v-else class="mr-share-card" @click="openSharedTarget(msg)">
             <img
               v-if="msg.messageType === 'SONG'"
               :src="fixUrl(msg.songCoverUrl || '') || '/song.jpg'"
               alt="song cover"
-              class="spotify-share-cover"
+              class="mr-share-cover"
             />
             <img
               v-else
               :src="fixUrl(msg.playlistCoverUrl || '') || '/cover.png'"
               alt="playlist cover"
-              class="spotify-share-cover"
+              class="mr-share-cover"
             />
-            <div class="spotify-share-meta">
-              <span class="spotify-type-tag">{{ msg.messageType }}</span>
-              <p class="spotify-share-title">
+            <div class="mr-share-meta">
+              <span class="mr-type-tag">{{ msg.messageType }}</span>
+              <p class="mr-share-title">
                 {{ msg.messageType === 'SONG' ? (msg.songName || `歌曲 #${msg.songId}`) : (msg.playlistTitle || `歌单 #${msg.playlistId}`) }}
               </p>
-              <p class="spotify-share-subtitle" v-if="msg.messageType === 'SONG'">{{ msg.songArtistName || '未知歌手' }}</p>
-              <p class="spotify-share-subtitle" v-else>点击查看歌单</p>
+              <p class="mr-share-subtitle" v-if="msg.messageType === 'SONG'">{{ msg.songArtistName || '未知歌手' }}</p>
+              <p class="mr-share-subtitle" v-else>点击查看歌单</p>
             </div>
-            <span class="spotify-bubble-time">{{ formatTime(msg.createTime) }}</span>
+            <span class="mr-bubble-time">{{ formatTime(msg.createTime) }}</span>
           </div>
         </div>
       </div>
 
-      <footer class="spotify-chat-input">
+      <footer class="mr-chat-input">
         <input
           v-model="inputText"
           placeholder="输入消息..."
@@ -483,30 +489,37 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.spotify-message-page {
+.mr-message-page {
+  --msg-bubble-bg: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  --msg-bubble-color: var(--text-base, #fff);
+  --msg-lock-color: #f59e0b;
+  --msg-lock-border: rgba(245, 158, 11, 0.5);
+  --msg-share-me-bg: color-mix(in srgb, var(--mr-accent) 14%, transparent);
+  --msg-share-me-border: color-mix(in srgb, var(--mr-accent) 50%, transparent);
+
   display: grid;
   grid-template-columns: 300px 1fr;
   height: 100%;
   gap: 12px;
 }
 
-.spotify-conversation-panel,
-.spotify-chat-panel {
+.mr-conversation-panel,
+.mr-chat-panel {
   border-radius: 12px;
   background: var(--bg-elevated, #1d1d1d);
 }
 
-.spotify-conversation-panel {
+.mr-conversation-panel {
   padding: 12px;
   overflow-y: auto;
 }
 
-.spotify-panel-title-row h3 {
+.mr-panel-title-row h3 {
   color: var(--text-base, #fff);
   margin: 2px 4px 10px;
 }
 
-.spotify-conversation-item {
+.mr-conversation-item {
   width: 100%;
   border: 0;
   background: transparent;
@@ -519,7 +532,7 @@ onUnmounted(() => {
   text-align: left;
 }
 
-.spotify-conversation-item img {
+.mr-conversation-item img {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -527,53 +540,53 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.spotify-conversation-item:hover,
-.spotify-conversation-active {
+.mr-conversation-item:hover,
+.mr-conversation-active {
   background: var(--bg-hover, rgba(255, 255, 255, 0.08));
 }
 
-.spotify-meta {
+.mr-meta {
   min-width: 0;
   flex: 1;
 }
 
-.spotify-meta-top,
-.spotify-meta-bottom {
+.mr-meta-top,
+.mr-meta-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.spotify-meta-actions {
+.mr-meta-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.spotify-name {
+.mr-name {
   color: var(--text-base, #fff);
   font-size: 0.9rem;
   cursor: pointer;
 }
 
-.spotify-time,
-.spotify-last {
+.mr-time,
+.mr-last {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.75rem;
 }
 
-.spotify-last {
+.mr-last {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.spotify-unread {
+.mr-unread {
   min-width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: #1db954;
+  background: var(--mr-accent);
   color: #000;
   font-size: 0.6875rem;
   line-height: 18px;
@@ -581,15 +594,15 @@ onUnmounted(() => {
   padding: 0 5px;
 }
 
-.spotify-lock {
+.mr-lock {
   font-size: 0.6875rem;
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: var(--msg-lock-color);
+  border: 1px solid var(--msg-lock-border);
   border-radius: 999px;
   padding: 1px 6px;
 }
 
-.spotify-profile-btn {
+.mr-profile-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -602,31 +615,31 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.spotify-profile-btn:hover {
+.mr-profile-btn:hover {
   color: var(--text-base, #fff);
   border-color: var(--text-base, #fff);
 }
 
-.spotify-chat-panel {
+.mr-chat-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
-.spotify-chat-header {
+.mr-chat-header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 }
 
-.spotify-chat-header h3 {
+.mr-chat-header h3 {
   color: var(--text-base, #fff);
 }
 
-.spotify-chat-title {
+.mr-chat-title {
   cursor: pointer;
 }
 
-.spotify-back-btn {
+.mr-back-btn {
   display: none;
   margin-bottom: 8px;
   border: 0;
@@ -635,7 +648,7 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.spotify-share-row {
+.mr-share-row {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
@@ -643,35 +656,35 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.spotify-share-chip {
+.mr-share-chip {
   border-radius: 999px;
-  border: 1px solid rgba(29, 185, 84, 0.6);
-  color: #1db954;
+  border: 1px solid var(--mr-accent);
+  color: var(--mr-accent);
   padding: 4px 10px;
   font-size: 0.75rem;
 }
 
-.spotify-share-btn,
-.spotify-share-clear-btn {
+.mr-share-btn,
+.mr-share-clear-btn {
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 0.75rem;
   cursor: pointer;
 }
 
-.spotify-share-btn {
+.mr-share-btn {
   border: 0;
-  background: #1db954;
+  background: var(--mr-accent);
   color: #000;
 }
 
-.spotify-share-clear-btn {
+.mr-share-clear-btn {
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
   background: transparent;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-chat-body {
+.mr-chat-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -681,18 +694,18 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.spotify-msg-row {
+.mr-msg-row {
   display: flex;
 }
 
-.spotify-msg-me {
+.mr-msg-me {
   justify-content: flex-end;
 }
 
-.spotify-bubble {
+.mr-bubble {
   max-width: min(72%, 560px);
-  background: #2a2a2a;
-  color: #fff;
+  background: var(--msg-bubble-bg);
+  color: var(--msg-bubble-color);
   padding: 8px 12px;
   border-radius: 12px;
   display: flex;
@@ -700,12 +713,12 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.spotify-msg-me .spotify-bubble {
-  background: #1db954;
+.mr-msg-me .mr-bubble {
+  background: var(--mr-accent);
   color: #000;
 }
 
-.spotify-share-card {
+.mr-share-card {
   max-width: min(72%, 560px);
   display: flex;
   align-items: center;
@@ -717,12 +730,12 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.spotify-msg-me .spotify-share-card {
-  border-color: rgba(29, 185, 84, 0.5);
-  background: rgba(29, 185, 84, 0.14);
+.mr-msg-me .mr-share-card {
+  border-color: var(--msg-share-me-border);
+  background: var(--msg-share-me-bg);
 }
 
-.spotify-share-cover {
+.mr-share-cover {
   width: 44px;
   height: 44px;
   border-radius: 8px;
@@ -730,7 +743,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.spotify-share-meta {
+.mr-share-meta {
   min-width: 0;
   flex: 1;
   display: flex;
@@ -738,7 +751,7 @@ onUnmounted(() => {
   gap: 2px;
 }
 
-.spotify-share-title {
+.mr-share-title {
   color: var(--text-base, #fff);
   font-size: 0.875rem;
   white-space: nowrap;
@@ -746,12 +759,12 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
-.spotify-share-subtitle {
+.mr-share-subtitle {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.75rem;
 }
 
-.spotify-type-tag {
+.mr-type-tag {
   font-size: 0.625rem;
   border-radius: 999px;
   padding: 1px 6px;
@@ -759,20 +772,21 @@ onUnmounted(() => {
   opacity: 0.8;
 }
 
-.spotify-bubble-time {
+.mr-bubble-time {
   margin-left: 4px;
   font-size: 0.625rem;
   opacity: 0.8;
 }
 
-.spotify-chat-input {
+.mr-chat-input {
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   padding: 12px;
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-.spotify-chat-input input {
+.mr-chat-input input {
   flex: 1;
   border: 0;
   border-radius: 999px;
@@ -781,82 +795,129 @@ onUnmounted(() => {
   color: var(--text-base, #fff);
 }
 
-.spotify-chat-input button {
+.mr-chat-input button {
   border: 0;
   border-radius: 999px;
   padding: 0 16px;
-  background: #1db954;
+  background: var(--mr-accent);
   color: #000;
   font-weight: 600;
   cursor: pointer;
 }
 
-.spotify-chat-input button:disabled {
+.mr-chat-input button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.spotify-empty-chat,
-.spotify-empty-panel {
+.mr-empty-chat,
+.mr-empty-panel {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
   text-align: center;
   padding: 24px 8px;
 }
 
-:root:not(.dark) .spotify-message-page {
+:root:not(.dark) .mr-message-page {
   --bg-elevated: #f0f0f0;
   --bg-surface: #ffffff;
   --bg-hover: rgba(0, 0, 0, 0.06);
   --text-base: #000;
   --text-subdued: #666;
   --border-color: rgba(0, 0, 0, 0.12);
+  --msg-bubble-bg: #efefef;
+  --msg-bubble-color: #111;
+  --msg-share-me-bg: color-mix(in srgb, var(--mr-accent) 20%, transparent);
+  --msg-share-me-border: color-mix(in srgb, var(--mr-accent) 50%, transparent);
 }
 
-:root:not(.dark) .spotify-bubble {
-  background: #efefef;
-  color: #111;
+:root:not(.dark) .mr-share-card {
+  background: var(--bg-surface);
+  border-color: var(--border-color);
 }
 
-:root:not(.dark) .spotify-share-card {
-  background: #f7f7f7;
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-:root:not(.dark) .spotify-msg-me .spotify-bubble {
-  background: #1db954;
+:root:not(.dark) .mr-msg-me .mr-bubble {
+  background: var(--mr-accent);
   color: #000;
 }
 
-:root:not(.dark) .spotify-msg-me .spotify-share-card {
-  background: rgba(29, 185, 84, 0.2);
-  border-color: rgba(29, 185, 84, 0.5);
-}
-
 @media (max-width: 768px) {
-  .spotify-message-page {
+  .mr-message-page {
     grid-template-columns: 1fr;
     position: relative;
+    gap: 0;
+    padding: 0 0 140px 0;
   }
 
-  .spotify-conversation-panel {
-    max-height: 40%;
+  .mr-conversation-panel,
+  .mr-chat-panel {
+    border-radius: 0;
+    height: 100%;
   }
 
-  .spotify-conversation-hidden {
+  .mr-conversation-panel {
+    max-height: none;
+    padding: 12px;
+  }
+
+  .mr-conversation-open .mr-chat-panel {
     display: none;
   }
 
-  .spotify-back-btn {
+  .mr-message-page:not(.mr-conversation-open) .mr-conversation-panel {
+    display: none;
+  }
+
+  .mr-conversation-hidden {
+    display: none;
+  }
+
+  .mr-back-btn {
     display: inline-block;
   }
 
-  .spotify-bubble {
-    max-width: 84%;
+  .mr-chat-header {
+    padding: 12px;
   }
 
-  .spotify-share-card {
+  .mr-chat-title {
+    font-size: 0.9375rem;
+  }
+
+  .mr-share-row {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .mr-chat-body {
+    padding: 12px;
+  }
+
+  .mr-bubble {
     max-width: 84%;
+    padding: 8px 10px;
+  }
+
+  .mr-share-card {
+    max-width: 84%;
+    padding: 8px;
+  }
+
+  .mr-share-cover {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mr-chat-input {
+    padding: 10px 12px;
+  }
+
+  .mr-chat-input input {
+    padding: 8px 12px;
+  }
+
+  .mr-chat-input button {
+    padding: 0 14px;
   }
 }
 </style>

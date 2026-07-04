@@ -167,18 +167,22 @@ export function useFeedback(tableRef: Ref) {
     }
 
     try {
-      const { data } = await getFeedbackList(params);
-      dataList.value = data.items;
-      pagination.total = data.total;
+      const result = await getFeedbackList(params);
+      if (result.code === 0 && result.data) {
+        dataList.value = result.data.items;
+        pagination.total = result.data.total;
+      } else {
+        dataList.value = [];
+        pagination.total = 0;
+        message(result.message || "获取反馈列表失败", { type: "error" });
+      }
     } catch (e) {
       console.error("获取反馈列表错误:", e);
       message("获取反馈列表失败", { type: "error" });
       dataList.value = [];
       pagination.total = 0;
     } finally {
-      setTimeout(() => {
-        loading.value = false;
-      }, 500);
+      loading.value = false;
     }
   }
 

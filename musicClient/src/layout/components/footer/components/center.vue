@@ -22,7 +22,7 @@ const modeIcon = computed(() => {
     loop: 'ri:repeat-2-line',
     single: 'ri:repeat-one-line'
   }
-  return map[playMode.value]
+  return map[playMode.value] ?? 'ri:order-play-line'
 })
 
 const modeTitle = computed(() => {
@@ -32,7 +32,7 @@ const modeTitle = computed(() => {
     single: '单曲循环',
     shuffle: '随机播放'
   }
-  return map[playMode.value]
+  return map[playMode.value] ?? '顺序播放'
 })
 
 const openQueue = () => {
@@ -41,53 +41,53 @@ const openQueue = () => {
 </script>
 
 <template>
-  <div class="spotify-playing-bar-center">
-    <div class="spotify-playing-controls">
+  <div class="mr-playing-bar-center">
+    <div class="mr-playing-controls">
       <button
         @click="togglePlayMode"
-        class="spotify-control-btn spotify-control-btn-mode"
+        class="mr-control-btn mr-control-btn-mode"
         :title="modeTitle"
       >
-        <Icon :icon="modeIcon" class="spotify-control-icon" />
+        <Icon :icon="modeIcon" class="mr-control-icon" />
       </button>
 
       <button
         @click="prevTrack"
-        class="spotify-control-btn"
+        class="mr-control-btn"
       >
-        <Icon icon="mdi:skip-previous" class="spotify-control-icon-lg" />
+        <Icon icon="mdi:skip-previous" class="mr-control-icon-lg" />
       </button>
 
       <button
         @click="togglePlayPause"
-        class="spotify-play-btn"
+        class="mr-play-btn"
       >
         <Icon
           :icon="isPlaying ? 'mdi:pause' : 'mdi:play'"
-          class="spotify-play-icon"
+          class="mr-play-icon"
         />
       </button>
 
       <button
         @click="nextTrack"
-        class="spotify-control-btn"
+        class="mr-control-btn"
       >
-        <Icon icon="mdi:skip-next" class="spotify-control-icon-lg" />
+        <Icon icon="mdi:skip-next" class="mr-control-icon-lg" />
       </button>
 
       <button
         @click="openQueue"
-        class="spotify-control-btn"
+        class="mr-control-btn"
         title="播放队列"
       >
-        <Icon icon="ri:play-list-2-fill" class="spotify-control-icon" />
+        <Icon icon="ri:play-list-2-fill" class="mr-control-icon" />
       </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.spotify-playing-bar-center {
+.mr-playing-bar-center {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -96,13 +96,13 @@ const openQueue = () => {
   max-width: 722px;
 }
 
-.spotify-playing-controls {
+.mr-playing-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.spotify-control-btn {
+.mr-control-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,20 +116,20 @@ const openQueue = () => {
   transition: color 200ms ease, transform 33ms ease;
 }
 
-.spotify-control-btn:hover {
+.mr-control-btn:hover {
   color: var(--text-base, #fff);
   transform: scale(1.1);
 }
 
-.spotify-control-btn:active {
+.mr-control-btn:active {
   transform: scale(1);
 }
 
-.spotify-control-btn-mode {
+.mr-control-btn-mode {
   position: relative;
 }
 
-.spotify-control-btn-mode.active::after {
+.mr-control-btn-mode.active::after {
   content: '';
   position: absolute;
   bottom: -6px;
@@ -137,19 +137,19 @@ const openQueue = () => {
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  background-color: var(--text-accent, #1db954);
+  background-color: var(--text-accent, var(--mr-accent));
   border-radius: 50%;
 }
 
-.spotify-control-icon {
+.mr-control-icon {
   font-size: 1rem;
 }
 
-.spotify-control-icon-lg {
+.mr-control-icon-lg {
   font-size: 1.5rem;
 }
 
-.spotify-play-btn {
+.mr-play-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,29 +163,29 @@ const openQueue = () => {
   transition: transform 33ms ease, background-color 200ms ease;
 }
 
-.spotify-play-btn:hover {
+.mr-play-btn:hover {
   transform: scale(1.06);
 }
 
-.spotify-play-btn:active {
+.mr-play-btn:active {
   transform: scale(1);
 }
 
-.spotify-play-icon {
+.mr-play-icon {
   font-size: 1.25rem;
   margin-left: 2px;
 }
 
-:root:not(.dark) .spotify-playing-bar-center {
+:root:not(.dark) .mr-playing-bar-center {
   --text-base: #000000;
   --text-subdued: #6a6a6a;
-  --text-accent: #1db954;
+  --text-accent: var(--mr-accent);
   --btn-bg: #000000;
   --btn-text: #ffffff;
 }
 
 @media (max-width: 768px) {
-  .spotify-playing-bar-center {
+  .mr-playing-bar-center {
     display: none;
   }
 }

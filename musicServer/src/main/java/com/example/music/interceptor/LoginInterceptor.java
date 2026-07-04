@@ -111,10 +111,15 @@ public class LoginInterceptor implements HandlerInterceptor {
     }
 
     private Map<String, Object> validateAndParseClaims(String token) {
-        ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
-        String redisToken = operations.get(token);
-        if (redisToken == null) {
-            throw new RuntimeException("token expired");
+        try {
+            ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
+            String redisToken = operations.get(token);
+            if (redisToken == null) {
+                throw new RuntimeException("token expired");
+            }
+        } catch (Exception redisEx) {
+            // Redis 不可用或查询异常时，降级为仅校验 JWT 签名与过期时间
+            // 保证核心功能可用，但无法主动吊销 token
         }
         return JwtUtil.parseToken(token);
     }

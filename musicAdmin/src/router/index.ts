@@ -73,14 +73,16 @@ export const router: Router = createRouter({
   scrollBehavior(to, from, savedPosition) {
     return new Promise(resolve => {
       if (savedPosition) {
-        return savedPosition;
-      } else {
-        if (from.meta.saveSrollTop) {
-          const top: number =
-            document.documentElement.scrollTop || document.body.scrollTop;
-          resolve({ left: 0, top });
-        }
+        resolve(savedPosition);
+        return;
       }
+      if (from.meta.saveSrollTop) {
+        const top: number =
+          document.documentElement.scrollTop || document.body.scrollTop;
+        resolve({ left: 0, top });
+        return;
+      }
+      resolve({ left: 0, top: 0 });
     });
   }
 });
@@ -91,11 +93,6 @@ export function resetRouter() {
     const { name, meta } = route;
     if (name && router.hasRoute(name) && meta?.backstage) {
       router.removeRoute(name);
-      router.options.routes = formatTwoStageRoutes(
-        formatFlatteningRoutes(
-          buildHierarchyTree(ascending(routes.flat(Infinity)))
-        )
-      );
     }
   });
   usePermissionStoreHook().clearAllCachePage();
@@ -133,10 +130,12 @@ router.beforeEach((to: ToRouteType, _from, next) => {
     // 无权限跳转403页面
     if (to.meta?.roles && !isOneOfArray(to.meta?.roles, userInfo?.roles)) {
       next({ path: "/error/403" });
+      return;
     }
     // 开启隐藏首页后在浏览器地址栏手动输入首页welcome路由则跳转到404页面
     if (VITE_HIDE_HOME === "true" && to.fullPath === "/welcome") {
       next({ path: "/error/404" });
+      return;
     }
     if (_from?.name) {
       // name为超链接

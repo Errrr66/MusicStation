@@ -17,7 +17,6 @@ const menuStore = MenuStore()
 import { useDark, useToggle } from '@vueuse/core'
 
 const searchText = ref('')
-const isMobileSearchOpen = ref(false)
 
 const toggleMobileMenu = () => {
   menuStore.setMobileMenuOpen(!menuStore.isMobileMenuOpen)
@@ -28,7 +27,7 @@ const toggleMobileRightAside = () => {
 }
 
 const toggleMobileSearch = () => {
-  isMobileSearchOpen.value = !isMobileSearchOpen.value
+  menuStore.toggleMobileSearch()
 }
 
 // 听歌识曲相关
@@ -206,50 +205,50 @@ watch(
 )
 </script>
 <template>
-  <header class="spotify-navbar">
-    <div class="spotify-navbar-left">
+  <header class="mr-navbar">
+    <div class="mr-navbar-left">
       <!-- Mobile Menu Button -->
-      <button class="spotify-nav-button spotify-mobile-menu-btn" @click="toggleMobileMenu">
-        <Icon icon="ri:menu-line" class="text-xl" />
+      <button class="mr-nav-button mr-mobile-menu-btn" @click="toggleMobileMenu">
+        <Icon icon="mdi:menu" class="text-xl mr-menu-icon" />
       </button>
 
       <!-- Logo -->
-      <button class="spotify-logo-btn" @click="router.push('/')">
-        <img src="\logo.svg?v=1" alt="logo" class="spotify-logo" />
-        <span class="spotify-logo-text">Parachutes</span>
+      <button class="mr-logo-btn" @click="router.push('/')">
+        <img src="\logo.svg?v=1" alt="logo" class="mr-logo" />
+        <span class="mr-logo-text">Parachutes</span>
       </button>
     </div>
 
     <!-- Center - Search & Actions -->
-    <div class="spotify-navbar-center">
-      <div class="spotify-search-wrapper">
-        <Icon icon="mdi:magnify" class="spotify-search-icon" />
+    <div class="mr-navbar-center">
+      <div class="mr-search-wrapper">
+        <Icon icon="mdi:magnify" class="mr-search-icon" />
         <input
           v-model="searchText"
           type="text"
-          class="spotify-search-input"
+          class="mr-search-input"
           placeholder="想播放什么？"
           @keyup.enter="router.push('/search?query=' + searchText)"
         />
       </div>
       <SongRecognizer @success="handleRecognitionSuccess" />
-      <button class="spotify-icon-btn" @click="toggleMode">
-        <Icon class="text-xl" :class="theme.isDark ? '' : 'text-orange-500'" :icon="currentIcon" />
+      <button class="mr-icon-btn" @click="toggleMode">
+        <Icon class="text-xl mr-theme-icon" :icon="currentIcon" />
       </button>
     </div>
 
     <!-- Right - User -->
-    <div class="spotify-navbar-right">
+    <div class="mr-navbar-right">
       <!-- Mobile Actions -->
-      <div class="spotify-mobile-actions">
+      <div class="mr-mobile-actions">
         <SongRecognizer @success="handleRecognitionSuccess" />
-        <button class="spotify-icon-btn" @click="toggleMobileSearch">
+        <button class="mr-icon-btn" @click="toggleMobileSearch">
           <Icon icon="mdi:magnify" class="text-xl" />
         </button>
-        <button class="spotify-icon-btn" @click="toggleMode">
-          <Icon class="text-xl" :class="theme.isDark ? '' : 'text-orange-500'" :icon="currentIcon" />
+        <button class="mr-icon-btn" @click="toggleMode">
+          <Icon class="text-xl mr-theme-icon" :icon="currentIcon" />
         </button>
-        <button class="spotify-icon-btn" @click="toggleMobileRightAside">
+        <button class="mr-icon-btn mr-mobile-rightaside-btn" @click="toggleMobileRightAside">
           <Icon icon="mdi:music-box-outline" class="text-xl" />
         </button>
       </div>
@@ -257,54 +256,54 @@ watch(
     </div>
 
     <!-- Recognition Result Dropdown -->
-    <div v-if="showRecognizerDropdown" class="spotify-dropdown-overlay">
-      <div class="spotify-recognition-dropdown">
-        <div class="spotify-recognition-header">
-          <span class="spotify-recognition-title">识别结果</span>
-          <button @click="closeRecognizerDropdown" class="spotify-icon-btn-sm">
+    <div v-if="showRecognizerDropdown" class="mr-dropdown-overlay">
+      <div class="mr-recognition-dropdown">
+        <div class="mr-recognition-header">
+          <span class="mr-recognition-title">识别结果</span>
+          <button @click="closeRecognizerDropdown" class="mr-icon-btn-sm">
             <Icon icon="mdi:close" />
           </button>
         </div>
 
         <div
           v-if="recognizedTrack"
-          class="spotify-recognition-result"
-          :class="{'spotify-recognition-disabled': !localSongMatch && !isCheckingLocal}"
+          class="mr-recognition-result"
+          :class="{'mr-recognition-disabled': !localSongMatch && !isCheckingLocal}"
           @click="playRecognizedSong"
         >
-          <div class="spotify-recognition-cover">
+          <div class="mr-recognition-cover">
             <img
               :src="localSongMatch?.coverUrl || recognizedTrack.photo_url || default_album"
-              class="spotify-recognition-img"
+              class="mr-recognition-img"
               alt="cover"
             />
-            <div v-if="localSongMatch" class="spotify-recognition-play">
+            <div v-if="localSongMatch" class="mr-recognition-play">
               <Icon icon="mdi:play" class="text-white text-xl" />
             </div>
           </div>
 
-          <div class="spotify-recognition-info">
-            <h3 class="spotify-recognition-song">{{ recognizedTrack.title }}</h3>
-            <p class="spotify-recognition-artist">{{ recognizedTrack.subtitle }}</p>
-            <p v-if="isCheckingLocal" class="spotify-recognition-status checking">正在查找曲库...</p>
-            <p v-else-if="!localSongMatch" class="spotify-recognition-status not-found">歌曲暂未收录</p>
-            <p v-else class="spotify-recognition-status found">点击播放</p>
+          <div class="mr-recognition-info">
+            <h3 class="mr-recognition-song">{{ recognizedTrack.title }}</h3>
+            <p class="mr-recognition-artist">{{ recognizedTrack.subtitle }}</p>
+            <p v-if="isCheckingLocal" class="mr-recognition-status checking">正在查找曲库...</p>
+            <p v-else-if="!localSongMatch" class="mr-recognition-status not-found">歌曲暂未收录</p>
+            <p v-else class="mr-recognition-status found">点击播放</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Mobile Search Overlay -->
-    <div v-if="isMobileSearchOpen" class="spotify-mobile-search-overlay">
-      <button @click="toggleMobileSearch" class="spotify-icon-btn">
+    <div v-if="menuStore.isMobileSearchOpen" class="mr-mobile-search-overlay">
+      <button @click="toggleMobileSearch" class="mr-icon-btn">
         <Icon icon="mdi:arrow-left" class="text-xl" />
       </button>
-      <div class="spotify-mobile-search-wrapper">
-        <Icon icon="mdi:magnify" class="spotify-search-icon" />
+      <div class="mr-mobile-search-wrapper">
+        <Icon icon="mdi:magnify" class="mr-search-icon" />
         <input
           v-model="searchText"
           type="text"
-          class="spotify-search-input"
+          class="mr-search-input"
           placeholder="想播放什么？"
           @keyup.enter="router.push('/search?query=' + searchText); toggleMobileSearch()"
         />
@@ -314,30 +313,34 @@ watch(
 </template>
 
 <style scoped>
-.spotify-navbar {
+.mr-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background-color: #000000;
+  background-color: var(--bg-surface, #000);
   border-radius: 8px;
   position: relative;
   min-height: 56px;
   transition: background-color 200ms ease;
 }
 
-.spotify-navbar-left {
+.mr-navbar-left {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.spotify-mobile-menu-btn {
+.mr-mobile-menu-btn {
   display: none;
 }
 
-.spotify-logo-btn {
+.mr-menu-icon {
+  color: var(--text-base, #fff);
+}
+
+.mr-logo-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -347,25 +350,25 @@ watch(
   padding: 4px;
 }
 
-.spotify-logo {
+.mr-logo {
   width: 32px;
   height: 32px;
   filter: brightness(0) invert(1);
   transition: filter 200ms ease;
 }
 
-.spotify-logo-btn:hover .spotify-logo {
+.mr-logo-btn:hover .mr-logo {
   filter: brightness(0) invert(0.85);
 }
 
-.spotify-logo-text {
+.mr-logo-text {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-base, #fff);
   display: none;
 }
 
-.spotify-navbar-center {
+.mr-navbar-center {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -374,13 +377,13 @@ watch(
   max-width: 600px;
 }
 
-.spotify-search-wrapper {
+.mr-search-wrapper {
   position: relative;
   width: 100%;
   max-width: 400px;
 }
 
-.spotify-search-icon {
+.mr-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -390,7 +393,7 @@ watch(
   pointer-events: none;
 }
 
-.spotify-search-input {
+.mr-search-input {
   width: 100%;
   padding: 10px 12px 10px 44px;
   background-color: var(--bg-input, #242424);
@@ -402,20 +405,20 @@ watch(
   transition: box-shadow 200ms ease, background-color 200ms ease;
 }
 
-.spotify-search-input::placeholder {
+.mr-search-input::placeholder {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-search-input:hover {
+.mr-search-input:hover {
   box-shadow: 0 0 0 1px var(--border-hover, #535353);
 }
 
-.spotify-search-input:focus {
+.mr-search-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--border-focus, #fff);
 }
 
-.spotify-icon-btn {
+.mr-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -429,29 +432,33 @@ watch(
   transition: color 200ms ease, transform 33ms ease;
 }
 
-.spotify-icon-btn:hover {
+.mr-icon-btn:hover {
   color: var(--text-base, #fff);
   transform: scale(1.1);
 }
 
-.spotify-icon-btn:active {
+.mr-icon-btn:active {
   transform: scale(1);
 }
 
-.spotify-navbar-right {
+.mr-theme-icon {
+  color: var(--text-base, #fff);
+}
+
+.mr-navbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.spotify-mobile-actions {
+.mr-mobile-actions {
   display: none;
   align-items: center;
   gap: 4px;
 }
 
-.spotify-dropdown-overlay {
+.mr-dropdown-overlay {
   position: absolute;
   top: calc(100% + 8px);
   left: 50%;
@@ -461,14 +468,14 @@ watch(
   z-index: 100;
 }
 
-.spotify-recognition-dropdown {
+.mr-recognition-dropdown {
   background-color: var(--bg-dropdown, #282828);
   border-radius: 8px;
   box-shadow: 0 16px 24px rgba(0, 0, 0, 0.3), 0 6px 8px rgba(0, 0, 0, 0.2);
   padding: 8px;
 }
 
-.spotify-recognition-header {
+.mr-recognition-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -476,13 +483,13 @@ watch(
   margin-bottom: 8px;
 }
 
-.spotify-recognition-title {
+.mr-recognition-title {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-icon-btn-sm {
+.mr-icon-btn-sm {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -496,11 +503,11 @@ watch(
   transition: color 200ms ease;
 }
 
-.spotify-icon-btn-sm:hover {
+.mr-icon-btn-sm:hover {
   color: var(--text-base, #fff);
 }
 
-.spotify-recognition-result {
+.mr-recognition-result {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -510,30 +517,30 @@ watch(
   transition: background-color 200ms ease;
 }
 
-.spotify-recognition-result:hover {
+.mr-recognition-result:hover {
   background-color: var(--bg-hover, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-recognition-disabled {
+.mr-recognition-disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.spotify-recognition-cover {
+.mr-recognition-cover {
   position: relative;
   width: 48px;
   height: 48px;
   flex-shrink: 0;
 }
 
-.spotify-recognition-img {
+.mr-recognition-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.spotify-recognition-play {
+.mr-recognition-play {
   position: absolute;
   inset: 0;
   display: flex;
@@ -545,16 +552,16 @@ watch(
   transition: opacity 200ms ease;
 }
 
-.spotify-recognition-cover:hover .spotify-recognition-play {
+.mr-recognition-cover:hover .mr-recognition-play {
   opacity: 1;
 }
 
-.spotify-recognition-info {
+.mr-recognition-info {
   flex: 1;
   min-width: 0;
 }
 
-.spotify-recognition-song {
+.mr-recognition-song {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-base, #fff);
@@ -563,7 +570,7 @@ watch(
   white-space: nowrap;
 }
 
-.spotify-recognition-artist {
+.mr-recognition-artist {
   font-size: 0.75rem;
   color: var(--text-subdued, #b3b3b3);
   overflow: hidden;
@@ -571,24 +578,24 @@ watch(
   white-space: nowrap;
 }
 
-.spotify-recognition-status {
+.mr-recognition-status {
   font-size: 0.75rem;
   margin-top: 4px;
 }
 
-.spotify-recognition-status.checking {
-  color: #1db954;
+.mr-recognition-status.checking {
+  color: var(--mr-accent);
 }
 
-.spotify-recognition-status.not-found {
+.mr-recognition-status.not-found {
   color: #f15e6c;
 }
 
-.spotify-recognition-status.found {
-  color: #1db954;
+.mr-recognition-status.found {
+  color: var(--mr-accent);
 }
 
-.spotify-mobile-search-overlay {
+.mr-mobile-search-overlay {
   position: absolute;
   inset: 0;
   background-color: var(--bg-surface, #121212);
@@ -599,14 +606,14 @@ watch(
   z-index: 50;
 }
 
-.spotify-mobile-search-wrapper {
+.mr-mobile-search-wrapper {
   position: relative;
   flex: 1;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-navbar {
-  background-color: #ffffff;
+:root:not(.dark) .mr-navbar {
+  background-color: var(--bg-surface, #fff);
   --bg-input: #f0f0f0;
   --bg-surface: #ffffff;
   --bg-dropdown: #ffffff;
@@ -617,51 +624,90 @@ watch(
   --border-focus: #000000;
 }
 
-:root:not(.dark) .spotify-recognition-dropdown {
+:root:not(.dark) .mr-recognition-dropdown {
   box-shadow: 0 16px 24px rgba(0, 0, 0, 0.15), 0 6px 8px rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-logo {
+:root:not(.dark) .mr-logo {
   filter: brightness(0) invert(0);
 }
 
-:root:not(.dark) .spotify-logo-btn:hover .spotify-logo {
+:root:not(.dark) .mr-logo-btn:hover .mr-logo {
   filter: brightness(0) invert(0.2);
 }
 
 @media (min-width: 768px) {
-  .spotify-logo-text {
+  .mr-logo-text {
     display: block;
   }
   
-  .spotify-navbar-center {
+  .mr-navbar-center {
     display: flex;
   }
   
-  .spotify-mobile-actions {
+  .mr-mobile-actions {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .spotify-navbar {
+  .mr-navbar {
     border-radius: 0;
     padding: 8px 12px;
+    gap: 8px;
+    min-height: 52px;
   }
-  
-  .spotify-mobile-menu-btn {
+
+  .mr-navbar-left {
+    gap: 6px;
+  }
+
+  .mr-mobile-menu-btn {
     display: flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
   }
-  
-  .spotify-navbar-center {
+
+  .mr-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .mr-navbar-center {
     display: none;
   }
-  
-  .spotify-mobile-actions {
+
+  .mr-mobile-actions {
     display: flex;
+    align-items: center;
+    gap: 0;
   }
-  
-  .spotify-logo-text {
+
+  .mr-mobile-actions .mr-icon-btn,
+  .mr-mobile-actions .mr-recognizer-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  /* 精简移动端 header 右侧图标 */
+  .mr-mobile-actions .mr-recognizer-btn,
+  .mr-mobile-actions .mr-mobile-rightaside-btn {
+    display: none;
+  }
+
+  .mr-mobile-actions .mr-recognizer-text {
+    display: none;
+  }
+
+  .mr-avatar {
+    --el-avatar-size: 32px;
+  }
+
+  .mr-logo-text {
     display: none;
   }
 }

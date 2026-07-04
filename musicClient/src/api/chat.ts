@@ -1,5 +1,4 @@
-import { httpGet, httpPost } from '@/utils/http'
-import { UserStore } from '@/stores/modules/user'
+import { httpGet, httpPost, getAuthToken } from '@/utils/http'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -123,8 +122,7 @@ export const sendAgentMessageStream = async (
     signal?: AbortSignal
   }
 ) => {
-  const userStore = UserStore()
-  const token = userStore.userInfo?.token
+  const token = getAuthToken()
 
   const response = await fetch(`${import.meta.env.VITE_APP_BASE_API}/chat/agent/stream`, {
     method: 'POST',
@@ -138,7 +136,12 @@ export const sendAgentMessageStream = async (
   })
 
   if (!response.ok || !response.body) {
-    throw new Error('Stream request failed')
+    // 错误对象携带 status 与 body，便于调用方区分 401/403/500 等情况
+    const bodyText = await response.text().catch(() => '')
+    const error = new Error(`Stream request failed: ${response.status}`)
+    ;(error as Error & { status: number }).status = response.status
+    ;(error as Error & { body: string }).body = bodyText
+    throw error
   }
 
   const reader = response.body.getReader()

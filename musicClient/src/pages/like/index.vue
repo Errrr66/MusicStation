@@ -4,7 +4,8 @@ import type { Song } from '@/api/interface'
 import coverImg from '@/assets/cover.png'
 import { AudioStore } from '@/stores/modules/audio'
 import { useRoute } from 'vue-router'
-import { fixUrl } from '@/utils'
+import { fixUrl, durationToMs } from '@/utils'
+import { extractDominantColor } from '@/utils/imageUtils'
 
 const route = useRoute()
 const audui = AudioStore()
@@ -13,7 +14,7 @@ const { loadTrack, play } = useAudioPlayer()
 const songs = ref<Song[]>([])
 const searchKeyword = ref('')
 const currentPage = ref(1)
-const pageSize = ref(1000)
+const pageSize = ref(30)
 const dominantColor = ref('#1e3a5f')
 
 const playlist = ref({
@@ -26,39 +27,6 @@ const playlist = ref({
 interface PageResult {
   items: Song[]
   total: number
-}
-
-const extractDominantColor = (imageUrl: string): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'Anonymous'
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        resolve('#1e3a5f')
-        return
-      }
-      canvas.width = 50
-      canvas.height = 50
-      ctx.drawImage(img, 0, 0, 50, 50)
-      const imageData = ctx.getImageData(0, 0, 50, 50).data
-      let r = 0, g = 0, b = 0, count = 0
-      for (let i = 0; i < imageData.length; i += 4) {
-        r += imageData[i]
-        g += imageData[i + 1]
-        b += imageData[i + 2]
-        count++
-      }
-      r = Math.floor(r / count)
-      g = Math.floor(g / count)
-      b = Math.floor(b / count)
-      const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('')
-      resolve(hex)
-    }
-    img.onerror = () => resolve('#1e3a5f')
-    img.src = imageUrl
-  })
 }
 
 const getSongs = async () => {
@@ -102,7 +70,7 @@ const handlePlayAll = async () => {
     album: song.album,
     cover: song.coverUrl || coverImg,
     url: song.audioUrl,
-    duration: parseFloat(song.duration) * 1000,
+    duration: durationToMs(song.duration),
     likeStatus: song.likeStatus,
   }))
 
@@ -112,64 +80,39 @@ const handlePlayAll = async () => {
   play()
 }
 
-// 监听当前页面歌曲列表的变化
-watch(
-  () => audui.currentPageSongs,
-  (newSongs) => {
-    if (newSongs && newSongs.length > 0) {
-      // 检查是否有歌曲的收藏状态变为0（取消收藏）
-      const hasUnlikedSong = newSongs.some((song: any) => song.likeStatus === 0)
-      if (hasUnlikedSong) {
-        getSongs() // 重新获取收藏列表
-      }
-    }
-  },
-  { deep: true }
-)
-
-// 监听路由变化，每次进入页面时重新获取数据
-watch(
-  () => route.path,
-  (newPath) => {
-    if (newPath === '/like') {
-      getSongs()
-    }
-  }
-)
-
 onMounted(() => {
   getSongs()
 })
 </script>
 
 <template>
-  <div class="spotify-like-page" :style="{ '--gradient-color': dominantColor }">
+  <div class="mr-like-page" :style="{ '--gradient-color': dominantColor }">
     <!-- Header -->
-    <div class="spotify-like-header">
-      <div class="spotify-like-cover">
+    <div class="mr-like-header">
+      <div class="mr-like-cover">
         <img
           :alt="playlist.name"
-          class="spotify-like-cover-img"
+          class="mr-like-cover-img"
           :src="fixUrl(playlist?.coverImgUrl) || coverImg"
         />
       </div>
-      <div class="spotify-like-info">
-        <span class="spotify-like-type">歌单</span>
-        <h1 class="spotify-like-title">{{ playlist?.name }}</h1>
-        <div class="spotify-like-meta">
+      <div class="mr-like-info">
+        <span class="mr-like-type">歌单</span>
+        <h1 class="mr-like-title">{{ playlist?.name }}</h1>
+        <div class="mr-like-meta">
           <span>{{ playlist?.trackCount }} 首歌曲</span>
         </div>
-        <div class="spotify-like-actions">
-          <button @click="handlePlayAll" class="spotify-play-btn">
+        <div class="mr-like-actions">
+          <button @click="handlePlayAll" class="mr-play-btn">
             <Icon icon="mdi:play" class="text-xl" />
             <span>播放</span>
           </button>
-          <div class="spotify-search-wrapper">
-            <Icon icon="mdi:magnify" class="spotify-search-icon" />
+          <div class="mr-search-wrapper">
+            <Icon icon="mdi:magnify" class="mr-search-icon" />
             <input
               v-model="searchKeyword"
               @keyup.enter="handleSearch"
-              class="spotify-search-input"
+              class="mr-search-input"
               placeholder="搜索"
             />
           </div>
@@ -178,14 +121,14 @@ onMounted(() => {
     </div>
 
     <!-- Songs Table -->
-    <div class="spotify-like-content">
+    <div class="mr-like-content">
       <Table :data="songs" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.spotify-like-page {
+.mr-like-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -193,7 +136,7 @@ onMounted(() => {
   background: linear-gradient(180deg, var(--gradient-color, #1e3a5f) 0%, var(--bg-surface, #121212) 300px);
 }
 
-.spotify-like-header {
+.mr-like-header {
   display: flex;
   align-items: flex-end;
   gap: 24px;
@@ -201,21 +144,21 @@ onMounted(() => {
   padding-top: 48px;
 }
 
-.spotify-like-cover {
+.mr-like-cover {
   width: 232px;
   height: 232px;
   flex-shrink: 0;
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
 }
 
-.spotify-like-cover-img {
+.mr-like-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.spotify-like-info {
+.mr-like-info {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -223,7 +166,7 @@ onMounted(() => {
   min-width: 0;
 }
 
-.spotify-like-type {
+.mr-like-type {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -232,7 +175,7 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
-.spotify-like-title {
+.mr-like-title {
   font-size: 3rem;
   font-weight: 900;
   color: var(--text-base, #fff);
@@ -240,26 +183,26 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-.spotify-like-meta {
+.mr-like-meta {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
   margin-bottom: 24px;
 }
 
-.spotify-like-actions {
+.mr-like-actions {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.spotify-play-btn {
+.mr-play-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   height: 48px;
   padding: 0 32px;
-  background-color: #1db954;
+  background-color: var(--mr-accent);
   border: none;
   border-radius: 500px;
   color: #000;
@@ -269,21 +212,21 @@ onMounted(() => {
   transition: transform 33ms ease, background-color 200ms ease;
 }
 
-.spotify-play-btn:hover {
+.mr-play-btn:hover {
   transform: scale(1.04);
-  background-color: #1ed760;
+  background-color: var(--mr-accent-hover);
 }
 
-.spotify-play-btn:active {
+.mr-play-btn:active {
   transform: scale(1);
 }
 
-.spotify-search-wrapper {
+.mr-search-wrapper {
   position: relative;
   width: 200px;
 }
 
-.spotify-search-icon {
+.mr-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -293,7 +236,7 @@ onMounted(() => {
   pointer-events: none;
 }
 
-.spotify-search-input {
+.mr-search-input {
   width: 100%;
   padding: 10px 12px 10px 44px;
   background-color: var(--bg-input, #242424);
@@ -305,27 +248,27 @@ onMounted(() => {
   transition: box-shadow 200ms ease, background-color 200ms ease;
 }
 
-.spotify-search-input::placeholder {
+.mr-search-input::placeholder {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-search-input:hover {
+.mr-search-input:hover {
   box-shadow: 0 0 0 1px var(--border-hover, #535353);
 }
 
-.spotify-search-input:focus {
+.mr-search-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--border-focus, #fff);
 }
 
-.spotify-like-content {
+.mr-like-content {
   flex: 1;
   min-height: 0;
   padding: 0 24px 24px;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-like-page {
+:root:not(.dark) .mr-like-page {
   --bg-surface: #f0f0f0;
   --bg-input: #e8e8e8;
   --text-base: #000000;
@@ -335,43 +278,43 @@ onMounted(() => {
   --gradient-color: #e8f4f8;
 }
 
-:root:not(.dark) .spotify-like-cover {
+:root:not(.dark) .mr-like-cover {
   box-shadow: 0 4px 60px rgba(0, 0, 0, 0.15);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .spotify-like-page {
-    padding-bottom: 80px;
+  .mr-like-page {
+    padding-bottom: 140px;
   }
   
-  .spotify-like-header {
+  .mr-like-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
     padding: 24px 16px;
   }
   
-  .spotify-like-cover {
+  .mr-like-cover {
     width: 180px;
     height: 180px;
   }
   
-  .spotify-like-title {
+  .mr-like-title {
     font-size: 1.75rem;
   }
   
-  .spotify-like-actions {
+  .mr-like-actions {
     flex-direction: column;
     width: 100%;
   }
   
-  .spotify-search-wrapper {
+  .mr-search-wrapper {
     width: 100%;
     max-width: 300px;
   }
   
-  .spotify-like-content {
+  .mr-like-content {
     padding: 0 16px 16px;
   }
 }

@@ -57,8 +57,6 @@ export function useUser(tableRef: Ref) {
   const avatarInfo = ref();
   const switchLoadMap = ref({});
   const { switchStyle } = usePublicHooks();
-  const treeData = ref([]);
-  const treeLoading = ref(true);
   const selectedNum = ref(0);
   const pagination = reactive<PaginationProps>({
     total: 0,
@@ -173,17 +171,12 @@ export function useUser(tableRef: Ref) {
 
   function onChange(row, index, newValue) {
     ElMessageBox.confirm(
-      `确认要<strong>${
-        newValue === 1 ? "禁用" : "启用"
-      }</strong><strong style='color:var(--el-color-primary)'> ${
-        row.username
-      } </strong>用户吗?`,
+      `确认要${newValue === 1 ? "禁用" : "启用"} ${row.username} 用户吗?`,
       "系统提示",
       {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-        dangerouslyUseHTMLString: true,
         draggable: true
       }
     )
@@ -225,7 +218,7 @@ export function useUser(tableRef: Ref) {
   }
 
   function handleUpdate(row) {
-    console.log(row);
+    openDialog("修改", row);
   }
 
   function handleDelete(row) {
@@ -320,11 +313,9 @@ export function useUser(tableRef: Ref) {
     } catch (error) {
       console.error("请求失败：", error);
       message("会话过期，请重新登录", { type: "error" });
-    }
-
-    setTimeout(() => {
+    } finally {
       loading.value = false;
-    }, 500);
+    }
   }
 
   const resetForm = formEl => {
@@ -405,7 +396,6 @@ export function useUser(tableRef: Ref) {
           onCropper: info => (avatarInfo.value = info)
         }),
       beforeSure: done => {
-        console.log("裁剪后的图片信息：", avatarInfo.value);
         // 根据实际业务使用avatarInfo.value和row里的某些字段去调用上传头像接口即可
         done(); // 关闭弹框
         onSearch(); // 刷新表格数据
@@ -484,7 +474,6 @@ export function useUser(tableRef: Ref) {
             message(`已成功重置 ${row.username} 用户的密码`, {
               type: "success"
             });
-            console.log(pwdForm.newPwd);
             // 根据实际业务使用pwdForm.newPwd和row里的某些字段去调用重置用户密码接口即可
             done(); // 关闭弹框
             onSearch(); // 刷新表格数据
@@ -503,8 +492,6 @@ export function useUser(tableRef: Ref) {
     loading,
     columns,
     dataList,
-    treeData,
-    treeLoading,
     selectedNum,
     pagination,
     buttonClass,

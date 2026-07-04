@@ -12,30 +12,41 @@ const props = defineProps({
   },
   theme: {
     type: String,
-    default: '#7E22CE',
+    default: '',
   },
 })
 
-const artRef = ref()
-
-const option: Artplayer['Option'] = {
-  container: '.artplayer-app',
-  url: '',
-  autoSize: true,
-  poster: props.poster,
-  theme: props.theme,
-  flip: true,
-  setting: true,
-  playbackRate: true,
-  aspectRatio: true,
-  screenshot: true,
-  hotkey: true,
-}
+const artRef = ref<HTMLElement>()
 
 const art = ref<Artplayer>()
 
+const resolveTheme = (): string => {
+  if (props.theme) return props.theme
+  const cssVar = getComputedStyle(document.documentElement)
+    .getPropertyValue('--mr-accent')
+    .trim()
+  return cssVar || 'var(--mr-accent)'
+}
+
 onMounted(() => {
-  art.value = new Artplayer(option)
+  if (!artRef.value) return
+  art.value = new Artplayer({
+    container: artRef.value as HTMLDivElement,
+    url: '',
+    autoSize: true,
+    poster: props.poster,
+    theme: resolveTheme(),
+    flip: true,
+    setting: true,
+    playbackRate: true,
+    aspectRatio: true,
+    screenshot: true,
+    hotkey: true,
+  })
+})
+
+onUnmounted(() => {
+  art.value?.destroy(false)
 })
 
 watch(

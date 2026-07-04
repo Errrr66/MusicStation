@@ -214,15 +214,27 @@ watch(
   }
 )
 
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    stopAnimation()
+    stopFlipTimer()
+  } else {
+    startAnimation()
+    startFlipTimer()
+  }
+}
+
 onMounted(() => {
   render()
   startAnimation()
   startFlipTimer()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   stopAnimation()
   stopFlipTimer()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 defineExpose({

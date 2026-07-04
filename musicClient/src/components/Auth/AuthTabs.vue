@@ -35,15 +35,15 @@ const handleSwitchTab = (tab: string) => {
     v-model="dialogVisible"
     :show-close="false"
     width="340px"
-    class="spotify-auth-dialog"
+    class="mr-auth-dialog"
     @close="handleClose"
     >
-    <div class="spotify-auth-container">
-      <h2 class="spotify-auth-title">
+    <div class="mr-auth-container">
+      <h2 class="mr-auth-title">
         {{ activeTab === 'login' ? '登录' : activeTab === 'register' ? '注册' : '重置密码' }}
       </h2>
 
-      <div class="spotify-auth-content">
+      <div class="mr-auth-content">
         <Transition name="fade" mode="out-in">
           <LoginForm
             v-if="activeTab === 'login'"
@@ -66,7 +66,7 @@ const handleSwitchTab = (tab: string) => {
         </Transition>
       </div>
 
-      <button class="spotify-auth-close" @click="dialogVisible = false">
+      <button class="mr-auth-close" @click="dialogVisible = false">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
           <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/>
         </svg>
@@ -76,7 +76,7 @@ const handleSwitchTab = (tab: string) => {
 </template>
 
 <style scoped>
-.spotify-auth-dialog :deep(.el-dialog) {
+.mr-auth-dialog :deep(.el-dialog) {
   background-color: #282828;
   border-radius: 8px;
   overflow: hidden;
@@ -84,20 +84,20 @@ const handleSwitchTab = (tab: string) => {
   width: 170px !important;
 }
 
-.spotify-auth-dialog :deep(.el-dialog__header) {
+.mr-auth-dialog :deep(.el-dialog__header) {
   display: none;
 }
 
-.spotify-auth-dialog :deep(.el-dialog__body) {
+.mr-auth-dialog :deep(.el-dialog__body) {
   padding: 0;
 }
 
-.spotify-auth-container {
+.mr-auth-container {
   padding: 24px;
   position: relative;
 }
 
-.spotify-auth-title {
+.mr-auth-title {
   font-size: 1.25rem;
   font-weight: 700;
   color: #fff;
@@ -105,11 +105,11 @@ const handleSwitchTab = (tab: string) => {
   text-align: center;
 }
 
-.spotify-auth-content {
+.mr-auth-content {
   width: 100%;
 }
 
-.spotify-auth-close {
+.mr-auth-close {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -126,7 +126,7 @@ const handleSwitchTab = (tab: string) => {
   transition: color 200ms ease;
 }
 
-.spotify-auth-close:hover {
+.mr-auth-close:hover {
   color: #fff;
 }
 
@@ -141,25 +141,25 @@ const handleSwitchTab = (tab: string) => {
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-auth-dialog :deep(.el-dialog) {
+:root:not(.dark) .mr-auth-dialog :deep(.el-dialog) {
   background-color: #fff;
 }
 
-:root:not(.dark) .spotify-auth-title {
+:root:not(.dark) .mr-auth-title {
   color: #000;
 }
 
-:root:not(.dark) .spotify-auth-close {
+:root:not(.dark) .mr-auth-close {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-auth-close:hover {
+:root:not(.dark) .mr-auth-close:hover {
   color: #000;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .spotify-auth-dialog :deep(.el-dialog) {
+  .mr-auth-dialog :deep(.el-dialog) {
     width: 100% !important;
     max-width: 100% !important;
     border-radius: 0;
@@ -167,11 +167,11 @@ const handleSwitchTab = (tab: string) => {
     min-height: 100vh;
   }
   
-  .spotify-auth-container {
+  .mr-auth-container {
     padding: 20px;
   }
   
-  .spotify-auth-title {
+  .mr-auth-title {
     font-size: 1.125rem;
     margin-bottom: 16px;
   }

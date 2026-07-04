@@ -103,7 +103,8 @@ export const AudioPlayer = () => {
         )
         break
       case 'single':
-        audioElement.value!.currentTime = 0
+        if (!audioElement.value) return
+        audioElement.value.currentTime = 0
         break
       case 'order':
       default:
@@ -134,7 +135,8 @@ export const AudioPlayer = () => {
         )
         break
       case 'single':
-        audioElement.value!.currentTime = 0
+        if (!audioElement.value) return
+        audioElement.value.currentTime = 0
         break
       case 'order':
       default:
@@ -287,7 +289,7 @@ export const AudioPlayer = () => {
     audioElement.value = new Audio()
     audioElement.value.crossOrigin = 'anonymous'
     audioElement.value.src = currentTrack.value.url
-    volume.value = audioStore.volume || 50
+    volume.value = audioStore.volume ?? 50
     audioElement.value.volume = volume.value / 100
     // 歌词是否存在
     // checkLyrics()

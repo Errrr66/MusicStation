@@ -16,6 +16,7 @@ import com.example.music.service.EmailService;
 import com.example.music.service.IUserService;
 import com.example.music.service.MinioService;
 import com.example.music.util.JwtUtil;
+import com.example.music.util.PasswordUtils;
 import com.example.music.util.ThreadLocalUtil;
 import com.example.music.util.TypeConversionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -29,7 +30,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -95,6 +96,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result register(UserRegisterDTO userRegisterDTO) {
         // 删除Redis中的验证码
         stringRedisTemplate.delete("verificationCode:" + userRegisterDTO.getEmail());
@@ -109,9 +111,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.error(MessageConstant.EMAIL + MessageConstant.ALREADY_EXISTS);
         }
 
-        String passwordMD5 = DigestUtils.md5DigestAsHex(userRegisterDTO.getPassword().getBytes());
+        String passwordEncoded = PasswordUtils.encode(userRegisterDTO.getPassword());
         User user = new User();
-        user.setUsername(userRegisterDTO.getUsername()).setPassword(passwordMD5).setEmail(userRegisterDTO.getEmail())
+        user.setUsername(userRegisterDTO.getUsername()).setPassword(passwordEncoded).setEmail(userRegisterDTO.getEmail())
                 .setCreateTime(LocalDateTime.now()).setUpdateTime(LocalDateTime.now())
                 .setUserStatus(UserStatusEnum.ENABLE);
 
@@ -137,7 +139,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.error(MessageConstant.ACCOUNT_LOCKED);
         }
 
-        if (DigestUtils.md5DigestAsHex(userLoginDTO.getPassword().getBytes()).equals(user.getPassword())) {
+        if (PasswordUtils.matches(userLoginDTO.getPassword(), user.getPassword())) {
+            // 兼容旧 MD5 密码：登录成功后迁移到 BCrypt
+            if (PasswordUtils.isLegacyMd5(user.getPassword())) {
+                userMapper.update(new User().setPassword(PasswordUtils.encode(userLoginDTO.getPassword()))
+                        .setUpdateTime(LocalDateTime.now()),
+                        new QueryWrapper<User>().eq("id", user.getUserId()));
+            }
             // 登录成功
             Map<String, Object> claims = new HashMap<>();
             claims.put(JwtClaimsConstant.ROLE, RoleEnum.USER.getRole());
@@ -161,11 +169,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 结果
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<UserVO> userInfo() {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
         Long userId = TypeConversionUtil.toLong(userIdObj);
         User user = userMapper.selectById(userId);
+        if (user == null) {
+            return Result.error(MessageConstant.USER + MessageConstant.NOT_EXIST);
+        }
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
 
@@ -180,6 +192,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result updateUserInfo(UserDTO userDTO) {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
@@ -218,12 +231,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result updateUserAvatar(String avatarUrl) {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
         Long userId = TypeConversionUtil.toLong(userIdObj);
 
         User user = userMapper.selectById(userId);
+        if (user == null) {
+            return Result.error(MessageConstant.USER + MessageConstant.NOT_EXIST);
+        }
         String userAvatar = user.getUserAvatar();
         if (userAvatar != null && !userAvatar.isEmpty()) {
             minioService.deleteFile(userAvatar);
@@ -244,16 +261,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 结果
      */
     @Override
+    @Transactional
     public Result updateUserPassword(UserPasswordDTO userPasswordDTO, String token) {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
         Long userId = TypeConversionUtil.toLong(userIdObj);
         User user = userMapper.selectById(userId);
-        if (!user.getPassword().equals(DigestUtils.md5DigestAsHex(userPasswordDTO.getOldPassword().getBytes()))) {
+        if (user == null) {
+            return Result.error(MessageConstant.USER + MessageConstant.NOT_EXIST);
+        }
+        if (!PasswordUtils.matches(userPasswordDTO.getOldPassword(), user.getPassword())) {
             return Result.error(MessageConstant.OLD_PASSWORD_ERROR);
         }
 
-        if (user.getPassword().equals(DigestUtils.md5DigestAsHex(userPasswordDTO.getNewPassword().getBytes()))) {
+        if (PasswordUtils.matches(userPasswordDTO.getNewPassword(), user.getPassword())) {
             return Result.error(MessageConstant.NEW_PASSWORD_ERROR);
         }
 
@@ -261,7 +282,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.error(MessageConstant.PASSWORD_NOT_MATCH);
         }
 
-        if (userMapper.update(new User().setPassword(DigestUtils.md5DigestAsHex(userPasswordDTO.getNewPassword().getBytes())).setUpdateTime(LocalDateTime.now()),
+        if (userMapper.update(new User().setPassword(PasswordUtils.encode(userPasswordDTO.getNewPassword())).setUpdateTime(LocalDateTime.now()),
                 new QueryWrapper<User>().eq("id", userId)) == 0) {
             return Result.error(MessageConstant.UPDATE + MessageConstant.FAILED);
         }
@@ -279,6 +300,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 结果
      */
     @Override
+    @Transactional
     public Result resetUserPassword(UserResetPasswordDTO userResetPasswordDTO) {
         // 删除Redis中的验证码
         stringRedisTemplate.delete("verificationCode:" + userResetPasswordDTO.getEmail());
@@ -292,7 +314,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.error(MessageConstant.PASSWORD_NOT_MATCH);
         }
 
-        if (userMapper.update(new User().setPassword(DigestUtils.md5DigestAsHex(userResetPasswordDTO.getNewPassword().getBytes())).setUpdateTime(LocalDateTime.now()),
+        if (userMapper.update(new User().setPassword(PasswordUtils.encode(userResetPasswordDTO.getNewPassword())).setUpdateTime(LocalDateTime.now()),
                 new QueryWrapper<User>().eq("id", user.getUserId())) == 0) {
             return Result.error(MessageConstant.PASSWORD + MessageConstant.RESET + MessageConstant.FAILED);
         }
@@ -325,6 +347,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result deleteAccount() {
         Map<String, Object> map = ThreadLocalUtil.get();
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
@@ -355,6 +378,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @return 用户数量
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Long> getAllUsersCount() {
         return Result.success(userMapper.selectCount(new QueryWrapper<>()));
     }
@@ -367,6 +391,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @Cacheable(key = "#userSearchDTO.pageNum + '-' + #userSearchDTO.pageSize + '-' + #userSearchDTO.username + '-' + #userSearchDTO.phone + '-' + #userSearchDTO.userStatus")
+    @Transactional(readOnly = true)
     public Result<PageResult<UserManagementVO>> getAllUsers(UserSearchDTO userSearchDTO) {
         // 分页查询
         Page<User> page = new Page<>(userSearchDTO.getPageNum(), userSearchDTO.getPageSize());
@@ -409,6 +434,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result addUser(UserAddDTO userAddDTO) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", userAddDTO.getUsername())
@@ -432,9 +458,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             }
         }
 
-        String passwordMD5 = DigestUtils.md5DigestAsHex(userAddDTO.getPassword().getBytes());
+        String passwordEncoded = PasswordUtils.encode(userAddDTO.getPassword());
         User user = new User();
-        user.setUsername(userAddDTO.getUsername()).setPassword(passwordMD5).setPhone(userAddDTO.getPhone())
+        user.setUsername(userAddDTO.getUsername()).setPassword(passwordEncoded).setPhone(userAddDTO.getPhone())
                 .setEmail(userAddDTO.getEmail()).setIntroduction(userAddDTO.getIntroduction())
                 .setCreateTime(LocalDateTime.now()).setUpdateTime(LocalDateTime.now());
 
@@ -459,6 +485,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result updateUser(UserDTO userDTO) {
         Long userId = userDTO.getUserId();
 
@@ -496,6 +523,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result updateUserStatus(Long userId, Integer userStatus) {
         // 确保用户状态有效
         UserStatusEnum statusEnum;
@@ -526,6 +554,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result deleteUser(Long userId) {
         if (userMapper.deleteById(userId) == 0) {
             return Result.error(MessageConstant.DELETE + MessageConstant.FAILED);
@@ -541,6 +570,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
+    @Transactional
     public Result deleteUsers(List<Long> userIds) {
         if (userMapper.deleteByIds(userIds) == 0) {
             return Result.error(MessageConstant.DELETE + MessageConstant.FAILED);

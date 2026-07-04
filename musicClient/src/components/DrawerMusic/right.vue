@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { SongDetail } from '@/api/interface'
 import { ref, inject, type Ref, computed, watch } from 'vue'
+
+const injectedActiveTab = inject<Ref<'lyric' | 'comment'>>('activeRightTab')
+const closeDrawer = inject<() => void>('closeDrawer')
+const goBackToLeft = inject<() => void>('goBackToLeft')
 import { formatNumber, fixUrl } from '@/utils'
 import coverImg from '@/assets/cover.png'
 import { likeComment, addSongComment, getSongDetail, deleteComment } from '@/api/system'
@@ -8,16 +12,14 @@ import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { Icon } from '@iconify/vue'
-import { MenuStore } from '@/stores/modules/menu'
 
 const router = useRouter()
-const menuStore = MenuStore()
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
 const userStore = UserStore()
 const { currentTime, seek } = useAudioPlayer()
 
-const activeTab = ref<'lyric' | 'comment'>('lyric')
+const activeTab = injectedActiveTab || ref<'lyric' | 'comment'>('lyric')
 const lyricContainerRef = ref<HTMLElement | null>(null)
 
 // 歌词解析
@@ -65,7 +67,7 @@ const currentLyricIndex = computed(() => {
 watch(currentLyricIndex, (newIndex) => {
   if (newIndex > -1 && lyricContainerRef.value && activeTab.value === 'lyric') {
     const container = lyricContainerRef.value
-    const lyricItems = container.querySelectorAll('.spotify-lyric-line')
+    const lyricItems = container.querySelectorAll('.mr-lyric-line')
     const targetItem = lyricItems[newIndex] as HTMLElement
     
     if (targetItem && container) {
@@ -109,10 +111,18 @@ const handleComment = async () => {
     return
   }
 
-  try {
-    const songId = songDetail.value?.songId
-    if (!songId) return
+  if (commentContent.value.trim().length > maxLength) {
+    ElMessage.warning(`评论内容不能超过 ${maxLength} 字`)
+    return
+  }
 
+  const songId = songDetail.value?.songId
+  if (!songId) {
+    ElMessage.warning('歌曲信息未加载完成，请稍后再试')
+    return
+  }
+
+  try {
     const content = commentContent.value.trim()
     const res = await addSongComment({
       songId,
@@ -128,10 +138,10 @@ const handleComment = async () => {
         songDetail.value = detailRes.data as unknown as SongDetail
       }
     } else {
-      ElMessage.error('评论发布失败')
+      ElMessage.error(res.message || '评论发布失败')
     }
-  } catch (error) {
-    ElMessage.error('评论发布失败')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '评论发布失败，请检查网络连接')
   }
 }
 
@@ -145,13 +155,13 @@ const formatDate = (date: string) => {
 
 const goUserProfile = (userId?: number) => {
   if (!userId) return
-  menuStore.setSongDrawerOpen(false)
+  closeDrawer?.()
   router.push(`/profile/${userId}`)
 }
 
 const shareCurrentSong = () => {
   if (!songDetail.value?.songId) return
-  menuStore.setSongDrawerOpen(false)
+  closeDrawer?.()
   router.push({
     path: '/messages',
     query: {
@@ -221,59 +231,69 @@ const handleDelete = async (comment: any) => {
 </script>
 
 <template>
-  <div class="spotify-lyrics-comments">
+  <div class="mr-lyrics-comments">
     <!-- Tab Switcher -->
-    <div class="spotify-tabs">
+    <div class="mr-tabs">
       <button
-        class="spotify-tab"
-        :class="{ 'spotify-tab-active': activeTab === 'lyric' }"
-        @click="activeTab = 'lyric'"
+        class="mr-tab-back"
+        @click="goBackToLeft?.()"
+        aria-label="返回播放器"
       >
-        歌词
+        <Icon icon="mdi:chevron-left" />
       </button>
-      <button
-        class="spotify-tab"
-        :class="{ 'spotify-tab-active': activeTab === 'comment' }"
-        @click="activeTab = 'comment'"
-      >
-        评论
-      </button>
+      <div class="mr-tab-group">
+        <button
+          class="mr-tab"
+          :class="{ 'mr-tab-active': activeTab === 'lyric' }"
+          @click="activeTab = 'lyric'"
+        >
+          歌词
+        </button>
+        <button
+          class="mr-tab"
+          :class="{ 'mr-tab-active': activeTab === 'comment' }"
+          @click="activeTab = 'comment'"
+        >
+          评论
+        </button>
+      </div>
+      <div class="mr-tab-spacer"></div>
     </div>
 
     <!-- Lyrics View -->
-    <div v-show="activeTab === 'lyric'" class="spotify-lyrics-view" ref="lyricContainerRef">
-      <div v-if="parsedLyrics.length > 0" class="spotify-lyrics-content">
+    <div v-show="activeTab === 'lyric'" class="mr-lyrics-view" ref="lyricContainerRef">
+      <div v-if="parsedLyrics.length > 0" class="mr-lyrics-content">
         <p
           v-for="(line, index) in parsedLyrics"
           :key="index"
-          class="spotify-lyric-line"
-          :class="{ 'spotify-lyric-active': index === currentLyricIndex }"
+          class="mr-lyric-line"
+          :class="{ 'mr-lyric-active': index === currentLyricIndex }"
           @click="seek(line.time)"
         >
           {{ line.text }}
         </p>
       </div>
-      <div v-else class="spotify-empty">
+      <div v-else class="mr-empty">
         <Icon icon="mdi:music-note-outline" class="text-4xl mb-4 opacity-50" />
         <p>暂无歌词</p>
       </div>
     </div>
 
     <!-- Comments View -->
-    <div v-show="activeTab === 'comment'" class="spotify-comments-view">
-      <div v-if="songDetail" class="spotify-comments-content">
+    <div v-show="activeTab === 'comment'" class="mr-comments-view">
+      <div v-if="songDetail" class="mr-comments-content">
         <!-- Song Info -->
-        <div class="spotify-song-info">
-          <div class="spotify-info-item">
-            <span class="spotify-info-label">专辑</span>
-            <span class="spotify-info-value">{{ songDetail.album }}</span>
+        <div class="mr-song-info">
+          <div class="mr-info-item">
+            <span class="mr-info-label">专辑</span>
+            <span class="mr-info-value">{{ songDetail.album }}</span>
           </div>
-          <div class="spotify-info-item">
-            <span class="spotify-info-label">发行时间</span>
-            <span class="spotify-info-value">{{ formatDate(songDetail.releaseTime) }}</span>
+          <div class="mr-info-item">
+            <span class="mr-info-label">发行时间</span>
+            <span class="mr-info-value">{{ formatDate(songDetail.releaseTime) }}</span>
           </div>
-          <div class="spotify-info-item">
-            <button class="spotify-share-btn" @click="shareCurrentSong">
+          <div class="mr-info-item">
+            <button class="mr-share-btn" @click="shareCurrentSong">
               <Icon icon="mdi:share-variant-outline" />
               <span>分享歌曲给好友</span>
             </button>
@@ -281,35 +301,35 @@ const handleDelete = async (comment: any) => {
         </div>
 
         <!-- Comments List -->
-        <div class="spotify-comments-list">
-          <h3 class="spotify-comments-title">
+        <div class="mr-comments-list">
+          <h3 class="mr-comments-title">
             评论（{{ formatNumber(songDetail.comments?.length || 0) }}）
           </h3>
 
-          <div v-if="comments.length > 0" class="spotify-comments-items">
-            <div v-for="comment in comments" :key="comment.commentId" class="spotify-comment-item">
+          <div v-if="comments.length > 0" class="mr-comments-items">
+            <div v-for="comment in comments" :key="comment.commentId" class="mr-comment-item">
               <img
                 :src="fixUrl(comment.userAvatar) || coverImg"
                 alt="avatar"
-                class="spotify-comment-avatar"
+                class="mr-comment-avatar"
                 @click="goUserProfile(comment.userId)"
               />
-              <div class="spotify-comment-body">
-                <div class="spotify-comment-header">
-                  <span class="spotify-comment-username" @click="goUserProfile(comment.userId)">{{ comment.username }}</span>
-                  <span class="spotify-comment-time">{{ comment.createTime }}</span>
+              <div class="mr-comment-body">
+                <div class="mr-comment-header">
+                  <span class="mr-comment-username" @click="goUserProfile(comment.userId)">{{ comment.username }}</span>
+                  <span class="mr-comment-time">{{ comment.createTime }}</span>
                 </div>
-                <p class="spotify-comment-text">{{ comment.content }}</p>
-                <div class="spotify-comment-actions">
+                <p class="mr-comment-text">{{ comment.content }}</p>
+                <div class="mr-comment-actions">
                   <button
                     v-if="comment.username === currentUsername"
-                    class="spotify-comment-action"
+                    class="mr-comment-action"
                     @click="handleDelete(comment)"
                   >
                     <Icon icon="mdi:delete-outline" />
                     <span>删除</span>
                   </button>
-                  <button class="spotify-comment-action" @click="handleLike(comment)">
+                  <button class="mr-comment-action" @click="handleLike(comment)">
                     <Icon icon="mdi:thumb-up-outline" />
                     <span>{{ formatNumber(comment.likeCount) || '0' }}</span>
                   </button>
@@ -317,19 +337,20 @@ const handleDelete = async (comment: any) => {
               </div>
             </div>
           </div>
-          <div v-else class="spotify-empty spotify-empty-small">
+          <div v-else class="mr-empty mr-empty-small">
             <p>暂无评论，快来抢沙发吧~</p>
           </div>
         </div>
+
       </div>
-      <div v-else class="spotify-empty">
+      <div v-else class="mr-empty">
         <p>暂无歌曲信息</p>
       </div>
 
       <!-- Comment Input -->
-      <div class="spotify-comment-input">
-        <div class="spotify-input-wrapper">
-          <Icon icon="mdi:message-outline" class="spotify-input-icon" />
+      <div class="mr-comment-input">
+        <div class="mr-input-wrapper">
+          <Icon icon="mdi:message-outline" class="mr-input-icon" />
           <el-input
             v-model="commentContent"
             type="textarea"
@@ -338,16 +359,16 @@ const handleDelete = async (comment: any) => {
             :maxlength="maxLength"
             placeholder="说点什么..."
             resize="none"
-            class="spotify-input"
+            class="mr-input"
           />
-          <span class="spotify-char-count">{{ commentContent.length }}/{{ maxLength }}</span>
+          <span class="mr-char-count">{{ commentContent.length }}/{{ maxLength }}</span>
         </div>
         <button
           @click="handleComment"
           :disabled="!commentContent.trim()"
-          class="spotify-submit-btn"
+          class="mr-submit-btn"
         >
-          <Icon icon="mdi:send" class="spotify-submit-icon" />
+          <Icon icon="mdi:send" class="mr-submit-icon" />
         </button>
       </div>
     </div>
@@ -355,23 +376,56 @@ const handleDelete = async (comment: any) => {
 </template>
 
 <style scoped>
-.spotify-lyrics-comments {
+.mr-lyrics-comments {
   height: 100%;
   display: flex;
   flex-direction: column;
   padding: 16px;
   overflow: hidden;
+  position: relative;
 }
 
-.spotify-tabs {
+.mr-tabs {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 24px;
   flex-shrink: 0;
 }
 
-.spotify-tab {
+.mr-tab-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: color 200ms ease, background-color 200ms ease;
+  flex-shrink: 0;
+}
+
+.mr-tab-back:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mr-tab-group {
+  display: flex;
+  gap: 8px;
+}
+
+.mr-tab-spacer {
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.mr-tab {
   padding: 8px 24px;
   background: transparent;
   border: none;
@@ -383,16 +437,16 @@ const handleDelete = async (comment: any) => {
   transition: all 200ms ease;
 }
 
-.spotify-tab:hover {
+.mr-tab:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.spotify-tab-active {
+.mr-tab-active {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.spotify-lyrics-view {
+.mr-lyrics-view {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -402,11 +456,11 @@ const handleDelete = async (comment: any) => {
   -ms-overflow-style: none;
 }
 
-.spotify-lyrics-view::-webkit-scrollbar {
+.mr-lyrics-view::-webkit-scrollbar {
   display: none;
 }
 
-.spotify-lyrics-content {
+.mr-lyrics-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -414,7 +468,7 @@ const handleDelete = async (comment: any) => {
   gap: 16px;
 }
 
-.spotify-lyric-line {
+.mr-lyric-line {
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
   font-size: 1rem;
@@ -425,19 +479,19 @@ const handleDelete = async (comment: any) => {
   border-radius: 4px;
 }
 
-.spotify-lyric-line:hover {
+.mr-lyric-line:hover {
   color: rgba(255, 255, 255, 0.8);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.spotify-lyric-active {
+.mr-lyric-active {
   color: #fff;
   font-size: 1.25rem;
   font-weight: 700;
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
 
-.spotify-comments-view {
+.mr-comments-view {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -445,7 +499,7 @@ const handleDelete = async (comment: any) => {
   min-height: 0;
 }
 
-.spotify-comments-content {
+.mr-comments-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -454,16 +508,16 @@ const handleDelete = async (comment: any) => {
   -ms-overflow-style: none;
 }
 
-.spotify-comments-content::-webkit-scrollbar {
+.mr-comments-content::-webkit-scrollbar {
   width: 4px;
 }
 
-.spotify-comments-content::-webkit-scrollbar-thumb {
+.mr-comments-content::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
 }
 
-.spotify-song-info {
+.mr-song-info {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
@@ -473,61 +527,61 @@ const handleDelete = async (comment: any) => {
   margin-bottom: 24px;
 }
 
-.spotify-info-item {
+.mr-info-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.spotify-info-label {
+.mr-info-label {
   font-size: 0.6875rem;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.spotify-info-value {
+.mr-info-value {
   font-size: 0.875rem;
   color: #fff;
   font-weight: 500;
 }
 
-.spotify-share-btn {
+.mr-share-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(29, 185, 84, 0.7);
+  border: 1px solid color-mix(in srgb, var(--text-base, #fff) 70%, transparent);
   background: transparent;
-  color: #1db954;
+  color: var(--mr-accent);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 0.75rem;
   cursor: pointer;
 }
 
-.spotify-comments-list {
+.mr-comments-list {
   flex: 1;
 }
 
-.spotify-comments-title {
+.mr-comments-title {
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 16px;
 }
 
-.spotify-comments-items {
+.mr-comments-items {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.spotify-comment-item {
+.mr-comment-item {
   display: flex;
   gap: 12px;
 }
 
-.spotify-comment-avatar {
+.mr-comment-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -536,38 +590,38 @@ const handleDelete = async (comment: any) => {
   cursor: pointer;
 }
 
-.spotify-comment-body {
+.mr-comment-body {
   flex: 1;
   min-width: 0;
 }
 
-.spotify-comment-header {
+.mr-comment-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
 }
 
-.spotify-comment-username {
+.mr-comment-username {
   font-size: 0.8125rem;
   font-weight: 600;
   color: #fff;
   cursor: pointer;
 }
 
-.spotify-comment-time {
+.mr-comment-time {
   font-size: 0.6875rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
-.spotify-comment-text {
+.mr-comment-text {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.5;
   margin-bottom: 8px;
 }
 
-.spotify-comment-actions {
+.mr-comment-actions {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -575,11 +629,11 @@ const handleDelete = async (comment: any) => {
   transition: opacity 200ms ease;
 }
 
-.spotify-comment-item:hover .spotify-comment-actions {
+.mr-comment-item:hover .mr-comment-actions {
   opacity: 1;
 }
 
-.spotify-comment-action {
+.mr-comment-action {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -591,11 +645,11 @@ const handleDelete = async (comment: any) => {
   transition: color 200ms ease;
 }
 
-.spotify-comment-action:hover {
+.mr-comment-action:hover {
   color: #fff;
 }
 
-.spotify-empty {
+.mr-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -605,12 +659,12 @@ const handleDelete = async (comment: any) => {
   font-size: 0.875rem;
 }
 
-.spotify-empty-small {
+.mr-empty-small {
   height: auto;
   padding: 32px 0;
 }
 
-.spotify-comment-input {
+.mr-comment-input {
   display: flex;
   align-items: flex-end;
   gap: 12px;
@@ -622,7 +676,7 @@ const handleDelete = async (comment: any) => {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.spotify-input-wrapper {
+.mr-input-wrapper {
   flex: 1;
   position: relative;
   display: flex;
@@ -630,22 +684,22 @@ const handleDelete = async (comment: any) => {
   gap: 8px;
 }
 
-.spotify-input-icon {
+.mr-input-icon {
   font-size: 1.25rem;
   color: rgba(255, 255, 255, 0.5);
   margin-bottom: 8px;
   flex-shrink: 0;
 }
 
-.spotify-input {
+.mr-input {
   flex: 1;
 }
 
-.spotify-input.el-textarea {
+.mr-input.el-textarea {
   background: transparent !important;
 }
 
-.spotify-input.el-textarea :deep(.el-textarea__inner) {
+.mr-input.el-textarea :deep(.el-textarea__inner) {
   background: transparent !important;
   border: none !important;
   border-radius: 12px;
@@ -656,15 +710,15 @@ const handleDelete = async (comment: any) => {
   line-height: 1.5;
 }
 
-.spotify-input.el-textarea :deep(.el-textarea__inner::placeholder) {
+.mr-input.el-textarea :deep(.el-textarea__inner::placeholder) {
   color: rgba(255, 255, 255, 0.4) !important;
 }
 
-.spotify-input.el-textarea :deep(.el-textarea__inner:focus) {
+.mr-input.el-textarea :deep(.el-textarea__inner:focus) {
   background: transparent !important;
 }
 
-.spotify-char-count {
+.mr-char-count {
   font-size: 0.6875rem;
   color: rgba(255, 255, 255, 0.4);
   margin-bottom: 8px;
@@ -673,13 +727,13 @@ const handleDelete = async (comment: any) => {
   text-align: right;
 }
 
-.spotify-submit-btn {
+.mr-submit-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: #1db954;
+  background: var(--mr-accent);
   border: none;
   border-radius: 50%;
   color: #000;
@@ -688,34 +742,36 @@ const handleDelete = async (comment: any) => {
   flex-shrink: 0;
 }
 
-.spotify-submit-btn:hover:not(:disabled) {
+.mr-submit-btn:hover:not(:disabled) {
   transform: scale(1.06);
-  background: #1ed760;
+  background: var(--mr-accent-hover);
 }
 
-.spotify-submit-btn:disabled {
+.mr-submit-btn:disabled {
   background: #535353;
   color: #b3b3b3;
   cursor: not-allowed;
 }
 
-.spotify-submit-icon {
+.mr-submit-icon {
   font-size: 1.25rem;
 }
 
 @media (min-width: 768px) {
-  .spotify-lyrics-comments {
+  .mr-lyrics-comments {
     padding: 24px;
   }
-  
-  .spotify-lyric-line {
+
+  .mr-lyric-line {
     font-size: 1.125rem;
   }
-  
-  .spotify-lyric-active {
+
+  .mr-lyric-active {
     font-size: 1.5rem;
   }
 }
+
+
 </style>
 
 <style>

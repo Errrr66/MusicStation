@@ -24,8 +24,17 @@ import { imageToColorFrame, createAnimatedFrames, type ColorFrame, type Animatio
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { AudioStore } from '@/stores/modules/audio'
 import defaultAlbum from '@/assets/default_album.jpg'
+import songCoverFallback from '@/assets/song.jpg'
+import coverImg from '@/assets/cover.png'
 
-type TimelineMessage = ChatMessage & { agentData?: AgentChatResponse; pending?: boolean }
+// 集中管理 public 目录下的静态资源路径，避免在模板中硬编码
+const AI_AVATAR_CONGYU = '/congyu.png'
+const AI_AVATAR_THINKING = '/thinking.png'
+
+type TimelineMessage = ChatMessage & { id: number; agentData?: AgentChatResponse; pending?: boolean }
+
+// 消息唯一 id 计数器，用作 v-for key，避免用 index 导致的关键状态错乱
+let messageIdCounter = 0
 
 const messages = ref<TimelineMessage[]>([])
 const inputMessage = ref('')
@@ -158,7 +167,7 @@ function updateAnimationMode() {
 
 const sampleAnalyserVolume = (analyser: AnalyserNode | null, dataArray: Uint8Array | null, channel: 'input' | 'output') => {
   if (!analyser || !dataArray) return 0
-  analyser.getByteTimeDomainData(dataArray)
+  analyser.getByteTimeDomainData(dataArray as Uint8Array<ArrayBuffer>)
   let sum = 0
   for (let i = 0; i < dataArray.length; i++) {
     const normalized = (dataArray[i] - 128) / 128
@@ -347,7 +356,7 @@ onMounted(async () => {
   initLiveSpeech()
   await refreshChatHealth()
   try {
-    const colorFrame = await imageToColorFrame('/thinking.png', 45, 54)
+    const colorFrame = await imageToColorFrame(AI_AVATAR_THINKING, 45, 54)
     colorFrameRef.value = colorFrame
     matrixFrames.value = createAnimatedFrames(colorFrame, animationModes[0], 12)
     modeTimerId.value = window.setInterval(() => {
@@ -462,6 +471,7 @@ const runAgentRequest = async (
 
   try {
     let streamDone = false
+    let streamHadError = false
     await sendAgentMessageStream(payload, {
       onDelta: (chunk) => {
         if (streamState.value !== 'streaming') {
@@ -501,6 +511,7 @@ const runAgentRequest = async (
         }
       },
       onError: (message) => {
+        streamHadError = true
         streamState.value = 'error'
         ElMessage.error(message || '流式响应失败')
       },
@@ -508,7 +519,8 @@ const runAgentRequest = async (
       signal: streamAbortController.value?.signal,
     })
 
-    if (!streamDone) {
+    // 仅在流式出错时回退到非流式接口；流式正常结束但未收到 done 事件时不再自动回退
+    if (streamHadError && !streamDone) {
       const res = await sendAgentMessage(payload)
       if (res.code === 0 && res.data) {
         streamState.value = 'done'
@@ -555,13 +567,13 @@ const sendByText = async (text: string) => {
   stopCurrentTtsAudio()
 
   const userMsg = text.trim()
-  messages.value.push({ role: 'user', content: userMsg })
+  messages.value.push({ id: ++messageIdCounter, role: 'user', content: userMsg })
   const historyMessages = messages.value.map((item) => ({ role: item.role, content: item.content }))
   inputMessage.value = ''
   scrollToBottom()
 
   const assistantIndex = messages.value.length
-  messages.value.push({ role: 'assistant', content: '', pending: true })
+  messages.value.push({ id: ++messageIdCounter, role: 'assistant', content: '', pending: true })
 
   await runAgentRequest({
     message: userMsg,
@@ -592,7 +604,7 @@ const resumeStreaming = async () => {
   const targetIndex = lastAbortedAssistantIndex.value;
   const assistantIndex = targetIndex != null && messages.value[targetIndex]
     ? targetIndex
-    : messages.value.push({ role: 'assistant', content: '', pending: true }) - 1
+    : messages.value.push({ id: ++messageIdCounter, role: 'assistant', content: '', pending: true }) - 1
 
   messages.value[assistantIndex].content = ''
   messages.value[assistantIndex].agentData = undefined
@@ -873,7 +885,7 @@ const saveGeneratedPlaylist = async (playlist: AgentPlaylistCard, key: string) =
       confirmButtonText: '保存',
       cancelButtonText: '取消',
       closeOnClickModal: false,
-      customClass: 'spotify-save-playlist-dialog',
+      customClass: 'mr-save-playlist-dialog',
       inputValidator: (value) => {
         if (!value || !value.trim()) {
           return '歌单标题不能为空'
@@ -961,139 +973,97 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 </script>
 
 <template>
-  <div class="spotify-chat-page">
-    <div class="spotify-chat-header">
-      <span class="spotify-chat-subtitle">Ciallo～(∠・ω< )⌒★</span>
-      <div class="spotify-health-row">
-        <button class="spotify-health-refresh" :disabled="healthLoading" @click="refreshChatHealth">
-          <Icon icon="mdi:refresh" :class="{ 'spotify-rotating': healthLoading }" />
-          <span>{{ healthLoading ? '检查中' : '健康检查' }}</span>
-        </button>
-        <button class="spotify-health-toggle" @click="healthExpanded = !healthExpanded">
-          <Icon :icon="healthExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'" />
-          <span>{{ healthExpanded ? '收起详情' : '展开详情' }}</span>
-        </button>
-        <span class="spotify-health-chip" :class="chatHealth?.ragEnabled ? 'spotify-health-ok' : 'spotify-health-bad'">
-          RAG {{ chatHealth?.ragEnabled ? 'ON' : 'OFF' }}
-        </span>
-        <span class="spotify-health-chip">模式 {{ chatHealth?.ragMode || '-' }}</span>
-        <span
-          class="spotify-health-chip"
-          :class="chatHealth?.providers?.deepseekConfigured ? 'spotify-health-ok' : 'spotify-health-bad'"
-        >
-          DeepSeek {{ chatHealth?.providers?.deepseekConfigured ? 'OK' : 'MISSING' }}
-        </span>
-        <span
-          class="spotify-health-chip"
-          :class="chatHealth?.providers?.ttsConfigured ? 'spotify-health-ok' : 'spotify-health-bad'"
-        >
-          TTS {{ chatHealth?.providers?.ttsConfigured ? 'OK' : 'MISSING' }}
-        </span>
-        <span class="spotify-health-chip">
-          引用 {{ chatHealth?.ragLastRetrieval?.citationCount ?? 0 }}
-        </span>
-      </div>
-      <div v-if="healthExpanded && chatHealth?.ragLastRetrieval" class="spotify-health-detail">
-        <span>策略: {{ chatHealth.ragLastRetrieval.strategy }}</span>
-        <span>查询: {{ chatHealth.ragLastRetrieval.queryCount }}</span>
-        <span>候选: {{ chatHealth.ragLastRetrieval.candidateCount }}</span>
-        <span>命中: {{ chatHealth.ragLastRetrieval.citationCount }}</span>
-        <span>更新时间: {{ new Date(chatHealth.ragLastRetrieval.updatedAtEpochMs).toLocaleString() }}</span>
-      </div>
-      <div v-if="streamState !== 'idle'" class="spotify-stream-status" :class="`spotify-stream-status-${streamState}`">
-        <span>{{ streamStateTextMap[streamState] || streamState }}</span>
-        <span v-if="streamFirstDeltaMs != null" class="spotify-stream-metric">首字 {{ streamFirstDeltaMs }}ms</span>
-        <span v-if="streamTotalMs != null" class="spotify-stream-metric">总耗时 {{ streamTotalMs }}ms</span>
-      </div>
-      <div v-if="healthError" class="spotify-health-error">{{ healthError }}</div>
+  <div class="mr-chat-page">
+    <div class="mr-chat-header">
+      <span class="mr-chat-subtitle">(∠・ω< )⌒★</span>
     </div>
 
-    <div v-if="viewMode === 'tts'" ref="scrollbarRef" class="spotify-chat-messages">
+    <div v-if="viewMode === 'tts'" ref="scrollbarRef" class="mr-chat-messages">
       <div
         v-for="(msg, index) in messages"
-        :key="index"
+        :key="msg.id"
         v-show="msg.role === 'user' || !msg.pending"
-        class="spotify-message"
-        :class="msg.role === 'user' ? 'spotify-message-user' : 'spotify-message-assistant'"
+        class="mr-message"
+        :class="msg.role === 'user' ? 'mr-message-user' : 'mr-message-assistant'"
       >
         <div
           v-if="msg.role === 'assistant' && ((msg.content && msg.content.trim().length > 0) || msg.agentData)"
-          class="spotify-avatar spotify-avatar-assistant"
+          class="mr-avatar mr-avatar-assistant"
         >
-          <img src="/congyu.png" alt="AI" />
+          <img :src="AI_AVATAR_CONGYU" alt="AI" />
         </div>
-        <div class="spotify-message-content">
+        <div class="mr-message-content">
           <div
             v-if="msg.content && msg.content.trim().length > 0"
-            class="spotify-message-bubble"
-            :class="msg.role === 'user' ? 'spotify-bubble-user' : 'spotify-bubble-assistant'"
+            class="mr-message-bubble"
+            :class="msg.role === 'user' ? 'mr-bubble-user' : 'mr-bubble-assistant'"
           >
             {{ msg.content }}
           </div>
 
-          <div v-if="msg.role === 'assistant' && msg.agentData" class="spotify-agent-panel">
-            <div v-if="msg.agentData.toolTrace?.length" class="spotify-trace-row">
-              <span v-for="(trace, tIndex) in msg.agentData.toolTrace" :key="`${index}-${tIndex}`" class="spotify-trace-chip">
+          <div v-if="msg.role === 'assistant' && msg.agentData" class="mr-agent-panel">
+            <div v-if="msg.agentData.toolTrace?.length" class="mr-trace-row">
+              <span v-for="(trace, tIndex) in msg.agentData.toolTrace" :key="`${msg.id}-${tIndex}`" class="mr-trace-chip">
                 {{ trace.summary }}
               </span>
             </div>
 
-            <div v-if="msg.agentData.songs?.length" class="spotify-agent-section">
-              <div class="spotify-agent-section-title">歌曲结果</div>
-              <div class="spotify-songs-grid">
+            <div v-if="msg.agentData.songs?.length" class="mr-agent-section">
+              <div class="mr-agent-section-title">歌曲结果</div>
+              <div class="mr-songs-grid">
                 <button
                   v-for="(song, songIndex) in msg.agentData.songs"
-                  :key="`${index}-song-${songIndex}`"
-                  class="spotify-song-card"
+                  :key="`${msg.id}-song-${songIndex}`"
+                  class="mr-song-card"
                   @click="playAgentSong(song)"
                 >
-                  <img :src="song.coverUrl || '/song.jpg'" alt="cover" class="spotify-song-cover" />
-                  <div class="spotify-song-meta">
-                    <span class="spotify-song-name">{{ song.songName }}</span>
-                    <span class="spotify-song-artist">{{ song.artistName }}</span>
+                  <img :src="song.coverUrl || songCoverFallback" alt="cover" class="mr-song-cover" />
+                  <div class="mr-song-meta">
+                    <span class="mr-song-name">{{ song.songName }}</span>
+                    <span class="mr-song-artist">{{ song.artistName }}</span>
                   </div>
-                  <Icon icon="mdi:play-circle" class="spotify-song-play" />
+                  <Icon icon="mdi:play-circle" class="mr-song-play" />
                 </button>
               </div>
             </div>
 
-            <div v-if="msg.agentData.playlists?.length" class="spotify-agent-section">
-              <div class="spotify-agent-section-title">歌单建议</div>
-              <div class="spotify-playlist-grid">
+            <div v-if="msg.agentData.playlists?.length" class="mr-agent-section">
+              <div class="mr-agent-section-title">歌单建议</div>
+              <div class="mr-playlist-grid">
                 <div
                   v-for="(playlist, pIndex) in msg.agentData.playlists"
-                  :key="`${index}-playlist-${pIndex}`"
-                  class="spotify-playlist-card"
+                  :key="`${msg.id}-playlist-${pIndex}`"
+                  class="mr-playlist-card"
                 >
-                  <img :src="playlist.coverUrl || '/cover.png'" alt="playlist" class="spotify-playlist-cover" />
-                  <div class="spotify-playlist-meta">
-                    <span class="spotify-playlist-name">{{ playlist.title }}</span>
-                    <span class="spotify-playlist-reason">{{ playlist.reason || 'AI 歌单建议' }}</span>
+                  <img :src="playlist.coverUrl || coverImg" alt="playlist" class="mr-playlist-cover" />
+                  <div class="mr-playlist-meta">
+                    <span class="mr-playlist-name">{{ playlist.title }}</span>
+                    <span class="mr-playlist-reason">{{ playlist.reason || 'AI 歌单建议' }}</span>
                   </div>
                   <button
                     v-if="playlist.tracks?.length"
-                    class="spotify-save-playlist-btn"
-                    :disabled="savingPlaylistKeys[`${index}-${pIndex}`]"
-                    @click="saveGeneratedPlaylist(playlist, `${index}-${pIndex}`)"
+                    class="mr-save-playlist-btn"
+                    :disabled="savingPlaylistKeys[`${msg.id}-${pIndex}`]"
+                    @click="saveGeneratedPlaylist(playlist, `${msg.id}-${pIndex}`)"
                   >
-                    {{ savingPlaylistKeys[`${index}-${pIndex}`] ? '保存中...' : '保存到我的歌单' }}
+                    {{ savingPlaylistKeys[`${msg.id}-${pIndex}`] ? '保存中...' : '保存到我的歌单' }}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div v-if="msg.agentData.citations?.length" class="spotify-agent-section spotify-citation-section">
-              <div class="spotify-agent-section-title spotify-citation-title">参考资料</div>
-              <div class="spotify-citation-grid">
+            <div v-if="msg.agentData.citations?.length" class="mr-agent-section mr-citation-section">
+              <div class="mr-agent-section-title mr-citation-title">参考资料</div>
+              <div class="mr-citation-grid">
                 <div
                   v-for="(citation, cIndex) in msg.agentData.citations"
-                  :key="`${index}-citation-${cIndex}`"
-                  class="spotify-citation-card"
+                  :key="`${msg.id}-citation-${cIndex}`"
+                  class="mr-citation-card"
                   @click="handleCitationClick(citation, msg.agentData)"
                 >
-                  <span class="spotify-citation-type">{{ citation.sourceType }}</span>
-                  <span class="spotify-citation-name">{{ citation.title }}</span>
-                  <span class="spotify-citation-snippet">{{ citation.snippet }}</span>
+                  <span class="mr-citation-type">{{ citation.sourceType }}</span>
+                  <span class="mr-citation-name">{{ citation.title }}</span>
+                  <span class="mr-citation-snippet">{{ citation.snippet }}</span>
                 </div>
               </div>
             </div>
@@ -1101,23 +1071,23 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         </div>
       </div>
 
-      <div v-if="loading" class="spotify-message spotify-message-assistant">
-        <div class="spotify-avatar spotify-avatar-assistant">
-          <img src="/thinking.png" alt="AI" />
+      <div v-if="loading" class="mr-message mr-message-assistant">
+        <div class="mr-avatar mr-avatar-assistant">
+          <img :src="AI_AVATAR_THINKING" alt="AI" />
         </div>
-        <div class="spotify-bubble-assistant spotify-message-bubble spotify-typing">
-          <div class="spotify-typing-dots">
+        <div class="mr-bubble-assistant mr-message-bubble mr-typing">
+          <div class="mr-typing-dots">
             <span></span>
             <span></span>
             <span></span>
           </div>
-          <span class="spotify-typing-text">思考中...</span>
+          <span class="mr-typing-text">思考中...</span>
         </div>
       </div>
 
-      <div v-if="messages.length === 0" class="spotify-empty-state">
-        <div v-if="matrixLoading" class="spotify-matrix-loading">
-          <img src="/congyu.png" alt="AI Assistant" class="spotify-matrix-fallback" />
+      <div v-if="messages.length === 0" class="mr-empty-state">
+        <div v-if="matrixLoading" class="mr-matrix-loading">
+          <img :src="AI_AVATAR_CONGYU" alt="AI Assistant" class="mr-matrix-fallback" />
         </div>
         <Matrix
           v-else-if="matrixFrames.length > 0"
@@ -1133,9 +1103,9 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
       </div>
     </div>
 
-    <div v-else class="spotify-voice-stage">
+    <div v-else class="mr-voice-stage">
       <Orb
-        class="spotify-orb"
+        class="mr-orb"
         :agent-state="orbAgentState"
         :colors-ref="orbColorsRef"
         :seed="20260418"
@@ -1143,24 +1113,24 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         :get-input-volume="getInputVolume"
         :get-output-volume="getOutputVolume"
       />
-      <p class="spotify-orb-hint">
+      <p class="mr-orb-hint">
         {{ orbAgentState === 'talking' ? 'AI 正在回答，语音振幅实时驱动 Orb' : orbAgentState === 'listening' ? '实时语音输入中，请继续说' : orbAgentState === 'thinking' ? 'AI 思考中...' : '点击下方麦克风开始语音输入' }}
       </p>
     </div>
 
-    <div class="spotify-chat-input">
-      <div class="spotify-input-tools">
-        <div class="spotify-mode-switch">
+    <div class="mr-chat-input">
+      <div class="mr-input-tools">
+        <div class="mr-mode-switch">
           <button
-            class="spotify-mode-btn"
-            :class="{ 'spotify-mode-btn-active': viewMode === 'tts' }"
+            class="mr-mode-btn"
+            :class="{ 'mr-mode-btn-active': viewMode === 'tts' }"
             @click="switchToTtsMode"
           >
             TTS
           </button>
           <button
-            class="spotify-mode-btn"
-            :class="{ 'spotify-mode-btn-active': viewMode === 'voice' }"
+            class="mr-mode-btn"
+            :class="{ 'mr-mode-btn-active': viewMode === 'voice' }"
             @click="switchToVoiceMode"
           >
             语音
@@ -1169,7 +1139,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         <SongRecognizer v-if="viewMode === 'tts'" @success="handleRecognitionSuccess" />
         <button
           v-if="viewMode === 'tts' && canResumeAfterAbort && !loading"
-          class="spotify-resume-btn"
+          class="mr-resume-btn"
           @click="resumeStreaming"
           title="继续生成"
         >
@@ -1177,18 +1147,18 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
           <span>继续生成</span>
         </button>
       </div>
-      <div class="spotify-input-wrapper">
-        <Icon icon="ri:chat-1-line" class="spotify-input-icon" />
+      <div class="mr-input-wrapper">
+        <Icon icon="ri:chat-1-line" class="mr-input-icon" />
         <input
           v-model="inputMessage"
           :placeholder="viewMode === 'voice' ? (voiceHint ? `识别中: ${voiceHint}` : '语音模式：点击右侧麦克风开始实时输入') : (voiceHint ? `识别中: ${voiceHint}` : '输入消息...')"
           @keyup.enter="handleSend"
           :disabled="loading || viewMode === 'voice'"
-          class="spotify-input"
+          class="mr-input"
         />
         <button
-          class="spotify-live-voice-btn"
-          :class="{ 'spotify-live-voice-btn-active': isLiveVoiceListening || viewMode === 'voice' }"
+          class="mr-live-voice-btn"
+          :class="{ 'mr-live-voice-btn-active': isLiveVoiceListening || viewMode === 'voice' }"
           @click="toggleLiveVoice"
           :title="isLiveVoiceListening ? '停止语音输入' : '语音输入'"
         >
@@ -1199,26 +1169,26 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
         v-if="!loading && viewMode === 'tts'"
         @click="handleSend"
         :disabled="!inputMessage.trim()"
-        class="spotify-send-btn"
-        :class="{ 'spotify-send-btn-disabled': !inputMessage.trim() }"
+        class="mr-send-btn"
+        :class="{ 'mr-send-btn-disabled': !inputMessage.trim() }"
       >
         <Icon icon="mdi:send" class="text-lg" />
       </button>
       <button
         v-else-if="loading"
         @click="stopStreaming"
-        class="spotify-stop-btn"
+        class="mr-stop-btn"
         title="中断生成"
       >
         <Icon icon="mdi:stop" class="text-lg" />
       </button>
-      <div v-else class="spotify-voice-pill">语音模式</div>
+      <div v-else class="mr-voice-pill">语音模式</div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.spotify-chat-page {
+.mr-chat-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1227,7 +1197,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   gap: 16px;
 }
 
-.spotify-chat-header {
+.mr-chat-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1236,7 +1206,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-chat-title {
+.mr-chat-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1245,17 +1215,17 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   color: var(--text-base, #fff);
 }
 
-.spotify-chat-icon {
+.mr-chat-icon {
   font-size: 1.75rem;
-  color: #1db954;
+  color: var(--mr-accent);
 }
 
-.spotify-chat-subtitle {
+.mr-chat-subtitle {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-health-row {
+.mr-health-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1263,7 +1233,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   margin-top: 8px;
 }
 
-.spotify-health-refresh {
+.mr-health-refresh {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1276,7 +1246,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   cursor: pointer;
 }
 
-.spotify-health-toggle {
+.mr-health-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1289,7 +1259,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   cursor: pointer;
 }
 
-.spotify-health-detail {
+.mr-health-detail {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
@@ -1298,7 +1268,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-health-chip {
+.mr-health-chip {
   display: inline-flex;
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1308,27 +1278,27 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-health-ok {
-  border-color: rgba(29, 185, 84, 0.5);
-  color: #1ed760;
+.mr-health-ok {
+  border-color: color-mix(in srgb, var(--text-base, #fff) 50%, transparent);
+  color: var(--mr-accent-hover);
 }
 
-.spotify-health-bad {
+.mr-health-bad {
   border-color: rgba(239, 68, 68, 0.6);
   color: #ef4444;
 }
 
-.spotify-health-error {
+.mr-health-error {
   margin-top: 6px;
   font-size: 12px;
   color: #ef4444;
 }
 
-.spotify-rotating {
-  animation: spotify-rotate 1s linear infinite;
+.mr-rotating {
+  animation: mr-rotate 1s linear infinite;
 }
 
-@keyframes spotify-rotate {
+@keyframes mr-rotate {
   from {
     transform: rotate(0deg);
   }
@@ -1337,7 +1307,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   }
 }
 
-.spotify-stream-status {
+.mr-stream-status {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -1350,22 +1320,22 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-stream-status-connecting,
-.spotify-stream-status-streaming {
-  border-color: rgba(29, 185, 84, 0.6);
-  color: #1db954;
+.mr-stream-status-connecting,
+.mr-stream-status-streaming {
+  border-color: color-mix(in srgb, var(--text-base, #fff) 60%, transparent);
+  color: var(--mr-accent);
 }
 
-.spotify-stream-status-error {
+.mr-stream-status-error {
   border-color: rgba(239, 68, 68, 0.65);
   color: #ef4444;
 }
 
-.spotify-stream-metric {
+.mr-stream-metric {
   opacity: 0.9;
 }
 
-.spotify-chat-messages {
+.mr-chat-messages {
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -1375,14 +1345,14 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   min-height: 0;
 }
 
-.spotify-message {
+.mr-message {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  animation: spotify-fade-in 200ms ease-out;
+  animation: mr-fade-in 200ms ease-out;
 }
 
-.spotify-message-content {
+.mr-message-content {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1390,11 +1360,11 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   max-width: 70%;
 }
 
-.spotify-message-assistant .spotify-message-content {
+.mr-message-assistant .mr-message-content {
   max-width: min(920px, 88%);
 }
 
-@keyframes spotify-fade-in {
+@keyframes mr-fade-in {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -1405,15 +1375,15 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   }
 }
 
-.spotify-message-user {
+.mr-message-user {
   flex-direction: row-reverse;
 }
 
-.spotify-message-user .spotify-message-content {
+.mr-message-user .mr-message-content {
   align-items: flex-end;
 }
 
-.spotify-avatar {
+.mr-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -1424,17 +1394,17 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   overflow: hidden;
 }
 
-.spotify-avatar img {
+.mr-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.spotify-avatar-assistant {
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+.mr-avatar-assistant {
+  background: linear-gradient(135deg, var(--mr-accent) 0%, var(--mr-accent-hover) 100%);
 }
 
-.spotify-message-bubble {
+.mr-message-bubble {
   max-width: 100%;
   padding: 12px 16px;
   border-radius: 16px;
@@ -1444,19 +1414,19 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   word-break: break-word;
 }
 
-.spotify-agent-panel {
+.mr-agent-panel {
   width: 100%;
   margin-top: 8px;
 }
 
-.spotify-trace-row {
+.mr-trace-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-.spotify-trace-chip {
+.mr-trace-chip {
   font-size: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
@@ -1464,40 +1434,40 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-songs-grid,
-.spotify-playlist-grid {
+.mr-songs-grid,
+.mr-playlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px;
 }
 
-.spotify-citation-section {
+.mr-citation-section {
   margin-top: 10px;
 }
 
-.spotify-agent-section {
+.mr-agent-section {
   margin-top: 10px;
 }
 
-.spotify-agent-section-title {
+.mr-agent-section-title {
   font-size: 12px;
   color: var(--text-subdued, #b3b3b3);
   margin-bottom: 8px;
 }
 
-.spotify-citation-title {
+.mr-citation-title {
   font-size: 12px;
   color: var(--text-subdued, #b3b3b3);
   margin-bottom: 8px;
 }
 
-.spotify-citation-grid {
+.mr-citation-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 8px;
 }
 
-.spotify-citation-card {
+.mr-citation-card {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1509,34 +1479,34 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.spotify-citation-card:hover {
+.mr-citation-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(29, 185, 84, 0.5);
+  border-color: color-mix(in srgb, var(--text-base, #fff) 50%, transparent);
 }
 
-.spotify-citation-type {
+.mr-citation-type {
   width: fit-content;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(29, 185, 84, 0.45);
-  color: #1ed760;
+  border: 1px solid color-mix(in srgb, var(--text-base, #fff) 45%, transparent);
+  color: var(--mr-accent-hover);
   font-size: 11px;
   text-transform: uppercase;
 }
 
-.spotify-citation-name {
+.mr-citation-name {
   font-size: 13px;
   color: var(--text-base, #fff);
 }
 
-.spotify-citation-snippet {
+.mr-citation-snippet {
   font-size: 12px;
   color: var(--text-subdued, #b3b3b3);
   line-height: 1.4;
 }
 
-.spotify-song-card,
-.spotify-playlist-card {
+.mr-song-card,
+.mr-playlist-card {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1546,35 +1516,35 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   background: rgba(255, 255, 255, 0.04);
 }
 
-.spotify-playlist-card {
+.mr-playlist-card {
   align-items: center;
   min-height: 82px;
   padding: 10px 12px;
 }
 
-.spotify-song-card {
+.mr-song-card {
   cursor: pointer;
   color: inherit;
 }
 
-.spotify-song-cover,
-.spotify-playlist-cover {
+.mr-song-cover,
+.mr-playlist-cover {
   width: 42px;
   height: 42px;
   border-radius: 8px;
   object-fit: cover;
 }
 
-.spotify-song-meta,
-.spotify-playlist-meta {
+.mr-song-meta,
+.mr-playlist-meta {
   display: flex;
   flex-direction: column;
   min-width: 0;
   flex: 1;
 }
 
-.spotify-song-name,
-.spotify-playlist-name {
+.mr-song-name,
+.mr-playlist-name {
   font-size: 13px;
   color: var(--text-base, #fff);
   white-space: nowrap;
@@ -1582,8 +1552,8 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   text-overflow: ellipsis;
 }
 
-.spotify-song-artist,
-.spotify-playlist-reason {
+.mr-song-artist,
+.mr-playlist-reason {
   font-size: 12px;
   color: var(--text-subdued, #b3b3b3);
   display: -webkit-box;
@@ -1592,17 +1562,17 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   overflow: hidden;
 }
 
-.spotify-song-play {
+.mr-song-play {
   margin-left: auto;
   font-size: 1.2rem;
 }
 
-.spotify-save-playlist-btn {
+.mr-save-playlist-btn {
   margin-left: 8px;
   align-self: center;
-  border: 1px solid rgba(29, 185, 84, 0.7);
+  border: 1px solid color-mix(in srgb, var(--text-base, #fff) 70%, transparent);
   background: transparent;
-  color: #1db954;
+  color: var(--mr-accent);
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 12px;
@@ -1612,52 +1582,52 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   white-space: nowrap;
 }
 
-.spotify-save-playlist-btn:disabled {
+.mr-save-playlist-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.spotify-bubble-user {
-  background-color: #1db954;
+.mr-bubble-user {
+  background-color: var(--mr-accent);
   color: #000;
   border-bottom-right-radius: 4px;
   font-weight: 500;
 }
 
-.spotify-bubble-assistant {
+.mr-bubble-assistant {
   background-color: var(--bg-elevated, #242424);
   color: var(--text-base, #fff);
   border-bottom-left-radius: 4px;
 }
 
-.spotify-typing {
+.mr-typing {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.spotify-typing-dots {
+.mr-typing-dots {
   display: flex;
   gap: 4px;
 }
 
-.spotify-typing-dots span {
+.mr-typing-dots span {
   width: 6px;
   height: 6px;
-  background-color: #1db954;
+  background-color: var(--mr-accent);
   border-radius: 50%;
-  animation: spotify-bounce 1.4s infinite ease-in-out both;
+  animation: mr-bounce 1.4s infinite ease-in-out both;
 }
 
-.spotify-typing-dots span:nth-child(1) {
+.mr-typing-dots span:nth-child(1) {
   animation-delay: -0.32s;
 }
 
-.spotify-typing-dots span:nth-child(2) {
+.mr-typing-dots span:nth-child(2) {
   animation-delay: -0.16s;
 }
 
-@keyframes spotify-bounce {
+@keyframes mr-bounce {
   0%, 80%, 100% {
     transform: scale(0);
   }
@@ -1666,12 +1636,12 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   }
 }
 
-.spotify-typing-text {
+.mr-typing-text {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
 }
 
-.spotify-empty-state {
+.mr-empty-state {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1680,18 +1650,18 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   gap: 14px;
 }
 
-.spotify-matrix-loading {
+.mr-matrix-loading {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.spotify-matrix-fallback {
+.mr-matrix-fallback {
   max-width: 200px;
   border-radius: 16px;
 }
 
-.spotify-voice-stage {
+.mr-voice-stage {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1700,19 +1670,19 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   gap: 16px;
 }
 
-.spotify-orb {
+.mr-orb {
   width: min(60vw, 420px);
   height: min(60vw, 420px);
   min-width: 240px;
   min-height: 240px;
 }
 
-.spotify-orb-hint {
+.mr-orb-hint {
   font-size: 0.875rem;
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-chat-input {
+.mr-chat-input {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1721,20 +1691,20 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.spotify-input-tools {
+.mr-input-tools {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.spotify-mode-switch {
+.mr-mode-switch {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   margin-right: 4px;
 }
 
-.spotify-mode-btn {
+.mr-mode-btn {
   height: 34px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -1744,13 +1714,13 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   cursor: pointer;
 }
 
-.spotify-mode-btn-active {
-  border-color: rgba(29, 185, 84, 0.7);
-  color: #1db954;
-  background: rgba(29, 185, 84, 0.12);
+.mr-mode-btn-active {
+  border-color: color-mix(in srgb, var(--text-base, #fff) 70%, transparent);
+  color: var(--mr-accent);
+  background: color-mix(in srgb, var(--text-base, #fff) 12%, transparent);
 }
 
-.spotify-live-voice-btn {
+.mr-live-voice-btn {
   position: absolute;
   right: 8px;
   display: inline-flex;
@@ -1766,42 +1736,42 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   transition: all 200ms ease;
 }
 
-.spotify-live-voice-btn:hover {
+.mr-live-voice-btn:hover {
   color: var(--text-base, #fff);
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-.spotify-live-voice-btn-active {
-  border-color: rgba(29, 185, 84, 0.8);
-  color: #1db954;
+.mr-live-voice-btn-active {
+  border-color: color-mix(in srgb, var(--text-base, #fff) 80%, transparent);
+  color: var(--mr-accent);
 }
 
-.spotify-resume-btn {
+.mr-resume-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   height: 36px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid rgba(29, 185, 84, 0.6);
-  background: rgba(29, 185, 84, 0.08);
-  color: #1db954;
+  border: 1px solid color-mix(in srgb, var(--text-base, #fff) 60%, transparent);
+  background: color-mix(in srgb, var(--text-base, #fff) 8%, transparent);
+  color: var(--mr-accent);
   cursor: pointer;
   transition: all 200ms ease;
 }
 
-.spotify-resume-btn:hover {
-  background: rgba(29, 185, 84, 0.16);
+.mr-resume-btn:hover {
+  background: color-mix(in srgb, var(--text-base, #fff) 16%, transparent);
 }
 
-.spotify-input-wrapper {
+.mr-input-wrapper {
   flex: 1;
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.spotify-input-icon {
+.mr-input-icon {
   position: absolute;
   left: 16px;
   color: var(--text-subdued, #b3b3b3);
@@ -1809,7 +1779,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   pointer-events: none;
 }
 
-.spotify-input {
+.mr-input {
   width: 100%;
   padding: 14px 48px 14px 48px;
   background-color: var(--bg-elevated, #242424);
@@ -1820,24 +1790,24 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   transition: box-shadow 200ms ease;
 }
 
-.spotify-input::placeholder {
+.mr-input::placeholder {
   color: var(--text-subdued, #b3b3b3);
 }
 
-.spotify-input:focus {
+.mr-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px #fff;
 }
 
-.spotify-input:disabled {
+.mr-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.spotify-send-btn {
+.mr-send-btn {
   width: 48px;
   height: 48px;
-  background-color: #1db954;
+  background-color: var(--mr-accent);
   border: none;
   border-radius: 50%;
   color: #000;
@@ -1849,22 +1819,22 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   flex-shrink: 0;
 }
 
-.spotify-send-btn:hover:not(.spotify-send-btn-disabled) {
-  background-color: #1ed760;
+.mr-send-btn:hover:not(.mr-send-btn-disabled) {
+  background-color: var(--mr-accent-hover);
   transform: scale(1.04);
 }
 
-.spotify-send-btn:active:not(.spotify-send-btn-disabled) {
+.mr-send-btn:active:not(.mr-send-btn-disabled) {
   transform: scale(1);
 }
 
-.spotify-send-btn-disabled {
+.mr-send-btn-disabled {
   background-color: #535353;
   color: #b3b3b3;
   cursor: not-allowed;
 }
 
-.spotify-stop-btn {
+.mr-stop-btn {
   width: 48px;
   height: 48px;
   background-color: #ef4444;
@@ -1879,12 +1849,12 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   flex-shrink: 0;
 }
 
-.spotify-stop-btn:hover {
+.mr-stop-btn:hover {
   background-color: #dc2626;
   transform: scale(1.04);
 }
 
-.spotify-voice-pill {
+.mr-voice-pill {
   height: 34px;
   display: inline-flex;
   align-items: center;
@@ -1897,7 +1867,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-chat-page {
+:root:not(.dark) .mr-chat-page {
   --bg-surface: #f0f0f0;
   --bg-elevated: #e8e8e8;
   --text-base: #000000;
@@ -1905,89 +1875,89 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
   --border-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-input:focus {
+:root:not(.dark) .mr-input:focus {
   box-shadow: 0 0 0 2px #000;
 }
 
-:root:not(.dark) .spotify-empty-image {
-  background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(30, 215, 96, 0.05) 100%);
+:root:not(.dark) .mr-empty-image {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--text-base, #000) 10%, transparent) 0%, color-mix(in srgb, var(--text-base, #000) 5%, transparent) 100%);
 }
 
 /* Scrollbar */
-.spotify-chat-messages::-webkit-scrollbar {
+.mr-chat-messages::-webkit-scrollbar {
   width: 8px;
 }
 
-.spotify-chat-messages::-webkit-scrollbar-track {
+.mr-chat-messages::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.spotify-chat-messages::-webkit-scrollbar-thumb {
+.mr-chat-messages::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
 
-.spotify-chat-messages::-webkit-scrollbar-thumb:hover {
+.mr-chat-messages::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 
 @media (max-width: 640px) {
-  .spotify-chat-page {
-    padding-bottom: 80px;
+  .mr-chat-page {
+    padding-bottom: 140px;
   }
   
-  .spotify-chat-header {
+  .mr-chat-header {
     padding: 12px 16px;
   }
   
-  .spotify-chat-subtitle {
+  .mr-chat-subtitle {
     font-size: 0.8125rem;
   }
   
-  .spotify-message-bubble {
+  .mr-message-bubble {
     max-width: 85%;
   }
 
-  .spotify-message-assistant .spotify-message-content {
+  .mr-message-assistant .mr-message-content {
     max-width: 100%;
   }
 
-  .spotify-songs-grid,
-  .spotify-playlist-grid {
+  .mr-songs-grid,
+  .mr-playlist-grid {
     grid-template-columns: 1fr;
   }
 
-  .spotify-chat-input {
+  .mr-chat-input {
     padding: 12px;
     gap: 8px;
     flex-wrap: wrap;
   }
 
-  .spotify-input-tools {
+  .mr-input-tools {
     width: 100%;
     justify-content: flex-start;
     flex-wrap: wrap;
   }
   
-  .spotify-input-wrapper {
+  .mr-input-wrapper {
     padding: 10px 12px 10px 40px;
   }
   
-  .spotify-input {
+  .mr-input {
     font-size: 0.875rem;
   }
   
-  .spotify-send-btn {
+  .mr-send-btn {
     width: 40px;
     height: 40px;
   }
 
-  .spotify-stop-btn {
+  .mr-stop-btn {
     width: 40px;
     height: 40px;
   }
 
-  .spotify-stream-status {
+  .mr-stream-status {
     width: 100%;
     justify-content: space-between;
     font-size: 11px;
@@ -1995,7 +1965,7 @@ const handleCitationClick = async (citation: AgentCitation, agentData?: AgentCha
     gap: 6px;
   }
 
-  .spotify-stream-metric {
+  .mr-stream-metric {
     font-size: 10px;
   }
 }

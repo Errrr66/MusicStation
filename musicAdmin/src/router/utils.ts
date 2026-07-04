@@ -78,7 +78,7 @@ function isOneOfArray(a: Array<string>, b: Array<string>) {
     ? intersection(a, b).length > 0
       ? true
       : false
-    : true;
+    : false;
 }
 
 /** 从localStorage里取出当前登录用户的角色roles，过滤无权限的菜单 */

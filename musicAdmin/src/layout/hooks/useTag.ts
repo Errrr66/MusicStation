@@ -50,12 +50,14 @@ export function useTags() {
     )?.showModel || "smart"
   );
   /** 是否隐藏标签页，默认显示 */
-  const showTags =
-    ref(
-      storageLocal().getItem<StorageConfigs>(
+  const showTags = ref(
+    (() => {
+      const storageConfig = storageLocal().getItem<StorageConfigs>(
         `${responsiveStorageNameSpace()}configure`
-      ).hideTabs
-    ) ?? ref("false");
+      );
+      return storageConfig?.hideTabs ?? "false";
+    })()
+  );
   const multiTags: any = computed(() => {
     return useMultiTagsStoreHook().multiTags;
   });

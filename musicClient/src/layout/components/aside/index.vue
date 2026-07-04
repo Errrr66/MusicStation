@@ -66,108 +66,108 @@ const handlePlaylistClick = (id: number) => {
 
 <template>
   <aside
-    class="spotify-sidebar"
+    class="mr-sidebar"
     :class="[
-      isCollapsed ? 'spotify-sidebar-collapsed' : 'spotify-sidebar-expanded',
-      isMobile ? 'spotify-sidebar-mobile' : 'spotify-sidebar-desktop'
+      isCollapsed ? 'mr-sidebar-collapsed' : 'mr-sidebar-expanded',
+      isMobile ? 'mr-sidebar-mobile' : 'mr-sidebar-desktop'
     ]"
   >
-    <div class="spotify-sidebar-content">
-      <div class="spotify-sidebar-header" @click="!isMobile && toggleCollapse()">
-        <div class="spotify-sidebar-logo" :class="{ 'spotify-logo-centered': isCollapsed && !isMobile }">
-          <Icon icon="mdi:library-music" class="spotify-logo-icon" />
-          <span v-if="!isCollapsed && !isMobile" class="spotify-logo-text">音乐库</span>
+    <div class="mr-sidebar-content">
+      <div class="mr-sidebar-header" @click="!isMobile && toggleCollapse()">
+        <div class="mr-sidebar-logo" :class="{ 'mr-logo-centered': isCollapsed && !isMobile }">
+          <Icon icon="mdi:library-music" class="mr-logo-icon" />
+          <span v-if="!isCollapsed && !isMobile" class="mr-logo-text">音乐库</span>
         </div>
-        <button v-if="isMobile" class="spotify-mobile-close" @click="$emit('close')">
+        <button v-if="isMobile" class="mr-mobile-close" @click="$emit('close')">
           <Icon icon="mdi:close" />
         </button>
       </div>
 
-      <div class="spotify-sidebar-main">
+      <div class="mr-sidebar-main">
         <div
           v-for="(section, sIndex) in MenuData"
           :key="sIndex"
-          class="spotify-nav-section"
+          class="mr-nav-section"
         >
-          <div v-if="sIndex > 0 && !isCollapsed" class="spotify-nav-divider"></div>
+          <div v-if="sIndex > 0 && !isCollapsed" class="mr-nav-divider"></div>
           
-          <h4 v-if="!isCollapsed && section.title" class="spotify-nav-title">
+          <h4 v-if="!isCollapsed && section.title" class="mr-nav-title">
             {{ section.title }}
           </h4>
 
-          <div class="spotify-nav-items">
+          <div class="mr-nav-items">
             <div
               v-for="(item, iIndex) in section.children"
               :key="iIndex"
-              class="spotify-nav-item"
-              :class="{ 'spotify-nav-item-active': route.path === item.router }"
+              class="mr-nav-item"
+              :class="{ 'mr-nav-item-active': route.path === item.router }"
               @click="handleMenuClick(item.router)"
               :title="isCollapsed ? item.title : ''"
             >
-              <div class="spotify-nav-item-icon-wrapper">
-                <Icon :icon="item.icon" class="spotify-nav-item-icon" />
+              <div class="mr-nav-item-icon-wrapper">
+                <Icon :icon="item.icon" class="mr-nav-item-icon" />
               </div>
-              <span v-if="!isCollapsed" class="spotify-nav-item-text">{{ item.title }}</span>
+              <span v-if="!isCollapsed" class="mr-nav-item-text">{{ item.title }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-if="user.isLoggedIn && !isCollapsed" class="spotify-sidebar-footer">
-        <div class="spotify-footer-header">
-          <Icon icon="mdi:folder-heart" class="spotify-footer-icon" />
-          <span class="spotify-footer-title">收藏的歌单</span>
-          <span class="spotify-footer-count">{{ favoriteStore.favoritePlaylists.length }}</span>
+      <div v-if="user.isLoggedIn && !isCollapsed" class="mr-sidebar-footer">
+        <div class="mr-footer-header">
+          <Icon icon="mdi:folder-heart" class="mr-footer-icon" />
+          <span class="mr-footer-title">收藏的歌单</span>
+          <span class="mr-footer-count">{{ favoriteStore.favoritePlaylists.length }}</span>
         </div>
 
-        <el-scrollbar class="spotify-footer-scroll">
-          <div v-if="favoriteStore.loading" class="spotify-footer-loading">
+        <el-scrollbar class="mr-footer-scroll">
+          <div v-if="favoriteStore.loading" class="mr-footer-loading">
             <Icon icon="eos-icons:loading" class="text-2xl" />
           </div>
-          <div v-else class="spotify-footer-list">
+          <div v-else class="mr-footer-list">
             <div
               v-for="item in favoriteStore.favoritePlaylists"
               :key="item.id"
-              class="spotify-playlist-item"
-              :class="{ 'spotify-playlist-active': route.path === `/playlist/${item.id}` }"
+              class="mr-playlist-item"
+              :class="{ 'mr-playlist-active': route.path === `/playlist/${item.id}` }"
               @click="handlePlaylistClick(item.id)"
             >
               <el-image
                 lazy
                 :src="(item.coverImgUrl && item.coverImgUrl.startsWith('http')) ? item.coverImgUrl + '?param=50y50' : (item.coverImgUrl || coverImg)"
-                class="spotify-playlist-cover"
+                class="mr-playlist-cover"
                 :alt="item.name"
               >
                 <template #error>
-                  <div class="spotify-playlist-cover-placeholder">
+                  <div class="mr-playlist-cover-placeholder">
                     <Icon icon="ri:music-2-line" />
                   </div>
                 </template>
               </el-image>
-              <div class="spotify-playlist-info">
-                <span class="spotify-playlist-name">{{ item.name }}</span>
+              <div class="mr-playlist-info">
+                <span class="mr-playlist-name">{{ item.name }}</span>
               </div>
             </div>
           </div>
         </el-scrollbar>
       </div>
 
-      <div v-if="user.isLoggedIn && isCollapsed" class="spotify-sidebar-footer-collapsed">
-        <div class="spotify-footer-divider"></div>
+      <div v-if="user.isLoggedIn && isCollapsed" class="mr-sidebar-footer-collapsed">
+        <div class="mr-footer-divider"></div>
         <div
           v-for="(item, index) in favoriteStore.favoritePlaylists.slice(0, 3)"
           :key="index"
-          class="spotify-mini-playlist"
-          :class="{ 'spotify-playlist-active': route.path === `/playlist/${item.id}` }"
+          class="mr-mini-playlist"
+          :class="{ 'mr-playlist-active': route.path === `/playlist/${item.id}` }"
           @click="handlePlaylistClick(item.id)"
         >
           <el-image
             lazy
             :src="(item.coverImgUrl && item.coverImgUrl.startsWith('http')) ? item.coverImgUrl + '?param=50y50' : (item.coverImgUrl || coverImg)"
-            class="spotify-mini-cover"
+            class="mr-mini-cover"
           >
             <template #error>
-              <div class="spotify-playlist-cover-placeholder">
+              <div class="mr-playlist-cover-placeholder">
                 <Icon icon="ri:music-2-line" />
               </div>
             </template>
@@ -181,7 +181,7 @@ const handlePlaylistClick = (id: number) => {
 </template>
 
 <style scoped>
-.spotify-sidebar {
+.mr-sidebar {
   display: flex;
   flex-direction: column;
   background-color: #121212;
@@ -189,24 +189,24 @@ const handlePlaylistClick = (id: number) => {
   transition: width 200ms ease;
 }
 
-.spotify-sidebar-desktop {
+.mr-sidebar-desktop {
   display: none;
 }
 
-.spotify-sidebar-mobile {
+.mr-sidebar-mobile {
   width: 100% !important;
   height: 100% !important;
 }
 
-.spotify-sidebar-expanded {
+.mr-sidebar-expanded {
   width: 280px;
 }
 
-.spotify-sidebar-collapsed {
+.mr-sidebar-collapsed {
   width: 72px;
 }
 
-.spotify-sidebar-content {
+.mr-sidebar-content {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -214,40 +214,40 @@ const handlePlaylistClick = (id: number) => {
   gap: 8px;
 }
 
-.spotify-sidebar-header {
+.mr-sidebar-header {
   padding: 8px;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 200ms ease;
 }
 
-.spotify-sidebar-header:hover {
+.mr-sidebar-header:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-sidebar-logo {
+.mr-sidebar-logo {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.spotify-logo-centered {
+.mr-logo-centered {
   justify-content: center;
   width: 100%;
 }
 
-.spotify-logo-icon {
+.mr-logo-icon {
   font-size: 1.5rem;
   color: #b3b3b3;
 }
 
-.spotify-logo-text {
+.mr-logo-text {
   font-size: 1rem;
   font-weight: 700;
   color: #b3b3b3;
 }
 
-.spotify-mobile-close {
+.mr-mobile-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,12 +263,12 @@ const handlePlaylistClick = (id: number) => {
   transition: color 200ms ease, background-color 200ms ease;
 }
 
-.spotify-mobile-close:hover {
+.mr-mobile-close:hover {
   color: #fff;
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-sidebar-main {
+.mr-sidebar-main {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -277,28 +277,28 @@ const handlePlaylistClick = (id: number) => {
   gap: 8px;
 }
 
-.spotify-sidebar-main::-webkit-scrollbar {
+.mr-sidebar-main::-webkit-scrollbar {
   width: 4px;
 }
 
-.spotify-sidebar-main::-webkit-scrollbar-thumb {
+.mr-sidebar-main::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 20px;
 }
 
-.spotify-nav-section {
+.mr-nav-section {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.spotify-nav-divider {
+.mr-nav-divider {
   height: 1px;
   background-color: rgba(255, 255, 255, 0.1);
   margin: 8px 12px;
 }
 
-.spotify-nav-title {
+.mr-nav-title {
   padding: 8px 12px;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -307,13 +307,13 @@ const handlePlaylistClick = (id: number) => {
   letter-spacing: 0.1em;
 }
 
-.spotify-nav-items {
+.mr-nav-items {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.spotify-nav-item {
+.mr-nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -323,24 +323,24 @@ const handlePlaylistClick = (id: number) => {
   transition: background-color 200ms ease;
 }
 
-.spotify-nav-item:hover {
+.mr-nav-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-nav-item-active {
+.mr-nav-item-active {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.spotify-nav-item-active .spotify-nav-item-icon {
+.mr-nav-item-active .mr-nav-item-icon {
   color: #fff;
 }
 
-.spotify-nav-item-active .spotify-nav-item-text {
+.mr-nav-item-active .mr-nav-item-text {
   color: #fff;
   font-weight: 600;
 }
 
-.spotify-nav-item-icon-wrapper {
+.mr-nav-item-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -348,12 +348,12 @@ const handlePlaylistClick = (id: number) => {
   height: 24px;
 }
 
-.spotify-nav-item-icon {
+.mr-nav-item-icon {
   font-size: 1.5rem;
   color: #b3b3b3;
 }
 
-.spotify-nav-item-text {
+.mr-nav-item-text {
   font-size: 0.9375rem;
   font-weight: 500;
   color: #b3b3b3;
@@ -362,7 +362,7 @@ const handlePlaylistClick = (id: number) => {
   text-overflow: ellipsis;
 }
 
-.spotify-sidebar-footer {
+.mr-sidebar-footer {
   display: flex;
   flex-direction: column;
   max-height: 240px;
@@ -371,7 +371,7 @@ const handlePlaylistClick = (id: number) => {
   overflow: hidden;
 }
 
-.spotify-footer-header {
+.mr-footer-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -379,29 +379,29 @@ const handlePlaylistClick = (id: number) => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.spotify-footer-icon {
+.mr-footer-icon {
   font-size: 1.125rem;
-  color: #1db954;
+  color: var(--mr-accent);
 }
 
-.spotify-footer-title {
+.mr-footer-title {
   font-size: 0.8125rem;
   font-weight: 600;
   color: #fff;
 }
 
-.spotify-footer-count {
+.mr-footer-count {
   font-size: 0.75rem;
   color: #b3b3b3;
   margin-left: auto;
 }
 
-.spotify-footer-scroll {
+.mr-footer-scroll {
   flex: 1;
   overflow: hidden;
 }
 
-.spotify-footer-loading {
+.mr-footer-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,14 +409,14 @@ const handlePlaylistClick = (id: number) => {
   color: #b3b3b3;
 }
 
-.spotify-footer-list {
+.mr-footer-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 8px;
 }
 
-.spotify-playlist-item {
+.mr-playlist-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -426,15 +426,15 @@ const handlePlaylistClick = (id: number) => {
   transition: background-color 200ms ease;
 }
 
-.spotify-playlist-item:hover {
+.mr-playlist-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-playlist-active {
+.mr-playlist-active {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-.spotify-playlist-cover {
+.mr-playlist-cover {
   width: 40px;
   height: 40px;
   border-radius: 4px;
@@ -442,7 +442,7 @@ const handlePlaylistClick = (id: number) => {
   flex-shrink: 0;
 }
 
-.spotify-playlist-cover-placeholder {
+.mr-playlist-cover-placeholder {
   width: 100%;
   height: 100%;
   background-color: #282828;
@@ -454,12 +454,12 @@ const handlePlaylistClick = (id: number) => {
   font-size: 1.25rem;
 }
 
-.spotify-playlist-info {
+.mr-playlist-info {
   flex: 1;
   min-width: 0;
 }
 
-.spotify-playlist-name {
+.mr-playlist-name {
   font-size: 0.8125rem;
   color: #fff;
   display: -webkit-box;
@@ -469,30 +469,30 @@ const handlePlaylistClick = (id: number) => {
   line-height: 1.4;
 }
 
-.spotify-sidebar-footer-collapsed {
+.mr-sidebar-footer-collapsed {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding-top: 8px;
 }
 
-.spotify-footer-divider {
+.mr-footer-divider {
   height: 1px;
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-mini-playlist {
+.mr-mini-playlist {
   display: flex;
   justify-content: center;
   padding: 4px 0;
   cursor: pointer;
 }
 
-.spotify-mini-playlist:hover .spotify-mini-cover {
+.mr-mini-playlist:hover .mr-mini-cover {
   transform: scale(1.05);
 }
 
-.spotify-mini-cover {
+.mr-mini-cover {
   width: 48px;
   height: 48px;
   border-radius: 4px;
@@ -500,102 +500,102 @@ const handlePlaylistClick = (id: number) => {
   transition: transform 200ms ease;
 }
 
-.spotify-sidebar-collapsed .spotify-nav-item {
+.mr-sidebar-collapsed .mr-nav-item {
   justify-content: center;
   padding: 12px 0;
 }
 
-.spotify-sidebar-collapsed .spotify-nav-item-icon {
+.mr-sidebar-collapsed .mr-nav-item-icon {
   font-size: 1.75rem;
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-sidebar {
+:root:not(.dark) .mr-sidebar {
   background-color: #f0f0f0;
 }
 
-:root:not(.dark) .spotify-sidebar-header:hover {
+:root:not(.dark) .mr-sidebar-header:hover {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-logo-icon,
-:root:not(.dark) .spotify-logo-text {
+:root:not(.dark) .mr-logo-icon,
+:root:not(.dark) .mr-logo-text {
   color: #000;
 }
 
-:root:not(.dark) .spotify-nav-item:hover {
+:root:not(.dark) .mr-nav-item:hover {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-nav-item-active {
+:root:not(.dark) .mr-nav-item-active {
   background-color: rgba(0, 0, 0, 0.12);
 }
 
-:root:not(.dark) .spotify-nav-item-icon,
-:root:not(.dark) .spotify-nav-title,
-:root:not(.dark) .spotify-nav-item-text {
+:root:not(.dark) .mr-nav-item-icon,
+:root:not(.dark) .mr-nav-title,
+:root:not(.dark) .mr-nav-item-text {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-nav-item-active .spotify-nav-item-icon,
-:root:not(.dark) .spotify-nav-item-active .spotify-nav-item-text {
+:root:not(.dark) .mr-nav-item-active .mr-nav-item-icon,
+:root:not(.dark) .mr-nav-item-active .mr-nav-item-text {
   color: #000;
 }
 
-:root:not(.dark) .spotify-nav-divider {
+:root:not(.dark) .mr-nav-divider {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-sidebar-footer {
+:root:not(.dark) .mr-sidebar-footer {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-:root:not(.dark) .spotify-footer-header {
+:root:not(.dark) .mr-footer-header {
   border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-footer-title,
-:root:not(.dark) .spotify-playlist-name {
+:root:not(.dark) .mr-footer-title,
+:root:not(.dark) .mr-playlist-name {
   color: #000;
 }
 
-:root:not(.dark) .spotify-playlist-item:hover {
+:root:not(.dark) .mr-playlist-item:hover {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-playlist-active {
+:root:not(.dark) .mr-playlist-active {
   background-color: rgba(0, 0, 0, 0.12);
 }
 
-:root:not(.dark) .spotify-playlist-cover-placeholder {
+:root:not(.dark) .mr-playlist-cover-placeholder {
   background-color: #e0e0e0;
 }
 
-:root:not(.dark) .spotify-footer-divider {
+:root:not(.dark) .mr-footer-divider {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
 @media (min-width: 768px) {
-  .spotify-sidebar-desktop {
+  .mr-sidebar-desktop {
     display: flex;
   }
   
-  .spotify-sidebar-mobile {
+  .mr-sidebar-mobile {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .spotify-sidebar {
+  .mr-sidebar {
     border-radius: 0;
   }
   
-  .spotify-sidebar-content {
+  .mr-sidebar-content {
     padding: 8px;
     gap: 8px;
   }
   
-  .spotify-sidebar-header {
+  .mr-sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -603,59 +603,59 @@ const handlePlaylistClick = (id: number) => {
     cursor: default;
   }
   
-  .spotify-sidebar-header:hover {
+  .mr-sidebar-header:hover {
     background-color: transparent;
   }
   
-  .spotify-sidebar-main {
+  .mr-sidebar-main {
     gap: 4px;
   }
   
-  .spotify-nav-item {
+  .mr-nav-item {
     padding: 12px;
     border-radius: 8px;
   }
   
-  .spotify-nav-item-icon {
+  .mr-nav-item-icon {
     font-size: 1.5rem;
   }
   
-  .spotify-nav-item-text {
+  .mr-nav-item-text {
     font-size: 0.9375rem;
     font-weight: 500;
   }
   
-  .spotify-nav-title {
+  .mr-nav-title {
     padding: 8px 12px;
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
   }
   
-  .spotify-sidebar-footer {
+  .mr-sidebar-footer {
     max-height: 240px;
     border-radius: 8px;
   }
   
-  .spotify-footer-header {
+  .mr-footer-header {
     padding: 12px 16px;
   }
   
-  .spotify-footer-title {
+  .mr-footer-title {
     font-size: 0.8125rem;
   }
   
-  .spotify-playlist-item {
+  .mr-playlist-item {
     padding: 8px;
     border-radius: 6px;
   }
   
-  .spotify-playlist-cover {
+  .mr-playlist-cover {
     width: 40px;
     height: 40px;
     border-radius: 4px;
   }
   
-  .spotify-playlist-name {
+  .mr-playlist-name {
     font-size: 0.8125rem;
   }
 }

@@ -19,7 +19,14 @@ watch(
 );
 
 const handleChange = file => {
-  if (!file.raw.name.endsWith(".mp3")) {
+  // 文件大小校验（不超过 50MB）
+  if (file.raw.size > 50 * 1024 * 1024) {
+    message("文件不能超过50MB", { type: "warning" });
+    fileList.value = [];
+    return;
+  }
+  // MIME 类型与扩展名校验
+  if (file.raw.type !== "audio/mpeg" && !file.raw.name.endsWith(".mp3")) {
     message("只能上传.mp3格式的音频文件", { type: "warning" });
     fileList.value = [];
     return;

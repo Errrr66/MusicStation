@@ -57,69 +57,69 @@ const closeQueue = () => {
     direction="rtl"
     size="360px"
     :with-header="false"
-    class="spotify-queue-drawer"
+    class="mr-queue-drawer"
   >
-    <div class="spotify-queue">
-      <div class="spotify-queue-header">
-        <h3 class="spotify-queue-title">播放队列</h3>
-        <span class="spotify-queue-count">{{ audioStore.trackList.length }} 首歌曲</span>
-        <button class="spotify-queue-close" @click="closeQueue">
+    <div class="mr-queue">
+      <div class="mr-queue-header">
+        <h3 class="mr-queue-title">播放队列</h3>
+        <span class="mr-queue-count">{{ audioStore.trackList.length }} 首歌曲</span>
+        <button class="mr-queue-close" @click="closeQueue">
           <Icon icon="mdi:close" />
         </button>
       </div>
 
-      <div class="spotify-queue-content">
-        <div v-if="audioStore.trackList.length === 0" class="spotify-queue-empty">
-          <Icon icon="mdi:music-note-off" class="spotify-empty-icon" />
-          <p class="spotify-empty-text">队列中没有歌曲</p>
-          <p class="spotify-empty-hint">播放一首歌曲开始收听</p>
+      <div class="mr-queue-content">
+        <div v-if="audioStore.trackList.length === 0" class="mr-queue-empty">
+          <Icon icon="mdi:music-note-off" class="mr-empty-icon" />
+          <p class="mr-empty-text">队列中没有歌曲</p>
+          <p class="mr-empty-hint">播放一首歌曲开始收听</p>
         </div>
 
         <div
           v-else
-          class="spotify-queue-list"
+          class="mr-queue-list"
         >
           <div
             v-for="(item, index) in audioStore.trackList"
             :key="item.id"
-            class="spotify-queue-item"
-            :class="{ 'spotify-queue-item-active': currentTrackId === item.id }"
+            class="mr-queue-item"
+            :class="{ 'mr-queue-item-active': currentTrackId === item.id }"
             @click="handleTrackClick(item, index)"
             @mouseenter="mouseOverIndex = index"
             @mouseleave="mouseOverIndex = -1"
           >
-            <div class="spotify-queue-cover-wrapper">
+            <div class="mr-queue-cover-wrapper">
               <img
                 :src="fixUrl(item.cover) || defaultCover"
                 :alt="item.title"
-                class="spotify-queue-cover"
+                class="mr-queue-cover"
               />
               <div
                 v-if="currentTrackId === item.id"
-                class="spotify-queue-playing-indicator"
+                class="mr-queue-playing-indicator"
               >
-                <Icon icon="mdi:volume-high" class="spotify-playing-icon" />
+                <Icon icon="mdi:volume-high" class="mr-playing-icon" />
               </div>
               <div
                 v-else-if="mouseOverIndex === index"
-                class="spotify-queue-play-overlay"
+                class="mr-queue-play-overlay"
               >
-                <Icon icon="mdi:play" class="spotify-play-overlay-icon" />
+                <Icon icon="mdi:play" class="mr-play-overlay-icon" />
               </div>
             </div>
 
-            <div class="spotify-queue-info">
-              <span class="spotify-queue-title-text" :title="item.title">{{ item.title }}</span>
-              <span class="spotify-queue-artist" :title="item.artist">{{ item.artist }}</span>
+            <div class="mr-queue-info">
+              <span class="mr-queue-title-text" :title="item.title">{{ item.title }}</span>
+              <span class="mr-queue-artist" :title="item.artist">{{ item.artist }}</span>
             </div>
 
-            <div class="spotify-queue-duration">
+            <div class="mr-queue-duration">
               {{ formatMillisecondsToTime(Number(item.duration) * 1000) }}
             </div>
 
             <button
               v-show="mouseOverIndex === index"
-              class="spotify-queue-delete"
+              class="mr-queue-delete"
               @click.stop="handleDelete(item.id)"
               title="从队列中移除"
             >
@@ -133,22 +133,22 @@ const closeQueue = () => {
 </template>
 
 <style scoped>
-.spotify-queue-drawer :deep(.el-drawer) {
+.mr-queue-drawer :deep(.el-drawer) {
   background-color: #121212;
 }
 
-.spotify-queue-drawer :deep(.el-drawer__body) {
+.mr-queue-drawer :deep(.el-drawer__body) {
   padding: 0;
   height: 100%;
 }
 
-.spotify-queue {
+.mr-queue {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.spotify-queue-header {
+.mr-queue-header {
   display: flex;
   align-items: center;
   padding: 16px 20px;
@@ -156,20 +156,20 @@ const closeQueue = () => {
   flex-shrink: 0;
 }
 
-.spotify-queue-title {
+.mr-queue-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
 }
 
-.spotify-queue-count {
+.mr-queue-count {
   font-size: 0.75rem;
   color: #b3b3b3;
   margin-left: 12px;
 }
 
-.spotify-queue-close {
+.mr-queue-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,31 +185,31 @@ const closeQueue = () => {
   transition: color 200ms ease, background-color 200ms ease;
 }
 
-.spotify-queue-close:hover {
+.mr-queue-close:hover {
   color: #fff;
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-queue-content {
+.mr-queue-content {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
 }
 
-.spotify-queue-content::-webkit-scrollbar {
+.mr-queue-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.spotify-queue-content::-webkit-scrollbar-track {
+.mr-queue-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.spotify-queue-content::-webkit-scrollbar-thumb {
+.mr-queue-content::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
 
-.spotify-queue-empty {
+.mr-queue-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -219,32 +219,32 @@ const closeQueue = () => {
   text-align: center;
 }
 
-.spotify-empty-icon {
+.mr-empty-icon {
   font-size: 4rem;
   color: #535353;
   margin-bottom: 16px;
 }
 
-.spotify-empty-text {
+.mr-empty-text {
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
   margin: 0 0 8px;
 }
 
-.spotify-empty-hint {
+.mr-empty-hint {
   font-size: 0.875rem;
   color: #b3b3b3;
   margin: 0;
 }
 
-.spotify-queue-list {
+.mr-queue-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.spotify-queue-item {
+.mr-queue-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -254,34 +254,34 @@ const closeQueue = () => {
   transition: background-color 200ms ease;
 }
 
-.spotify-queue-item:hover {
+.mr-queue-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.spotify-queue-item-active {
+.mr-queue-item-active {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.spotify-queue-item-active:hover {
+.mr-queue-item-active:hover {
   background-color: rgba(255, 255, 255, 0.25);
 }
 
-.spotify-queue-cover-wrapper {
+.mr-queue-cover-wrapper {
   position: relative;
   width: 48px;
   height: 48px;
   flex-shrink: 0;
 }
 
-.spotify-queue-cover {
+.mr-queue-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.spotify-queue-playing-indicator,
-.spotify-queue-play-overlay {
+.mr-queue-playing-indicator,
+.mr-queue-play-overlay {
   position: absolute;
   inset: 0;
   display: flex;
@@ -291,17 +291,17 @@ const closeQueue = () => {
   border-radius: 4px;
 }
 
-.spotify-playing-icon {
+.mr-playing-icon {
   font-size: 1.25rem;
-  color: #1db954;
+  color: var(--mr-accent);
 }
 
-.spotify-play-overlay-icon {
+.mr-play-overlay-icon {
   font-size: 1.25rem;
   color: #fff;
 }
 
-.spotify-queue-info {
+.mr-queue-info {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -309,7 +309,7 @@ const closeQueue = () => {
   gap: 2px;
 }
 
-.spotify-queue-title-text {
+.mr-queue-title-text {
   font-size: 0.9375rem;
   font-weight: 500;
   color: #fff;
@@ -318,11 +318,11 @@ const closeQueue = () => {
   white-space: nowrap;
 }
 
-.spotify-queue-item-active .spotify-queue-title-text {
-  color: #1db954;
+.mr-queue-item-active .mr-queue-title-text {
+  color: var(--mr-accent);
 }
 
-.spotify-queue-artist {
+.mr-queue-artist {
   font-size: 0.8125rem;
   color: #b3b3b3;
   overflow: hidden;
@@ -330,13 +330,13 @@ const closeQueue = () => {
   white-space: nowrap;
 }
 
-.spotify-queue-duration {
+.mr-queue-duration {
   font-size: 0.75rem;
   color: #b3b3b3;
   flex-shrink: 0;
 }
 
-.spotify-queue-delete {
+.mr-queue-delete {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,120 +352,120 @@ const closeQueue = () => {
   transition: color 200ms ease, background-color 200ms ease;
 }
 
-.spotify-queue-delete:hover {
+.mr-queue-delete:hover {
   color: #e91429;
   background-color: rgba(233, 20, 41, 0.1);
 }
 
 /* Light Theme */
-:root:not(.dark) .spotify-queue-drawer :deep(.el-drawer) {
+:root:not(.dark) .mr-queue-drawer :deep(.el-drawer) {
   background-color: #fff;
 }
 
-:root:not(.dark) .spotify-queue-header {
+:root:not(.dark) .mr-queue-header {
   border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 
-:root:not(.dark) .spotify-queue-title {
+:root:not(.dark) .mr-queue-title {
   color: #000;
 }
 
-:root:not(.dark) .spotify-queue-close {
+:root:not(.dark) .mr-queue-close {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-queue-close:hover {
+:root:not(.dark) .mr-queue-close:hover {
   color: #000;
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-empty-icon {
+:root:not(.dark) .mr-empty-icon {
   color: #d0d0d0;
 }
 
-:root:not(.dark) .spotify-empty-text {
+:root:not(.dark) .mr-empty-text {
   color: #000;
 }
 
-:root:not(.dark) .spotify-empty-hint {
+:root:not(.dark) .mr-empty-hint {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-queue-item:hover {
+:root:not(.dark) .mr-queue-item:hover {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-:root:not(.dark) .spotify-queue-item-active {
+:root:not(.dark) .mr-queue-item-active {
   background-color: rgba(0, 0, 0, 0.12);
 }
 
-:root:not(.dark) .spotify-queue-item-active:hover {
+:root:not(.dark) .mr-queue-item-active:hover {
   background-color: rgba(0, 0, 0, 0.15);
 }
 
-:root:not(.dark) .spotify-queue-title-text {
+:root:not(.dark) .mr-queue-title-text {
   color: #000;
 }
 
-:root:not(.dark) .spotify-queue-item-active .spotify-queue-title-text {
-  color: #1db954;
+:root:not(.dark) .mr-queue-item-active .mr-queue-title-text {
+  color: var(--mr-accent);
 }
 
-:root:not(.dark) .spotify-queue-artist,
-:root:not(.dark) .spotify-queue-duration {
+:root:not(.dark) .mr-queue-artist,
+:root:not(.dark) .mr-queue-duration {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-queue-delete {
+:root:not(.dark) .mr-queue-delete {
   color: #6a6a6a;
 }
 
-:root:not(.dark) .spotify-queue-delete:hover {
+:root:not(.dark) .mr-queue-delete:hover {
   color: #e91429;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .spotify-queue-drawer :deep(.el-drawer) {
+  .mr-queue-drawer :deep(.el-drawer) {
     width: 100% !important;
     max-width: 100% !important;
   }
   
-  .spotify-queue-header {
+  .mr-queue-header {
     padding: 12px 16px;
   }
   
-  .spotify-queue-title {
+  .mr-queue-title {
     font-size: 1rem;
   }
   
-  .spotify-queue-content {
+  .mr-queue-content {
     padding: 4px;
   }
   
-  .spotify-queue-item {
+  .mr-queue-item {
     padding: 6px;
     gap: 10px;
   }
   
-  .spotify-queue-cover-wrapper {
+  .mr-queue-cover-wrapper {
     width: 44px;
     height: 44px;
   }
   
-  .spotify-queue-title-text {
+  .mr-queue-title-text {
     font-size: 0.875rem;
   }
   
-  .spotify-queue-artist {
+  .mr-queue-artist {
     font-size: 0.75rem;
   }
   
-  .spotify-queue-duration {
+  .mr-queue-duration {
     display: none;
   }
   
-  .spotify-queue-delete {
+  .mr-queue-delete {
     width: 36px;
     height: 36px;
   }

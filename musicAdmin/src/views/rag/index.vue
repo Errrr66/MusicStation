@@ -172,7 +172,13 @@ const loadTrendHistory = () => {
 };
 
 const saveTrendHistory = () => {
-  localStorage.setItem(TREND_STORAGE_KEY, JSON.stringify(trendHistory.value));
+  try {
+    localStorage.setItem(TREND_STORAGE_KEY, JSON.stringify(trendHistory.value));
+  } catch (e) {
+    // 存储空间不足或被禁用时降级：仅保留最近 10 条并警告
+    console.warn("趋势历史保存失败", e);
+    trendHistory.value = trendHistory.value.slice(-10);
+  }
 };
 
 const appendTrendPoint = (result: AdminRagEvalResult) => {

@@ -246,7 +246,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addArtist")
-    public Result<?> addArtist(@RequestBody ArtistAddDTO artistAddDTO) {
+    public Result<?> addArtist(@Valid @RequestBody ArtistAddDTO artistAddDTO) {
         return artistService.addArtist(artistAddDTO);
     }
 
@@ -257,7 +257,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updateArtist")
-    public Result<?> updateArtist(@RequestBody ArtistUpdateDTO artistUpdateDTO) {
+    public Result<?> updateArtist(@Valid @RequestBody ArtistUpdateDTO artistUpdateDTO) {
         return artistService.updateArtist(artistUpdateDTO);
     }
 
@@ -337,7 +337,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addSong")
-    public Result<?> addSong(@RequestBody SongAddDTO songAddDTO) {
+    public Result<?> addSong(@Valid @RequestBody SongAddDTO songAddDTO) {
         return songService.addSong(songAddDTO);
     }
 
@@ -348,7 +348,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updateSong")
-    public Result<?> UpdateSong(@RequestBody SongUpdateDTO songUpdateDTO) {
+    public Result<?> updateSong(@Valid @RequestBody SongUpdateDTO songUpdateDTO) {
         return songService.updateSong(songUpdateDTO);
     }
 
@@ -471,7 +471,7 @@ public class AdminController {
      * @return 结果
      */
     @PostMapping("/addPlaylist")
-    public Result<?> addPlaylist(@RequestBody PlaylistAddDTO playlistAddDTO) {
+    public Result<?> addPlaylist(@Valid @RequestBody PlaylistAddDTO playlistAddDTO) {
         return playlistService.addPlaylist(playlistAddDTO);
     }
 
@@ -482,7 +482,7 @@ public class AdminController {
      * @return 结果
      */
     @PutMapping("/updatePlaylist")
-    public Result<?> updatePlaylist(@RequestBody PlaylistUpdateDTO playlistUpdateDTO) {
+    public Result<?> updatePlaylist(@Valid @RequestBody PlaylistUpdateDTO playlistUpdateDTO) {
         return playlistService.updatePlaylist(playlistUpdateDTO);
     }
 

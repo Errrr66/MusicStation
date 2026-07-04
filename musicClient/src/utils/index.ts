@@ -6,10 +6,8 @@ import { useNavigatorLanguage } from '@vueuse/core'
  */
 export function getBrowserLang() {
   const { language } = useNavigatorLanguage()
-  if (['zh-CN'].includes(language.value as string)) {
-    language.value = 'zh'
-  }
-  return language.value
+  const lang = language.value as string
+  return lang === 'zh-CN' ? 'zh' : lang
 }
 
 export function formatTime(seconds: number): string {
@@ -31,6 +29,17 @@ export function formatMillisecondsToTime(totalMilliseconds: number) {
     .map((n) => (n < 10 ? `0${n}` : n.toString()))
     .filter((val, index) => val !== '00' || index > 0) // 移除开头的"00"小时
     .join(':')
+}
+
+/**
+ * 将歌曲时长（后端返回的秒，可能是字符串或数字）统一转换为毫秒
+ * 作为时长单位的数据入口转换函数，避免各消费点重复 * 1000
+ * @param duration 秒为单位的时长（string | number）
+ * @returns 毫秒为单位的数字
+ */
+export function durationToMs(duration: string | number): number {
+  const seconds = typeof duration === 'number' ? duration : parseFloat(duration)
+  return (Number.isFinite(seconds) ? seconds : 0) * 1000
 }
 
 /**

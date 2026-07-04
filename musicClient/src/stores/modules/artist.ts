@@ -16,7 +16,7 @@ export const useArtistStore = defineStore('ArtistStore', {
     artistInfo: null as ArtistInfo | null,
   }),
   actions: {
-    setArtistInfo(info: ArtistInfo) {
+    setArtistInfo(info: ArtistInfo | null) {
       this.artistInfo = info
     },
   },

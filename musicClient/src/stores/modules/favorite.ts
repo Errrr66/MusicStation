@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import {
-  getFavoritePlaylists,
-  collectPlaylist,
-  cancelCollectPlaylist,
+  getFavoritePlaylists as fetchFavoritePlaylistsApi,
+  collectPlaylist as collectPlaylistApi,
+  cancelCollectPlaylist as cancelCollectPlaylistApi,
 } from '@/api/system'
 import type { ResultTable } from '@/api/system'
 import { ElMessage } from 'element-plus'
@@ -26,7 +26,7 @@ export const useFavoriteStore = defineStore('favorite', {
     async getFavoritePlaylists() {
       try {
         this.loading = true
-        const res = await getFavoritePlaylists({
+        const res = await fetchFavoritePlaylistsApi({
           pageNum: 1,
           pageSize: 50,
           title: '',
@@ -35,10 +35,10 @@ export const useFavoriteStore = defineStore('favorite', {
         if (res.code === 0 && res.data) {
           const data = res.data as ResultTable['data']
           if (data?.items) {
-            this.favoritePlaylists = data.items.map((item) => ({
-              id: item.playlistId,
-              name: item.title,
-              coverImgUrl: fixUrl(item.coverUrl) || coverImg,
+            this.favoritePlaylists = (data.items as Array<Record<string, unknown>>).map((item) => ({
+              id: item.playlistId as number,
+              name: item.title as string,
+              coverImgUrl: fixUrl(item.coverUrl as string) || coverImg,
             }))
           }
         }
@@ -52,11 +52,11 @@ export const useFavoriteStore = defineStore('favorite', {
     // 收藏歌单
     async collectPlaylist(playlistId: number) {
       try {
-        const res = await collectPlaylist(playlistId)
+        const res = await collectPlaylistApi(playlistId)
         if (res.code === 0) {
           ElMessage.success('收藏成功')
           // 重新获取收藏列表
-          this.getFavoritePlaylists()
+          await this.getFavoritePlaylists()
           return true
         }
         return false
@@ -69,7 +69,7 @@ export const useFavoriteStore = defineStore('favorite', {
     // 取消收藏歌单
     async cancelCollectPlaylist(playlistId: number) {
       try {
-        const res = await cancelCollectPlaylist(playlistId)
+        const res = await cancelCollectPlaylistApi(playlistId)
         if (res.code === 0) {
           ElMessage.success('取消收藏成功')
           // 从列表中移除

@@ -5,17 +5,27 @@ import com.example.music.service.MinioService;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class MinioServiceImpl implements MinioService {
 
     private final MinioClient minioClient;
+
+    // 允许上传的文件扩展名白名单
+    private static final Set<String> ALLOWED_EXTENSIONS = new HashSet<>(
+            Arrays.asList("jpg", "jpeg", "png", "gif", "webp", "mp3", "flac", "wav"));
 
     @Value("${minio.bucket}")
     private String bucketName;
@@ -28,6 +38,24 @@ public class MinioServiceImpl implements MinioService {
     }
 
     /**
+     * 校验文件扩展名是否在白名单内，返回小写扩展名
+     */
+    private String validateExtension(String originalFileName) {
+        if (originalFileName == null || originalFileName.isEmpty()) {
+            throw new RuntimeException(MessageConstant.FILE_UPLOAD + MessageConstant.FAILED + "：文件名为空");
+        }
+        int dotIndex = originalFileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == originalFileName.length() - 1) {
+            throw new RuntimeException(MessageConstant.FILE_UPLOAD + MessageConstant.FAILED + "：文件扩展名非法");
+        }
+        String ext = originalFileName.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
+        if (!ALLOWED_EXTENSIONS.contains(ext)) {
+            throw new RuntimeException(MessageConstant.FILE_UPLOAD + MessageConstant.FAILED + "：不支持的文件类型");
+        }
+        return ext;
+    }
+
+    /**
      * 上传文件到 Minio
      *
      * @param file   文件
@@ -36,13 +64,11 @@ public class MinioServiceImpl implements MinioService {
      */
     @Override
     public String uploadFile(MultipartFile file, String folder) {
-        try {
-            // 生成唯一文件名
-            String fileName = folder + "/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
-
-            // 获取文件流
-            InputStream inputStream = file.getInputStream();
-
+        String ext = validateExtension(file.getOriginalFilename());
+        // 使用 UUID 作为存储文件名，避免覆盖和路径穿越
+        String fileName = folder + "/" + UUID.randomUUID().toString().replace("-", "") + "." + ext;
+        // 使用 try-with-resources 确保输入流关闭
+        try (InputStream inputStream = file.getInputStream()) {
             // 上传文件
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -72,16 +98,15 @@ public class MinioServiceImpl implements MinioService {
      */
     @Override
     public String uploadFile(InputStream inputStream, String originalFileName, String contentType, String folder) {
-        try {
-            // 生成唯一文件名
-            String fileName = folder + "/" + UUID.randomUUID() + "-" + originalFileName;
-
+        String ext = validateExtension(originalFileName);
+        String fileName = folder + "/" + UUID.randomUUID().toString().replace("-", "") + "." + ext;
+        try (InputStream is = inputStream) {
             // 上传文件
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(fileName)
-                            .stream(inputStream, -1, 10485760) // Part size 10MB
+                            .stream(is, -1, 10485760) // Part size 10MB
                             .contentType(contentType)
                             .build()
             );
@@ -90,7 +115,7 @@ public class MinioServiceImpl implements MinioService {
             return endpoint + "/" + bucketName + "/" + fileName;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("文件上传失败：{}", e.getMessage(), e);
             throw new RuntimeException("文件上传失败：" + e.getMessage());
         }
     }

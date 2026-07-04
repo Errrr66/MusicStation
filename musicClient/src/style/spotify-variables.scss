@@ -1,3 +1,10 @@
+:root {
+  --mr-accent: var(--text-base, #fff);
+  --mr-accent-hover: var(--text-base, #fff);
+  --mr-accent-active: var(--text-base, #fff);
+  --bg-surface: #000000;
+}
+
 $desktop-breakpoint: 768px;
 $desktop-small-breakpoint: 900px;
 
@@ -11,9 +18,8 @@ $container-border-radius: 8px;
 
 $text-base: #ffffff;
 $text-subdued: #a7a7a7;
-$text-bright-accent: #1ed760;
-$text-negative: #f15e6c;
-$text-announcement: #1db954;
+$text-bright-accent: var(--text-base, #fff);
+$text-announcement: var(--text-base, #fff);
 
 $essential-negative: #000000;
 $essential-positive: #ffffff;
@@ -21,26 +27,26 @@ $essential-subdued: #727272;
 
 $decorative-subdued: #292929;
 
-$spotify-green: #1db954;
-$spotify-green-light: #1ed760;
-$spotify-green-dark: #169c46;
+$spotify-green: var(--text-base, #fff);
+$spotify-green-light: var(--text-base, #fff);
+$spotify-green-dark: var(--text-base, #fff);
 
-$primary-button-bg: #1db954;
-$primary-button-text: #000000;
+$primary-button-bg: var(--text-base, #fff);
+$primary-button-text: var(--bg-surface, #000);
 
 $secondary-button-bg: transparent;
 $secondary-button-border: #727272;
 $secondary-button-text: #ffffff;
 
-$heart-active: #1db954;
+$heart-active: var(--text-base, #fff);
 
 $progress-bar-bg: #4d4d4d;
 $progress-bar-fill: #ffffff;
-$progress-bar-fill-hover: #1db954;
+$progress-bar-fill-hover: var(--text-base, #fff);
 
 $volume-bar-bg: #4d4d4d;
 $volume-bar-fill: #ffffff;
-$volume-bar-fill-hover: #1db954;
+$volume-bar-fill-hover: var(--text-base, #fff);
 
 $library-card-bg: #ffffff1a;
 $library-card-hover: #ffffff33;

@@ -1,11 +1,11 @@
-import { defineComponent, Fragment } from "vue";
+import { defineComponent, Fragment, type PropType } from "vue";
 import { hasAuth } from "@/router/utils";
 
 export default defineComponent({
   name: "Auth",
   props: {
     value: {
-      type: undefined,
+      type: [String, Array] as PropType<string | string[]>,
       default: []
     }
   },

@@ -72,8 +72,8 @@ export const UserStore = defineStore('UserStore', {
           // 先保存token
           const token = response.data
 
-          // 设置token到userInfo
-          this.userInfo = { token }
+          // 设置token到userInfo（保留已有字段，避免中间状态丢失）
+          this.userInfo = { ...this.userInfo, token }
 
           try {
             // 再获取用户信息
@@ -83,11 +83,15 @@ export const UserStore = defineStore('UserStore', {
               this.setUserInfo(userInfoResponse.data, token)
               return { success: true, message: '登录成功' }
             }
+            // 获取用户信息失败，清除已保存的 token
+            this.clearUserInfo()
             return {
               success: false,
               message: userInfoResponse.message || '获取用户信息失败',
             }
           } catch (error: any) {
+            // 获取用户信息异常，清除已保存的 token
+            this.clearUserInfo()
             return {
               success: false,
               message: error.message || '获取用户信息失败',

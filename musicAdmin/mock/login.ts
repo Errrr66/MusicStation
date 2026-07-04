@@ -6,37 +6,31 @@ export default defineFakeRoute([
     url: "/login",
     method: "post",
     response: ({ body }) => {
-      if (body.username === "admin") {
-        return {
-          success: true,
-          data: {
-            avatar: "https://avatars.githubusercontent.com/u/44761321",
-            username: "admin",
-            nickname: "admin",
-            // 一个用户可能有多个角色
-            roles: ["admin"],
-            // 按钮级别权限
-            permissions: ["*:*:*"],
-            accessToken: "eyJhbGciOiJIUzUxMiJ9.admin",
-            refreshToken: "eyJhbGciOiJIUzUxMiJ9.adminRefresh",
-            expires: "2030/10/30 00:00:00"
-          }
-        };
-      } else {
-        return {
-          success: true,
-          data: {
-            avatar: "https://avatars.githubusercontent.com/u/52823142",
-            username: "common",
-            nickname: "common",
-            roles: ["common"],
-            permissions: ["permission:btn:add", "permission:btn:edit"],
-            accessToken: "eyJhbGciOiJIUzUxMiJ9.common",
-            refreshToken: "eyJhbGciOiJIUzUxMiJ9.commonRefresh",
-            expires: "2030/10/30 00:00:00"
-          }
-        };
-      }
+      const isAdmin = body.username === "admin";
+      // 构造 fake JWT 字符串，结构与后端真实返回保持一致（data 为 JWT 字符串）
+      const payload = {
+        claims: {
+          role: isAdmin ? "admin" : "common",
+          username: isAdmin ? "admin" : "common",
+          avatar: "",
+          nickname: isAdmin ? "admin" : "common",
+          permissions: isAdmin
+            ? ["*:*:*"]
+            : ["permission:btn:add", "permission:btn:edit"]
+        },
+        exp: 2000000000
+      };
+      const encode = (obj: object) =>
+        btoa(JSON.stringify(obj))
+          .replace(/=/g, "")
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_");
+      const token = `${encode({ alg: "HS512" })}.${encode(payload)}.fake`;
+      return {
+        code: 0,
+        message: "登录成功",
+        data: token
+      };
     }
   }
 ]);
