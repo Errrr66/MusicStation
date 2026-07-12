@@ -21,7 +21,7 @@ const itemStyle = computed(() => {
     const isActive = item?.path === active.value;
     return {
       background: isActive ? "var(--matrix-color)" : "",
-      color: isActive ? "#fff" : "var(--matrix-text)",
+      color: isActive ? "var(--matrix-text-bright)" : "var(--matrix-text)",
       fontSize: isActive ? "16px" : "14px",
       border: isActive ? "1px solid var(--matrix-color)" : "1px solid var(--matrix-border)"
     };
@@ -74,7 +74,7 @@ defineExpose({ handleScroll });
       v-for="(item, index) in options"
       :key="item.path"
       :ref="'resultItemRef' + index"
-      class="result-item dark:bg-[#1d1d1d]"
+      class="result-item bg-[var(--matrix-bg-light)]"
       :style="itemStyle(item)"
       @click="handleTo"
       @mouseenter="handleMouse(item)"
@@ -102,7 +102,7 @@ defineExpose({ handleScroll });
     border-radius: 0;
     background: var(--matrix-bg-light);
     transition: all 0.2s ease;
-    font-family: 'SF Mono', 'Consolas', monospace;
+    font-family: var(--mr-font-family);
 
     &:hover {
       background: var(--matrix-bg-hover);

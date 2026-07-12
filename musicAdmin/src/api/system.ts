@@ -28,7 +28,7 @@ export const getUserList = (data: object) => {
   return http.request<ResultTable>("post", "/admin/getAllUsers", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     }, // 确保是 JSON
     data // 直接传 JSON 对象
   });
@@ -40,7 +40,7 @@ export const addUser = (data: object) => {
   return http.request<Result>("post", "/admin/addUser", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -52,7 +52,7 @@ export const updateUser = (data: object) => {
   return http.request<Result>("put", "/admin/updateUser", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -66,7 +66,7 @@ export const updateUserStatus = (id: number, status: number) => {
     `/admin/updateUserStatus/${id}/${status}`,
     {
       headers: {
-        Authorization: userData.accessToken
+        Authorization: userData!.accessToken
       }
     }
   );
@@ -76,7 +76,7 @@ export const updateUserStatus = (id: number, status: number) => {
 export const deleteUser = (id: number) => {
   const userData = getToken();
   return http.request<Result>("delete", `/admin/deleteUser/${id}`, {
-    headers: { Authorization: userData.accessToken }
+    headers: { Authorization: userData!.accessToken }
   });
 };
 
@@ -86,7 +86,7 @@ export const deleteUsers = (ids: Array<number>) => {
   return http.request<Result>("delete", `/admin/deleteUsers`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data: ids
   });
@@ -98,7 +98,7 @@ export const getArtistList = (data: object) => {
   return http.request<ResultTable>("post", "/admin/getAllArtists", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -110,7 +110,7 @@ export const addArtist = (data: object) => {
   return http.request<Result>("post", "/admin/addArtist", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -122,7 +122,7 @@ export const updateArtist = (data: object) => {
   return http.request<Result>("put", "/admin/updateArtist", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -134,7 +134,7 @@ export const updateArtistAvatar = (id: number, data: object) => {
   return http.request<Result>("patch", `/admin/updateArtistAvatar/${id}`, {
     headers: {
       "Content-Type": "multipart/form-data",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data,
     responseType: "json" // 确保使用正确的响应类型（可以使用 'json' 或 'blob'）
@@ -145,7 +145,7 @@ export const updateArtistAvatar = (id: number, data: object) => {
 export const deleteArtist = (id: number) => {
   const userData = getToken();
   return http.request<Result>("delete", `/admin/deleteArtist/${id}`, {
-    headers: { Authorization: userData.accessToken }
+    headers: { Authorization: userData!.accessToken }
   });
 };
 
@@ -155,7 +155,7 @@ export const deleteArtists = (ids: Array<number>) => {
   return http.request<Result>("delete", `/admin/deleteArtists`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data: ids
   });
@@ -167,7 +167,7 @@ export const getAllArtists = () => {
   return http.request<Result>("get", "/admin/getAllArtistNames", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     }
   });
 };
@@ -178,7 +178,7 @@ export const getSongList = (data: object) => {
   return http.request<ResultTable>("post", "/admin/getAllSongsByArtist", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -190,7 +190,7 @@ export const addSong = (data: object) => {
   return http.request<Result>("post", "/admin/addSong", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -202,7 +202,7 @@ export const updateSong = (data: object) => {
   return http.request<Result>("put", "/admin/updateSong", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -214,7 +214,7 @@ export const updateSongCover = (id: number, data: object) => {
   return http.request<Result>("patch", `/admin/updateSongCover/${id}`, {
     headers: {
       "Content-Type": "multipart/form-data",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data,
     responseType: "json" // 确保使用正确的响应类型（可以使用 'json' 或 'blob'）
@@ -227,7 +227,7 @@ export const updateSongAudio = (id: number, data: object) => {
   return http.request<Result>("patch", `/admin/updateSongAudio/${id}`, {
     headers: {
       "Content-Type": "multipart/form-data",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data,
     responseType: "json" // 确保使用正确的响应类型（可以使用 'json' 或 'blob'）
@@ -238,7 +238,7 @@ export const updateSongAudio = (id: number, data: object) => {
 export const deleteSong = (id: number) => {
   const userData = getToken();
   return http.request<Result>("delete", `/admin/deleteSong/${id}`, {
-    headers: { Authorization: userData.accessToken }
+    headers: { Authorization: userData!.accessToken }
   });
 };
 
@@ -248,7 +248,7 @@ export const deleteSongs = (ids: Array<number>) => {
   return http.request<Result>("delete", `/admin/deleteSongs`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data: ids
   });
@@ -260,7 +260,7 @@ export const getPlaylistList = (data: object) => {
   return http.request<ResultTable>("post", "/admin/getAllPlaylists", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -272,7 +272,7 @@ export const addPlaylist = (data: object) => {
   return http.request<Result>("post", "/admin/addPlaylist", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -284,7 +284,7 @@ export const updatePlaylist = (data: object) => {
   return http.request<Result>("put", "/admin/updatePlaylist", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -296,7 +296,7 @@ export const updatePlaylistCover = (id: number, data: object) => {
   return http.request<Result>("patch", `/admin/updatePlaylistCover/${id}`, {
     headers: {
       "Content-Type": "multipart/form-data",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data,
     responseType: "json" // 确保使用正确的响应类型（可以使用 'json' 或 'blob'）
@@ -307,7 +307,7 @@ export const updatePlaylistCover = (id: number, data: object) => {
 export const deletePlaylist = (id: number) => {
   const userData = getToken();
   return http.request<Result>("delete", `/admin/deletePlaylist/${id}`, {
-    headers: { Authorization: userData.accessToken }
+    headers: { Authorization: userData!.accessToken }
   });
 };
 
@@ -317,7 +317,7 @@ export const deletePlaylists = (ids: Array<number>) => {
   return http.request<Result>("delete", `/admin/deletePlaylists`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data: ids
   });
@@ -329,7 +329,7 @@ export const getFeedbackList = (data: object) => {
   return http.request<ResultTable>("post", "/admin/getAllFeedbacks", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -339,7 +339,7 @@ export const getFeedbackList = (data: object) => {
 export const deleteFeedback = (id: number) => {
   const userData = getToken();
   return http.request<Result>("delete", `/admin/deleteFeedback/${id}`, {
-    headers: { Authorization: userData.accessToken }
+    headers: { Authorization: userData!.accessToken }
   });
 };
 
@@ -349,7 +349,7 @@ export const deleteFeedbacks = (ids: Array<number>) => {
   return http.request<Result>("delete", `/admin/deleteFeedbacks`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data: ids
   });
@@ -361,7 +361,7 @@ export const getBannerList = (data: object) => {
   return http.request<ResultTable>("post", "/admin/getAllBanners", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -373,7 +373,7 @@ export const addBanner = (data: object) => {
   return http.request<Result>("post", "/admin/addBanner", {
     headers: {
       "Content-Type": "multipart/form-data",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -385,7 +385,7 @@ export const updateBanner = (id: number, data: object) => {
   return http.request<Result>("patch", `/admin/updateBanner/${id}`, {
     headers: {
       "Content-Type": "multipart/form-data",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data
   });
@@ -396,7 +396,7 @@ export const updateBannerStatus = (id: number, status: number) => {
   const userData = getToken();
   return http.request<Result>("patch", `/admin/updateBannerStatus/${id}`, {
     headers: {
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     params: { status }
   });
@@ -406,7 +406,7 @@ export const updateBannerStatus = (id: number, status: number) => {
 export const deleteBanner = (id: number) => {
   const userData = getToken();
   return http.request<Result>("delete", `/admin/deleteBanner/${id}`, {
-    headers: { Authorization: userData.accessToken }
+    headers: { Authorization: userData!.accessToken }
   });
 };
 
@@ -416,139 +416,11 @@ export const deleteBanners = (ids: Array<number>) => {
   return http.request<Result>("delete", `/admin/deleteBanners`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     data: ids
   });
 };
 
-export type AdminRagHealth = {
-  ragEnabled: boolean;
-  ragMode: string;
-  ragLastRetrieval: {
-    strategy: string;
-    mode: string;
-    queryCount: number;
-    candidateCount: number;
-    citationCount: number;
-    enabled: boolean;
-    updatedAtEpochMs: number;
-  };
-  providers: {
-    deepseekConfigured: boolean;
-    ttsConfigured: boolean;
-    semanticConfigured: boolean;
-  };
-  serverTime: string;
-};
 
-export type AdminRagDebugRetrieveResult = {
-  query: string;
-  intent: string;
-  ragEnabled: boolean;
-  promptContext: string;
-  retrievalHealth: {
-    strategy: string;
-    mode: string;
-    queryCount: number;
-    candidateCount: number;
-    citationCount: number;
-    enabled: boolean;
-    updatedAtEpochMs: number;
-  };
-  citations: Array<{
-    sourceType: string;
-    sourceId: string;
-    title: string;
-    snippet: string;
-    reason: string;
-  }>;
-};
-
-export type AdminRagEvalResult = {
-  caseCount: number;
-  topK: number;
-  recallAtK: number;
-  mrr: number;
-  hitRate: number;
-  softRecallAtK: number;
-  softMrr: number;
-  softHitRate: number;
-  details: Array<{
-    query: string;
-    intent: string;
-    hit: boolean;
-    softHit: boolean;
-    recall: number;
-    softRecall: number;
-    reciprocalRank: number;
-    softReciprocalRank: number;
-    retrieved: Array<{
-      sourceType: string;
-      sourceId: string;
-      title: string;
-      snippet: string;
-      reason: string;
-    }>;
-  }>;
-};
-
-export const getAdminRagHealth = () => {
-  const userData = getToken();
-  return http.request<{ code: number; message: string; data: AdminRagHealth }>("get", "/admin/rag/health", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: userData.accessToken
-    }
-  });
-};
-
-export const refreshAdminRagArtistAlias = () => {
-  const userData = getToken();
-  return http.request<{ code: number; message: string; data: Record<string, any> }>("post", "/admin/rag/artist-alias/refresh", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: userData.accessToken
-    }
-  });
-};
-
-export const debugAdminRagRetrieve = (data: {
-  query: string;
-  intent?: string;
-  topK?: number;
-  enableRag?: boolean;
-}) => {
-  const userData = getToken();
-  return http.request<{ code: number; message: string; data: AdminRagDebugRetrieveResult }>("post", "/admin/rag/debug-retrieve", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: userData.accessToken
-    },
-    data
-  });
-};
-
-export const evaluateAdminRag = (data: {
-  topK?: number;
-  cases: Array<{
-    query: string;
-    intent?: string;
-    relevant: Array<{
-      sourceType: string;
-      sourceId: string;
-      titleKeyword?: string;
-      artistKeyword?: string;
-    }>;
-  }>;
-}) => {
-  const userData = getToken();
-  return http.request<{ code: number; message: string; data: AdminRagEvalResult }>("post", "/admin/rag/evaluate", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: userData.accessToken
-    },
-    data
-  });
-};
 

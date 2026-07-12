@@ -72,13 +72,13 @@ export const useAppStore = defineStore({
     toggleDevice(device: string) {
       this.device = device;
     },
-    setLayout(layout) {
+    setLayout(layout: any) {
       this.layout = layout;
     },
-    setViewportSize(size) {
+    setViewportSize(size: any) {
       this.viewportSize = size;
     },
-    setSortSwap(val) {
+    setSortSwap(val: any) {
       this.sortSwap = val;
     }
   }

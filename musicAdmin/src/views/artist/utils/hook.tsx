@@ -27,7 +27,7 @@ export function useArtist(tableRef: Ref) {
     gender: null
   });
   const formRef = ref();
-  const dataList = ref([]);
+  const dataList = ref<any[]>([]);
   const loading = ref(true);
   // 上传头像信息
   const avatarInfo = ref();
@@ -89,9 +89,9 @@ export function useArtist(tableRef: Ref) {
           effect="plain"
         >
           {row.gender === 0
-            ? "男歌手"
+            ? "Male"
             : row.gender === 1
-              ? "女歌手"
+              ? "Female"
               : row.gender === 2
                 ? "组合/乐队"
                 : "未知"}
@@ -145,11 +145,11 @@ export function useArtist(tableRef: Ref) {
     ];
   });
 
-  function handleUpdate(row) {
+  function handleUpdate(row: any) {
     openDialog("修改", row);
   }
 
-  function handleDelete(row) {
+  function handleDelete(row: any) {
     deleteArtist(row.artistId).then(res => {
       if (res.code === 0) {
         message(`您删除了歌手编号为 ${row.artistId} 的这条数据`, {
@@ -177,7 +177,7 @@ export function useArtist(tableRef: Ref) {
   }
 
   /** 当CheckBox选择项发生变化时会触发该事件 */
-  function handleSelectionChange(val) {
+  function handleSelectionChange(val: any) {
     selectedNum.value = val.length;
     // 重置表格高度
     tableRef.value.setAdaptive();
@@ -220,8 +220,8 @@ export function useArtist(tableRef: Ref) {
 
       if (result.code === 0 && result.data && result.data.items) {
         // 如果返回状态码为 0（成功），且 data 和 items 存在
-        pagination.total = result.data.total; // 设置总条目数
-        dataList.value = result.data.items.map(item => ({
+        pagination.total = result.data.total as number; // 设置总条目数
+        dataList.value = result.data.items.map((item: any) => ({
           artistId: item.artistId,
           artistName: item.artistName,
           gender: item.gender,
@@ -244,7 +244,7 @@ export function useArtist(tableRef: Ref) {
     }
   }
 
-  const resetForm = formEl => {
+  const resetForm = (formEl: any) => {
     if (!formEl) return;
     formEl.resetFields();
     onSearch();
@@ -280,7 +280,7 @@ export function useArtist(tableRef: Ref) {
           done(); // 关闭弹框
           onSearch(); // 刷新表格数据
         }
-        FormRef.validate(valid => {
+        FormRef.validate((valid: any) => {
           if (valid) {
             // 表单规则校验通过
             if (title === "新增") {
@@ -308,7 +308,7 @@ export function useArtist(tableRef: Ref) {
 
   const cropRef = ref();
   /** 上传头像 */
-  async function handleUpload(row) {
+  async function handleUpload(row: any) {
     addDialog({
       title: "裁剪、上传头像",
       width: "40%",
@@ -318,7 +318,7 @@ export function useArtist(tableRef: Ref) {
         h(ReCropperPreview, {
           ref: cropRef,
           imgSrc: row.avatar || userAvatar,
-          onCropper: info => (avatarInfo.value = info)
+          onCropper: (info: any) => (avatarInfo.value = info)
         }),
       beforeSure: async done => {
         if (!avatarInfo.value?.blob) {

@@ -6,7 +6,7 @@ const TITLE = getConfig("Title");
 
 <template>
   <footer
-    class="layout-footer text-[rgba(0,0,0,0.6)] dark:text-[rgba(220,220,242,0.8)]"
+    class="layout-footer text-[var(--matrix-text-dim)]"
   >
     Copyright © 2024-2025
     <a class="hover:text-primary" href="#" target="_blank">

@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, watch } from "vue";
+import {
+  useMatrixMorandiColors,
+  drawMatrixCell,
+  MATRIX_PATTERNS,
+  type MatrixPattern
+} from "./useMatrixColors";
+import { useMatrixAnimation } from "./useMatrixAnimation";
 
 const props = defineProps({
   data: {
@@ -8,187 +15,264 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: "#ff6b35"
+    default: ""
   }
 });
 
-const rows = 7;
-const size = 5;
+const rows = 9;
+const size = 4;
 const gap = 2;
-
 const cols = computed(() => props.data.length || 7);
+const duration = 1500;
 
+const containerRef = ref<HTMLElement | null>(null);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 const tooltipVisible = ref(false);
 const tooltipContent = ref("");
 const tooltipX = ref(0);
 const tooltipY = ref(0);
+const hoverIndex = ref(-1);
 
-let animationId: number | undefined;
-let startTime = 0;
-const phaseOffset = ref(0);
+const morandiColors = useMatrixMorandiColors(12);
+const resolvedColor = computed(() => props.color || "var(--matrix-color)");
 
-const animatedLevels = ref<number[]>(props.data.map(() => 0));
-const waveLevels = ref<number[]>(props.data.map(() => 0));
+const displayWidth = computed(() => cols.value * (size + gap) - gap);
+const displayHeight = rows * (size + gap) - gap;
 
-function animate(currentTime: number) {
-  if (!startTime) startTime = currentTime;
-  const elapsed = currentTime - startTime;
+let ctx: CanvasRenderingContext2D | null = null;
 
-  const duration = 1500;
+interface Point {
+  x: number;
+  y: number;
+  value: number;
+  color: string;
+  pattern: MatrixPattern;
+}
+
+let points: Point[] = [];
+
+function setupCanvas() {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.floor(displayWidth.value * dpr);
+  canvas.height = Math.floor(displayHeight * dpr);
+  canvas.style.width = `${displayWidth.value}px`;
+  canvas.style.height = `${displayHeight}px`;
+  ctx = canvas.getContext("2d");
+  if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function buildPoints() {
+  const maxVal = Math.max(...props.data, 1);
+  const palette = morandiColors.value;
+  points = props.data.map((val, i) => {
+    const normalized = val / maxVal;
+    const x = i * (size + gap) + size / 2;
+    const y = displayHeight - size / 2 - normalized * (displayHeight - size);
+    return {
+      x,
+      y,
+      value: val,
+      color: palette[i % palette.length],
+      pattern: MATRIX_PATTERNS[i % MATRIX_PATTERNS.length]
+    };
+  });
+}
+
+function drawArea(revealProgress: number) {
+  if (!ctx || points.length < 2) return;
+  const revealX = displayWidth.value * revealProgress;
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, displayHeight);
+  gradient.addColorStop(0, resolvedColor.value);
+  gradient.addColorStop(1, "transparent");
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, displayHeight);
+  for (const p of points) {
+    if (p.x > revealX) break;
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.lineTo(Math.min(revealX, points[points.length - 1].x), displayHeight);
+  ctx.closePath();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawLine(revealProgress: number) {
+  if (!ctx || points.length < 2) return;
+  const revealX = displayWidth.value * revealProgress;
+
+  ctx.save();
+  ctx.strokeStyle = resolvedColor.value;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.globalAlpha = 0.9;
+
+  ctx.beginPath();
+  let started = false;
+  for (const p of points) {
+    if (p.x > revealX) break;
+    if (!started) {
+      ctx.moveTo(p.x, p.y);
+      started = true;
+    } else {
+      ctx.lineTo(p.x, p.y);
+    }
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMarkers(revealX: number, _pulse: number, elapsed = 0) {
+  if (!ctx) return;
+  const sweep = (elapsed / 1200) * Math.PI * 2;
+
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    if (p.x > revealX) break;
+
+    const isHover = hoverIndex.value === i;
+    // 矩阵变换波动：数据点沿 X 轴形成波浪起伏
+    const phase = (i / points.length) * Math.PI * 2;
+    const wave = Math.sin(sweep + phase) * 0.5 + 0.5;
+    const radius = isHover ? size * 1.2 : size * (0.6 + wave * 0.25);
+    const alpha = isHover ? 1 : 0.7 + wave * 0.22;
+
+    ctx.globalAlpha = alpha;
+    drawMatrixCell(ctx, p.x, p.y, radius, p.pattern, p.color);
+
+    if (isHover) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 1;
+}
+
+function drawGrid() {
+  if (!ctx) return;
+  ctx.save();
+  ctx.strokeStyle = resolvedColor.value;
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.08;
+
+  for (let r = 1; r < rows; r += 2) {
+    const y = r * (size + gap) + size / 2;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(displayWidth.value, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function renderFrame(elapsed: number) {
+  if (!ctx) setupCanvas();
+  if (!ctx) return;
+
   const progress = Math.min(elapsed / duration, 1);
   const eased = 1 - Math.pow(1 - progress, 3);
+  const pulse = Math.sin((elapsed / 1200) * Math.PI * 2) * 0.5 + 0.5;
 
-  animatedLevels.value = props.data.map((val, i) => {
-    const delay = i * 50;
-    const adjustedProgress = Math.max(0, Math.min(1, (elapsed - delay) / (duration - delay)));
-    const adjustedEased = 1 - Math.pow(1 - adjustedProgress, 3);
-    return val * adjustedEased;
-  });
-
-  phaseOffset.value = (elapsed / 1000) * Math.PI * 2;
-
-  waveLevels.value = props.data.map((val, i) => {
-    const wave = Math.sin(phaseOffset.value + i * 0.5) * 0.12;
-    return Math.max(0, Math.min(1, (val / Math.max(...props.data, 1)) + wave));
-  });
-
-  animationId = requestAnimationFrame(animate);
+  ctx.clearRect(0, 0, displayWidth.value, displayHeight);
+  drawGrid();
+  drawArea(eased);
+  drawLine(eased);
+  drawMarkers(displayWidth.value * eased, pulse, elapsed);
 }
 
-onMounted(() => {
-  animationId = requestAnimationFrame(animate);
-  document.addEventListener("visibilitychange", handleVisibilityChange);
+const { restart } = useMatrixAnimation(containerRef, {
+  fps: 30,
+  duration,
+  onFrame: renderFrame
 });
 
-onUnmounted(() => {
-  if (animationId) {
-    cancelAnimationFrame(animationId);
-  }
-  document.removeEventListener("visibilitychange", handleVisibilityChange);
+watch(
+  () => props.data,
+  () => {
+    hoverIndex.value = -1;
+    buildPoints();
+    setupCanvas();
+    restart();
+  },
+  { deep: true }
+);
+
+watch(hoverIndex, () => {
+  renderFrame(duration);
 });
 
-function handleVisibilityChange() {
-  if (document.hidden) {
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-      animationId = undefined;
-    }
-  } else if (!animationId) {
-    startTime = 0;
-    animationId = requestAnimationFrame(animate);
-  }
-}
-
-const animatedFrame = computed(() => {
-  const result: number[][] = [];
-  const maxVal = Math.max(...animatedLevels.value, 1);
-
-  for (let r = 0; r < rows; r++) {
-    result[r] = [];
-    for (let c = 0; c < cols.value; c++) {
-      const normalizedValue = waveLevels.value[c] || 0;
-      const height = normalizedValue * rows;
-      const rowFromBottom = rows - 1 - r;
-      const distance = Math.abs(rowFromBottom - height);
-
-      if (distance < 0.3) {
-        result[r][c] = 1;
-      } else if (distance < 0.8) {
-        result[r][c] = 0.6;
-      } else if (distance < 1.5) {
-        result[r][c] = 0.2;
-      } else {
-        result[r][c] = 0;
-      }
+function resolveIndex(event: MouseEvent): number {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  let closest = -1;
+  let minDist = Infinity;
+  for (let i = 0; i < points.length; i++) {
+    const dist = Math.abs(points[i].x - x);
+    if (dist < minDist) {
+      minDist = dist;
+      closest = i;
     }
   }
-  return result;
-});
-
-const cellPositions = computed(() => {
-  const positions: { x: number; y: number }[][] = [];
-  for (let row = 0; row < rows; row++) {
-    positions[row] = [];
-    for (let col = 0; col < cols.value; col++) {
-      positions[row][col] = {
-        x: col * (size + gap),
-        y: row * (size + gap)
-      };
-    }
-  }
-  return positions;
-});
-
-const svgDimensions = computed(() => ({
-  width: cols.value * (size + gap) - gap,
-  height: rows * (size + gap) - gap
-}));
-
-function handleMouseEnter(colIndex: number, event: MouseEvent) {
-  tooltipVisible.value = true;
-  tooltipContent.value = `${props.data[colIndex]}`;
-  updateTooltipPosition(event);
+  return closest;
 }
 
 function handleMouseMove(event: MouseEvent) {
-  updateTooltipPosition(event);
-}
-
-function handleMouseLeave() {
-  tooltipVisible.value = false;
-}
-
-function updateTooltipPosition(event: MouseEvent) {
+  const index = resolveIndex(event);
+  hoverIndex.value = index;
+  if (index >= 0 && index < props.data.length) {
+    tooltipContent.value = `${props.data[index] ?? 0}`;
+    tooltipVisible.value = true;
+  }
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
   tooltipX.value = event.clientX - rect.left + 10;
   tooltipY.value = event.clientY - rect.top - 30;
 }
+
+function handleMouseLeave() {
+  tooltipVisible.value = false;
+  hoverIndex.value = -1;
+}
 </script>
 
 <template>
-  <div class="matrix-line-chart" :style="{ '--matrix-color': color }">
+  <div ref="containerRef" class="matrix-line-chart" :style="{ '--chart-color': resolvedColor }">
     <div
       class="chart-container"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
     >
-      <svg
-        :width="svgDimensions.width"
-        :height="svgDimensions.height"
-        :viewBox="`0 0 ${svgDimensions.width} ${svgDimensions.height}`"
-        xmlns="http://www.w3.org/2000/svg"
-        class="block"
-        style="overflow: visible"
-      >
-        <defs>
-          <filter id="pixel-glow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="1" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <template v-for="(row, rowIndex) in animatedFrame" :key="rowIndex">
-          <rect
-            v-for="(value, colIndex) in row"
-            :key="`${rowIndex}-${colIndex}`"
-            :class="['matrix-pixel', value > 0.4 && 'matrix-pixel-active']"
-            :x="cellPositions[rowIndex]?.[colIndex]?.x"
-            :y="cellPositions[rowIndex]?.[colIndex]?.y"
-            :width="size"
-            :height="size"
-            :fill="color"
-            :opacity="value > 0.1 ? value : 0.1"
-            @mouseenter="handleMouseEnter(colIndex, $event)"
-          />
-        </template>
-      </svg>
+      <canvas
+        ref="canvasRef"
+        :width="displayWidth"
+        :height="displayHeight"
+        :style="{ width: `${displayWidth}px`, height: `${displayHeight}px` }"
+        class="matrix-canvas"
+        aria-label="Matrix 风格折线趋势图"
+      />
       <Transition name="tooltip">
         <div
           v-if="tooltipVisible"
           class="matrix-tooltip"
-          :style="{ left: `${tooltipX}px`, top: `${tooltipY}px` }"
+          :style="{
+            left: `${tooltipX}px`,
+            top: `${tooltipY}px`,
+            '--chart-color': points[hoverIndex]?.color || resolvedColor
+          }"
         >
           <span class="tooltip-value">{{ tooltipContent }}</span>
         </div>
@@ -203,33 +287,31 @@ function updateTooltipPosition(event: MouseEvent) {
   align-items: center;
   justify-content: center;
   position: relative;
+  contain: paint layout;
 }
 
 .chart-container {
   position: relative;
 }
 
-.matrix-pixel {
-  transition: opacity 100ms ease-out;
-}
-
-.matrix-pixel-active {
-  filter: url(#pixel-glow);
+.matrix-canvas {
+  display: block;
 }
 
 .matrix-tooltip {
   position: absolute;
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid var(--matrix-color);
+  background: var(--mr-bg-elevated);
+  border: 1px solid var(--chart-color, var(--matrix-color));
   padding: 4px 8px;
   pointer-events: none;
   z-index: 100;
-  font-family: 'SF Mono', 'Consolas', monospace;
+  font-family: var(--mr-font-family, 'SF Mono', 'Consolas', monospace);
   font-size: 11px;
+  box-shadow: 0 0 8px var(--matrix-shadow);
 }
 
 .tooltip-value {
-  color: var(--matrix-color);
+  color: var(--chart-color, var(--matrix-color));
   font-weight: 600;
 }
 

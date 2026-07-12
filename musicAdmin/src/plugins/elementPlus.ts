@@ -239,7 +239,7 @@ const plugins = [
 export function useElementPlus(app: App) {
   // 全局注册组件
   components.forEach((component: Component) => {
-    app.component(component.name, component);
+    app.component(component.name!, component);
   });
   // 全局注册插件
   plugins.forEach(plugin => {

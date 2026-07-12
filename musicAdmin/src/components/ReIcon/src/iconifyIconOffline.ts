@@ -11,12 +11,13 @@ export default defineComponent({
     }
   },
   render() {
-    if (typeof this.icon === "object") addIcon(this.icon, this.icon);
+    if (typeof this.icon === "object" && this.icon !== null)
+      addIcon(this.icon as any, this.icon as any);
     const attrs = this.$attrs;
     return h(
       IconifyIcon,
       {
-        icon: this.icon,
+        icon: this.icon as any,
         style: attrs?.style
           ? Object.assign(attrs.style, { outline: "none" })
           : { outline: "none" },

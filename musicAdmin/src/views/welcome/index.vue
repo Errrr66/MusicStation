@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useDark } from "./utils";
 import { ReNormalCountTo } from "@/components/ReCountTo";
 import { ChartBar, ChartLine, ChartPie1, ChartPie2 } from "./components/charts";
 import useChartData from "./hooks/useChartData";
-import { useMatrixTheme } from "@/layout/hooks/useMatrixTheme";
+import { useMatrixChartColors } from "./components/charts/useMatrixColors";
 
 defineOptions({
   name: "Welcome"
 });
 
-const { isDark } = useDark();
-const { currentTheme } = useMatrixTheme();
+const statColors = useMatrixChartColors(4, {
+  grayscale: true,
+  lightnessMin: 32,
+  lightnessMax: 82
+});
 
 const {
   userCount,
@@ -56,32 +58,35 @@ const pieChartData2 = computed(() => [
   { value: femaleCount.value, name: "女" }
 ]);
 
-const statsCards = computed(() => [
-  {
-    label: "用户数量",
-    value: userCount.value,
-    color: "#41b6ff",
-    data: [210, 439, 530, 496, 575, 680, 845]
-  },
-  {
-    label: "歌手数量",
-    value: artistCount.value,
-    color: "#e85f33",
-    data: [210, 399, 500, 492, 652, 688, 850]
-  },
-  {
-    label: "歌曲数量",
-    value: songCount.value,
-    color: "#26ce83",
-    data: [2101, 3399, 5300, 4962, 6952, 6808, 8450]
-  },
-  {
-    label: "歌单数量",
-    value: playlistCount.value,
-    color: "#7846e5",
-    data: [2101, 5288, 4239, 4962, 6752, 5208, 7450]
-  }
-]);
+const statsCards = computed(() => {
+  const palette = statColors.value;
+  return [
+    {
+      label: "USERS",
+      value: userCount.value,
+      color: palette[0],
+      data: [210, 439, 530, 496, 575, 680, 845]
+    },
+    {
+      label: "ARTISTS",
+      value: artistCount.value,
+      color: palette[1],
+      data: [210, 399, 500, 492, 652, 688, 850]
+    },
+    {
+      label: "SONGS",
+      value: songCount.value,
+      color: palette[2],
+      data: [2101, 3399, 5300, 4962, 6952, 6808, 8450]
+    },
+    {
+      label: "PLAYLISTS",
+      value: playlistCount.value,
+      color: palette[3],
+      data: [2101, 5288, 4239, 4962, 6752, 5208, 7450]
+    }
+  ];
+});
 
 const timeString = ref("");
 let timeInterval: number | undefined;
@@ -238,7 +243,7 @@ onUnmounted(() => {
   min-height: 100%;
   padding: 16px;
   background: var(--matrix-bg);
-  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-family: var(--mr-font-family);
   color: var(--matrix-text);
 }
 

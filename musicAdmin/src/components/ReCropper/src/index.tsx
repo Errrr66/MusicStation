@@ -141,7 +141,7 @@ export default defineComponent({
       scaleY = 1;
     });
 
-    useResizeObserver(tippyElRef, () => handCropper("reset"));
+    useResizeObserver(tippyElRef as any, () => handCropper("reset"));
 
     async function init() {
       const imgEl = unref(imgElRef);
@@ -186,7 +186,7 @@ export default defineComponent({
           emit("cropper", {
             base64: e.target.result,
             blob,
-            info: { size: blob.size, ...cropper.value.getData() }
+            info: { size: blob.size, ...cropper.value!.getData() }
           });
         };
         fileReader.onerror = () => {
@@ -228,11 +228,11 @@ export default defineComponent({
         scaleY = arg = scaleY === -1 ? 1 : -1;
       }
       arg && isArray(arg)
-        ? cropper.value?.[event]?.(...arg)
-        : cropper.value?.[event]?.(arg);
+        ? (cropper.value as any)[event]?.(...arg)
+        : (cropper.value as any)[event]?.(arg);
     }
 
-    function beforeUpload(file) {
+    function beforeUpload(file: any) {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       inSrc.value = "";
@@ -378,10 +378,10 @@ export default defineComponent({
       }
     });
 
-    function onContextmenu(event) {
+    function onContextmenu(event: any) {
       event.preventDefault();
 
-      const { show, setProps, destroy, state } = useTippy(tippyElRef, {
+      const { show, setProps, destroy, state } = useTippy(tippyElRef as any, {
         content: menuContent,
         arrow: false,
         theme: "light",
@@ -441,7 +441,7 @@ export default defineComponent({
         ref="tippyElRef"
         class={getClass}
         style={getWrapperStyle}
-        onContextmenu={event => onContextmenu(event)}
+        onContextmenu={(event: MouseEvent) => onContextmenu(event)}
       >
         <img
           v-show={isReady}

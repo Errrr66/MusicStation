@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, watch } from "vue";
+import {
+  useMatrixMorandiColors,
+  drawMatrixCell,
+  MATRIX_PATTERNS,
+  type MatrixPattern
+} from "./useMatrixColors";
+import { useMatrixAnimation } from "./useMatrixAnimation";
 
 const props = defineProps({
   barChartData: {
@@ -9,182 +16,239 @@ const props = defineProps({
 });
 
 const labels = ["美国", "中国", "韩国", "日本", "德国", "英国"];
-const color = "var(--matrix-color)";
 
 const size = 10;
 const gap = 3;
-const rows = 10;
+const rows = 16;
 const cols = computed(() => props.barChartData.length || 6);
+const duration = 1500;
 
+const containerRef = ref<HTMLElement | null>(null);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 const tooltipVisible = ref(false);
 const tooltipContent = ref({ label: "", value: 0 });
 const tooltipX = ref(0);
 const tooltipY = ref(0);
+const activeCol = ref(-1);
 
-const animatedValues = ref<number[]>([]);
-let animationId: number | undefined;
-let startTime = 0;
-let wavePhase = 0;
+const colors = useMatrixMorandiColors(6);
 
-function animate(currentTime: number) {
-  if (!startTime) startTime = currentTime;
-  const elapsed = currentTime - startTime;
-  const duration = 1500;
-  const progress = Math.min(elapsed / duration, 1);
+const displayWidth = computed(() => cols.value * (size + gap) - gap);
+const displayHeight = rows * (size + gap) - gap;
 
-  animatedValues.value = props.barChartData.map((val, i) => {
-    const delay = i * 80;
-    const adjustedProgress = Math.max(0, Math.min(1, (elapsed - delay) / (duration - delay)));
-    const adjustedEased = 1 - Math.pow(1 - adjustedProgress, 3);
-    return val * adjustedEased;
-  });
+let ctx: CanvasRenderingContext2D | null = null;
 
-  wavePhase = (elapsed / 1500) * Math.PI * 2;
-
-  animationId = requestAnimationFrame(animate);
+interface Cell {
+  x: number;
+  y: number;
+  col: number;
+  row: number;
+  color: string;
+  baseBrightness: number;
+  pattern: MatrixPattern;
+  isTop: boolean;
 }
 
-onMounted(() => {
-  animatedValues.value = props.barChartData.map(() => 0);
-  animationId = requestAnimationFrame(animate);
-  document.addEventListener("visibilitychange", handleVisibilityChange);
-});
+const cells: Cell[] = [];
 
-onUnmounted(() => {
-  if (animationId) {
-    cancelAnimationFrame(animationId);
-  }
-  document.removeEventListener("visibilitychange", handleVisibilityChange);
-});
-
-function handleVisibilityChange() {
-  if (document.hidden) {
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-      animationId = undefined;
-    }
-  } else if (!animationId) {
-    startTime = 0;
-    animationId = requestAnimationFrame(animate);
-  }
+function setupCanvas() {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.floor(displayWidth.value * dpr);
+  canvas.height = Math.floor(displayHeight * dpr);
+  canvas.style.width = `${displayWidth.value}px`;
+  canvas.style.height = `${displayHeight}px`;
+  ctx = canvas.getContext("2d");
+  if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-const barFrame = computed(() => {
-  const frame: { brightness: number; colIndex: number }[][] = [];
-  const maxVal = Math.max(...animatedValues.value, 1);
+function buildCells() {
+  cells.length = 0;
+  const palette = colors.value;
+  const count = cols.value;
 
-  for (let r = 0; r < rows; r++) {
-    frame[r] = [];
-    for (let c = 0; c < cols.value; c++) {
-      const normalizedValue = (animatedValues.value[c] || 0) / maxVal;
-      const height = Math.floor(normalizedValue * rows);
+  for (let c = 0; c < count; c++) {
+    const color = palette[c % palette.length];
+    const colPattern = MATRIX_PATTERNS[c % MATRIX_PATTERNS.length];
+    for (let r = 0; r < rows; r++) {
       const rowFromBottom = rows - 1 - r;
-
-      const wave = Math.sin(wavePhase + c * 0.5) * 0.08;
-      const adjustedHeight = height + wave * 2;
-
-      if (rowFromBottom < adjustedHeight) {
-        const brightness = 1 - (rowFromBottom / rows) * 0.3;
-        frame[r][c] = { brightness: Math.max(0.5, brightness), colIndex: c };
-      } else if (rowFromBottom === Math.floor(adjustedHeight)) {
-        frame[r][c] = { brightness: 0.8, colIndex: c };
-      } else {
-        frame[r][c] = { brightness: 0, colIndex: c };
-      }
+      const baseBrightness = 0.45 + (rowFromBottom / rows) * 0.55;
+      // 每个柱子内部做变化：主体用一种 pattern，顶部用 ring 强调
+      const isTop = rowFromBottom === 0;
+      cells.push({
+        x: c * (size + gap) + size / 2,
+        y: r * (size + gap) + size / 2,
+        col: c,
+        row: r,
+        color,
+        baseBrightness,
+        pattern: isTop ? "ring" : colPattern,
+        isTop
+      });
     }
   }
-  return frame;
-});
+}
 
-const cellPositions = computed(() => {
-  const positions: { x: number; y: number }[][] = [];
-  for (let row = 0; row < rows; row++) {
-    positions[row] = [];
-    for (let col = 0; col < cols.value; col++) {
-      positions[row][col] = {
-        x: col * (size + gap),
-        y: row * (size + gap)
-      };
+function drawCells(progress: number, _pulse: number, elapsed = 0) {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, displayWidth.value, displayHeight);
+
+  const maxVal = Math.max(...props.barChartData, 1);
+  const dimOthers = activeCol.value >= 0;
+  const count = cols.value;
+  const sweep = (elapsed / 1200) * Math.PI * 2;
+
+  for (const cell of cells) {
+    const colIndex = cell.col;
+    const val = props.barChartData[colIndex] || 0;
+    const normalizedHeight = (val / maxVal) * rows;
+    const rowFromBottom = rows - 1 - cell.row;
+
+    const delay = colIndex * 80;
+    const colProgress = Math.max(
+      0,
+      Math.min(1, (progress * duration - delay) / (duration - delay))
+    );
+    const eased = 1 - Math.pow(1 - colProgress, 3);
+    const animatedHeight = normalizedHeight * eased;
+
+    if (rowFromBottom >= animatedHeight) continue;
+
+    // 矩阵变换波动：沿列形成横向波纹，VU meter 感
+    const phase = (colIndex / count) * Math.PI * 2;
+    const wave = Math.sin(sweep + phase) * 0.5 + 0.5;
+    let alpha = cell.baseBrightness * (0.86 + wave * 0.18);
+    const isTopCell = rowFromBottom >= animatedHeight - 1 && rowFromBottom < animatedHeight;
+
+    if (dimOthers && colIndex !== activeCol.value) {
+      alpha *= 0.22;
+    } else if (isTopCell) {
+      alpha = Math.min(1, alpha * 1.35);
     }
+
+    if (alpha <= 0.05) continue;
+
+    ctx.globalAlpha = Math.min(1, alpha);
+
+    const radius = isTopCell ? (size / 2) * 0.95 : (size / 2) * 0.78;
+    drawMatrixCell(ctx, cell.x, cell.y, radius, cell.pattern, cell.color);
   }
-  return positions;
+
+  if (activeCol.value >= 0) {
+    drawActiveGlow();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 1;
+}
+
+function drawActiveGlow() {
+  if (!ctx) return;
+  const active = activeCol.value;
+  const color = colors.value[active % colors.value.length];
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.12;
+  for (const cell of cells) {
+    if (cell.col !== active) continue;
+    ctx.beginPath();
+    ctx.arc(cell.x, cell.y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function renderFrame(elapsed: number) {
+  if (!ctx) setupCanvas();
+  if (!ctx) return;
+
+  const progress = Math.min(elapsed / duration, 1);
+  const pulse = Math.sin((elapsed / 1500) * Math.PI * 2) * 0.5 + 0.5;
+
+  drawCells(progress, pulse, elapsed);
+}
+
+function redrawStatic() {
+  drawCells(1, 0.5, 0);
+}
+
+const { restart } = useMatrixAnimation(containerRef, {
+  fps: 30,
+  duration,
+  onFrame: renderFrame
 });
 
-const svgDimensions = computed(() => ({
-  width: cols.value * (size + gap) - gap,
-  height: rows * (size + gap) - gap
-}));
+watch(
+  () => props.barChartData,
+  () => {
+    activeCol.value = -1;
+    buildCells();
+    setupCanvas();
+    restart();
+  },
+  { deep: true }
+);
 
-function handleCellHover(colIndex: number, event: MouseEvent) {
+watch(activeCol, () => {
+  redrawStatic();
+});
+
+function resolveColIndex(event: MouseEvent): number {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  return Math.floor(x / (size + gap));
+}
+
+function handleMouseMove(event: MouseEvent) {
+  const colIndex = resolveColIndex(event);
   if (colIndex >= 0 && colIndex < props.barChartData.length) {
+    activeCol.value = colIndex;
     tooltipContent.value = {
       label: labels[colIndex] || "",
       value: props.barChartData[colIndex]
     };
     tooltipVisible.value = true;
-    updateTooltipPosition(event);
   }
-}
-
-function handleMouseMove(event: MouseEvent) {
-  updateTooltipPosition(event);
-}
-
-function handleMouseLeave() {
-  tooltipVisible.value = false;
-}
-
-function updateTooltipPosition(event: MouseEvent) {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
   tooltipX.value = event.clientX - rect.left + 15;
   tooltipY.value = event.clientY - rect.top - 40;
 }
+
+function handleMouseLeave() {
+  tooltipVisible.value = false;
+  activeCol.value = -1;
+}
 </script>
 
 <template>
-  <div class="matrix-bar-container">
+  <div ref="containerRef" class="matrix-bar-container">
     <div
       class="matrix-bar-chart"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
     >
-      <svg
-        :width="svgDimensions.width"
-        :height="svgDimensions.height"
-        :viewBox="`0 0 ${svgDimensions.width} ${svgDimensions.height}`"
-        xmlns="http://www.w3.org/2000/svg"
-        class="block"
-        style="overflow: visible"
-      >
-        <defs>
-          <filter id="bar-pixel-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="0.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <template v-for="(row, rowIndex) in barFrame" :key="rowIndex">
-          <rect
-            v-for="(cell, colIndex) in row"
-            :key="`${rowIndex}-${colIndex}`"
-            :class="['matrix-pixel', cell.brightness > 0.5 && 'matrix-pixel-active']"
-            :x="cellPositions[rowIndex]?.[colIndex]?.x"
-            :y="cellPositions[rowIndex]?.[colIndex]?.y"
-            :width="size"
-            :height="size"
-            :fill="color"
-            :opacity="cell.brightness > 0.05 ? cell.brightness : 0.1"
-            @mouseenter="handleCellHover(cell.colIndex, $event)"
-          />
-        </template>
-      </svg>
+      <canvas
+        ref="canvasRef"
+        :width="displayWidth"
+        :height="displayHeight"
+        :style="{
+          width: `${displayWidth}px`,
+          height: `${displayHeight}px`
+        }"
+        class="matrix-canvas"
+        aria-label="Matrix 风格柱状图"
+      />
       <Transition name="tooltip">
         <div
           v-if="tooltipVisible"
           class="matrix-tooltip"
-          :style="{ left: `${tooltipX}px`, top: `${tooltipY}px` }"
+          :style="{
+            left: `${tooltipX}px`,
+            top: `${tooltipY}px`,
+            '--chart-color': colors[activeCol % colors.length]
+          }"
         >
           <div class="tooltip-header">{{ tooltipContent.label }}</div>
           <div class="tooltip-value">{{ tooltipContent.value }}</div>
@@ -196,7 +260,12 @@ function updateTooltipPosition(event: MouseEvent) {
         v-for="(label, index) in labels"
         :key="index"
         class="bar-label"
-        :style="{ width: `${size}px`, marginLeft: index === 0 ? 0 : `${gap}px` }"
+        :class="{ active: activeCol === index }"
+        :style="{
+          width: `${size}px`,
+          marginLeft: index === 0 ? 0 : `${gap}px`,
+          '--label-color': colors[index % colors.length]
+        }"
       >
         {{ label }}
       </div>
@@ -211,6 +280,7 @@ function updateTooltipPosition(event: MouseEvent) {
   align-items: center;
   gap: 12px;
   width: 100%;
+  contain: paint layout;
 }
 
 .matrix-bar-chart {
@@ -220,26 +290,23 @@ function updateTooltipPosition(event: MouseEvent) {
   position: relative;
 }
 
-.matrix-pixel {
-  transition: opacity 100ms ease-out;
-}
-
-.matrix-pixel-active {
-  filter: url(#bar-pixel-glow);
+.matrix-canvas {
+  display: block;
 }
 
 .matrix-tooltip {
   position: absolute;
-  background: rgba(0, 0, 0, 0.95);
-  border: 1px solid var(--matrix-color);
+  background: var(--mr-bg-elevated);
+  border: 1px solid var(--chart-color, var(--matrix-color));
   padding: 6px 10px;
   pointer-events: none;
   z-index: 100;
-  font-family: 'SF Mono', 'Consolas', monospace;
+  font-family: var(--mr-font-family, 'SF Mono', 'Consolas', monospace);
+  box-shadow: 0 0 8px var(--matrix-shadow);
 }
 
 .tooltip-header {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--mr-text-subdued);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -247,7 +314,7 @@ function updateTooltipPosition(event: MouseEvent) {
 }
 
 .tooltip-value {
-  color: var(--matrix-color);
+  color: var(--chart-color, var(--matrix-color));
   font-size: 14px;
   font-weight: 600;
 }
@@ -270,7 +337,13 @@ function updateTooltipPosition(event: MouseEvent) {
 .bar-label {
   text-align: center;
   font-size: 0.6rem;
-  color: var(--matrix-text-dim);
-  font-family: 'SF Mono', 'Consolas', monospace;
+  color: var(--mr-text-subdued);
+  font-family: var(--mr-font-family, 'SF Mono', 'Consolas', monospace);
+  transition: color 120ms ease;
+}
+
+.bar-label.active {
+  color: var(--label-color, var(--matrix-color));
+  font-weight: 600;
 }
 </style>

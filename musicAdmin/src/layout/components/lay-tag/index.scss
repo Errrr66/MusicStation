@@ -25,8 +25,8 @@
   width: 100%;
   font-size: 14px;
   color: var(--el-text-color-primary);
-  background: #fff;
-  box-shadow: 0 0 1px #888;
+  background: var(--mr-bg-surface);
+  box-shadow: 0 0 1px var(--matrix-border);
 
   .scroll-item {
     position: relative;
@@ -65,8 +65,8 @@
       transform: translate(0, -50%);
 
       &:hover {
-        color: rgb(0 0 0 / 88%) !important;
-        background-color: rgb(0 0 0 / 6%);
+        color: var(--matrix-text) !important;
+        background-color: var(--matrix-bg-hover);
       }
     }
   }
@@ -128,10 +128,10 @@
     color: var(--el-text-color-primary);
     white-space: nowrap;
     list-style-type: none;
-    background: #fff;
+    background: var(--mr-bg-elevated);
     border-radius: 4px;
     outline: 0;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+    box-shadow: 0 2px 8px var(--matrix-shadow);
 
     li {
       display: flex;
@@ -169,8 +169,8 @@
 }
 
 .el-dropdown-menu__item:not(.is-disabled):hover {
-  color: #606266;
-  background: #f0f0f0;
+  color: var(--matrix-text);
+  background: var(--matrix-bg-hover);
 }
 
 :deep(.el-dropdown-menu__item) i {
@@ -191,15 +191,15 @@
 
 .scroll-item.is-active {
   position: relative;
-  color: #fff;
-  box-shadow: 0 0 0.7px #888;
+  color: var(--matrix-text-bright);
+  box-shadow: 0 0 0.7px var(--matrix-border);
 
   .chrome-tab {
     z-index: 10;
   }
 
   .chrome-tab__bg {
-    color: var(--el-color-primary-light-9) !important;
+    color: var(--matrix-bg-hover) !important;
   }
 
   .tag-title {
@@ -237,7 +237,7 @@
 }
 
 .arrow-left {
-  box-shadow: 5px 0 5px -6px #ccc;
+  box-shadow: 5px 0 5px -6px var(--matrix-shadow);
 
   &:hover {
     cursor: w-resize;
@@ -245,8 +245,8 @@
 }
 
 .arrow-right {
-  border-right: 0.5px solid #ccc;
-  box-shadow: -5px 0 5px -6px #ccc;
+  border-right: 0.5px solid var(--matrix-border);
+  box-shadow: -5px 0 5px -6px var(--matrix-shadow);
 
   &:hover {
     cursor: e-resize;
@@ -264,11 +264,11 @@
 
 /* 卡片模式下鼠标移出隐藏蓝色边框 */
 .card-out {
-  color: #666;
+  color: var(--matrix-text-dim);
   border: none;
 
   .tag-title {
-    color: #666;
+    color: var(--matrix-text-dim);
   }
 }
 
@@ -324,18 +324,18 @@
     right: 7px;
     width: 1px;
     height: 14px;
-    background-color: #2b2d2f;
+    background-color: var(--matrix-border);
   }
 
   &:hover {
     z-index: 10;
 
     .chrome-tab__bg {
-      color: #dee1e6;
+      color: var(--matrix-bg-hover);
     }
 
     .tag-title {
-      color: #1f1f1f;
+      color: var(--matrix-text);
     }
 
     .chrome-tab-divider {
@@ -360,12 +360,12 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    color: #666;
+    color: var(--matrix-text-dim);
     border-radius: 50%;
 
     &:hover {
-      color: white;
-      background-color: #b1b3b8;
+      color: var(--matrix-bg);
+      background-color: var(--matrix-text-dim);
     }
   }
 }

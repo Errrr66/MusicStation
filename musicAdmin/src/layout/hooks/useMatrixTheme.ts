@@ -4,6 +4,8 @@ import { storageLocal } from "@pureadmin/utils";
 export interface MatrixThemeColor {
   name: string;
   color: string;
+  colorLight: string;
+  colorDark: string;
   bg: string;
   border: string;
   text: string;
@@ -15,98 +17,43 @@ export interface MatrixThemeColor {
 
 const MATRIX_THEME_KEY = "matrix-theme-color";
 
+/**
+ * 黑白灰双主题：深色矩阵（默认）/ 浅色矩阵。
+ * 整体 UI 色调保持黑白灰色系，仅在激活态使用高对比灰阶。
+ */
 const defaultThemes: MatrixThemeColor[] = [
   {
-    name: "橙红",
-    color: "#ff6b35",
-    bg: "rgba(15, 10, 8, 0.95)",
-    border: "rgba(255, 107, 53, 0.4)",
-    text: "rgba(255, 107, 53, 0.9)",
-    textDim: "rgba(255, 107, 53, 0.5)",
-    bgLight: "rgba(255, 107, 53, 0.05)",
-    bgHover: "rgba(255, 107, 53, 0.1)",
-    shadow: "rgba(255, 107, 53, 0.2)"
+    name: "深色矩阵",
+    color: "#e8e8e8",
+    colorLight: "#ffffff",
+    colorDark: "#a3a3a3",
+    bg: "#050505",
+    border: "rgba(255, 255, 255, 0.12)",
+    text: "#f2f2f2",
+    textDim: "#8a8a8a",
+    bgLight: "#0a0a0a",
+    bgHover: "#141414",
+    shadow: "rgba(255, 255, 255, 0.15)"
   },
   {
-    name: "翠绿",
-    color: "#26ce83",
-    bg: "rgba(10, 15, 12, 0.95)",
-    border: "rgba(38, 206, 131, 0.4)",
-    text: "rgba(38, 206, 131, 0.9)",
-    textDim: "rgba(38, 206, 131, 0.5)",
-    bgLight: "rgba(38, 206, 131, 0.05)",
-    bgHover: "rgba(38, 206, 131, 0.1)",
-    shadow: "rgba(38, 206, 131, 0.2)"
-  },
-  {
-    name: "天蓝",
-    color: "#41b6ff",
-    bg: "rgba(8, 12, 18, 0.95)",
-    border: "rgba(65, 182, 255, 0.4)",
-    text: "rgba(65, 182, 255, 0.9)",
-    textDim: "rgba(65, 182, 255, 0.5)",
-    bgLight: "rgba(65, 182, 255, 0.05)",
-    bgHover: "rgba(65, 182, 255, 0.1)",
-    shadow: "rgba(65, 182, 255, 0.2)"
-  },
-  {
-    name: "紫罗兰",
-    color: "#7846e5",
-    bg: "rgba(12, 8, 18, 0.95)",
-    border: "rgba(120, 70, 229, 0.4)",
-    text: "rgba(120, 70, 229, 0.9)",
-    textDim: "rgba(120, 70, 229, 0.5)",
-    bgLight: "rgba(120, 70, 229, 0.05)",
-    bgHover: "rgba(120, 70, 229, 0.1)",
-    shadow: "rgba(120, 70, 229, 0.2)"
-  },
-  {
-    name: "玫红",
-    color: "#eb2f96",
-    bg: "rgba(18, 8, 14, 0.95)",
-    border: "rgba(235, 47, 150, 0.4)",
-    text: "rgba(235, 47, 150, 0.9)",
-    textDim: "rgba(235, 47, 150, 0.5)",
-    bgLight: "rgba(235, 47, 150, 0.05)",
-    bgHover: "rgba(235, 47, 150, 0.1)",
-    shadow: "rgba(235, 47, 150, 0.2)"
-  },
-  {
-    name: "金黄",
-    color: "#f5a623",
-    bg: "rgba(18, 14, 8, 0.95)",
-    border: "rgba(245, 166, 35, 0.4)",
-    text: "rgba(245, 166, 35, 0.9)",
-    textDim: "rgba(245, 166, 35, 0.5)",
-    bgLight: "rgba(245, 166, 35, 0.05)",
-    bgHover: "rgba(245, 166, 35, 0.1)",
-    shadow: "rgba(245, 166, 35, 0.2)"
-  },
-  {
-    name: "青色",
-    color: "#13c2c2",
-    bg: "rgba(8, 15, 15, 0.95)",
-    border: "rgba(19, 194, 194, 0.4)",
-    text: "rgba(19, 194, 194, 0.9)",
-    textDim: "rgba(19, 194, 194, 0.5)",
-    bgLight: "rgba(19, 194, 194, 0.05)",
-    bgHover: "rgba(19, 194, 194, 0.1)",
-    shadow: "rgba(19, 194, 194, 0.2)"
-  },
-  {
-    name: "珊瑚红",
-    color: "#ff6b6b",
-    bg: "rgba(18, 10, 10, 0.95)",
-    border: "rgba(255, 107, 107, 0.4)",
-    text: "rgba(255, 107, 107, 0.9)",
-    textDim: "rgba(255, 107, 107, 0.5)",
-    bgLight: "rgba(255, 107, 107, 0.05)",
-    bgHover: "rgba(255, 107, 107, 0.1)",
-    shadow: "rgba(255, 107, 107, 0.2)"
+    name: "浅色矩阵",
+    color: "#0a0a0a",
+    colorLight: "#000000",
+    colorDark: "#525252",
+    bg: "#f5f5f5",
+    border: "rgba(0, 0, 0, 0.12)",
+    text: "#0a0a0a",
+    textDim: "#737373",
+    bgLight: "#ffffff",
+    bgHover: "#e8e8e8",
+    shadow: "rgba(0, 0, 0, 0.15)"
   }
 ];
 
-const savedThemeIndex = storageLocal().getItem<number>(MATRIX_THEME_KEY) ?? 0;
+const savedThemeIndex = Math.min(
+  storageLocal().getItem<number>(MATRIX_THEME_KEY) ?? 0,
+  defaultThemes.length - 1
+);
 
 const currentThemeIndex = ref(savedThemeIndex);
 
@@ -124,6 +71,8 @@ function setMatrixTheme(index: number) {
 function applyMatrixTheme(theme: MatrixThemeColor) {
   const root = document.documentElement;
   root.style.setProperty("--matrix-color", theme.color);
+  root.style.setProperty("--matrix-color-light", theme.colorLight);
+  root.style.setProperty("--matrix-color-dark", theme.colorDark);
   root.style.setProperty("--matrix-bg", theme.bg);
   root.style.setProperty("--matrix-border", theme.border);
   root.style.setProperty("--matrix-text", theme.text);
@@ -132,6 +81,26 @@ function applyMatrixTheme(theme: MatrixThemeColor) {
   root.style.setProperty("--matrix-bg-light", theme.bgLight);
   root.style.setProperty("--matrix-bg-hover", theme.bgHover);
   root.style.setProperty("--matrix-shadow", theme.shadow);
+  root.style.setProperty("--matrix-input-bg", theme.bgHover);
+  root.style.setProperty("--matrix-card-bg", theme.bgLight);
+
+  // 同步 MR 变量系统，确保 Element Plus 组件与图表保持一致
+  root.style.setProperty("--mr-accent", theme.color);
+  root.style.setProperty("--mr-accent-hover", theme.colorLight);
+  root.style.setProperty("--mr-accent-active", theme.colorDark);
+  root.style.setProperty("--mr-accent-glow", theme.shadow);
+  root.style.setProperty("--mr-bg-base", theme.bg);
+  root.style.setProperty("--mr-bg-surface", theme.bgLight);
+  root.style.setProperty("--mr-bg-elevated", theme.bgHover);
+  root.style.setProperty("--mr-bg-tinted", theme.bgLight);
+  root.style.setProperty("--mr-text-base", theme.text);
+  root.style.setProperty("--mr-text-subdued", theme.textDim);
+  root.style.setProperty("--mr-border-subdued", theme.border);
+  root.style.setProperty("--mr-border-bright", theme.color);
+  root.style.setProperty("--mr-text-bright", theme.colorLight);
+  root.style.setProperty("--mr-essential-positive", theme.color);
+  root.style.setProperty("--mr-essential-negative", theme.bg);
+  root.style.setProperty("--mr-essential-subdued", theme.textDim);
 }
 
 function initMatrixTheme() {

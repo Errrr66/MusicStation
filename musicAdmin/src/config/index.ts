@@ -1,18 +1,18 @@
 import axios from "axios";
 import type { App } from "vue";
 
-let config: object = {};
+let config: Record<string, any> = {};
 const { VITE_PUBLIC_PATH } = import.meta.env;
 
 const setConfig = (cfg?: unknown) => {
   config = Object.assign(config, cfg);
 };
 
-const getConfig = (key?: string): PlatformConfigs => {
+const getConfig = (key?: string): any => {
   if (typeof key === "string") {
     const arr = key.split(".");
     if (arr && arr.length) {
-      let data = config;
+      let data: any = config;
       arr.forEach(v => {
         if (data && typeof data[v] !== "undefined") {
           data = data[v];
@@ -27,7 +27,7 @@ const getConfig = (key?: string): PlatformConfigs => {
 };
 
 /** 获取项目动态全局配置 */
-export const getPlatformConfig = async (app: App): Promise<undefined> => {
+export const getPlatformConfig = async (app: App): Promise<any> => {
   app.config.globalProperties.$config = getConfig();
   return axios({
     method: "get",

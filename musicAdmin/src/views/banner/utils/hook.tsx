@@ -18,10 +18,10 @@ import {
 } from "@/api/system";
 
 export function useBanner(formData: any, tableRef: Ref) {
-  const dataList = ref([]);
+  const dataList = ref<any[]>([]);
   const loading = ref(true);
-  const switchLoadMap = ref({});
-  const selectionList = ref([]);
+  const switchLoadMap = ref<any>({});
+  const selectionList = ref<any[]>([]);
   const latestBlob = ref<Blob | null>(null);
   const latestBase64 = ref<string | null>(null);
   const latestInfo = ref<any>(null);
@@ -80,7 +80,7 @@ export function useBanner(formData: any, tableRef: Ref) {
     }
   ];
 
-  function onChange(row, index, newValue) {
+  function onChange(row: any, index: any, newValue: any) {
     ElMessageBox.confirm(
       `确认要${newValue === 1 ? "禁用" : "启用"} 编号:${row.bannerId} 的轮播图吗?`,
       "系统提示",
@@ -128,7 +128,7 @@ export function useBanner(formData: any, tableRef: Ref) {
       });
   }
 
-  function handleDelete(row) {
+  function handleDelete(row: any) {
     deleteBanner(row.bannerId)
       .then(res => {
         if (res.code === 0) {
@@ -155,7 +155,7 @@ export function useBanner(formData: any, tableRef: Ref) {
     onSearch();
   }
 
-  function handleSelectionChange(val) {
+  function handleSelectionChange(val: any) {
     selectionList.value = val;
   }
 
@@ -217,8 +217,8 @@ export function useBanner(formData: any, tableRef: Ref) {
 
       if (result.code === 0 && result.data && result.data.items) {
         // 如果返回状态码为 0（成功），且 data 和 items 存在
-        pagination.total = result.data.total; // 设置总条目数
-        dataList.value = result.data.items.map(item => ({
+        pagination.total = result.data.total as number; // 设置总条目数
+        dataList.value = result.data.items.map((item: any) => ({
           ...item,
           bannerStatus: item.bannerStatus === "ENABLE" ? 0 : 1
         }));

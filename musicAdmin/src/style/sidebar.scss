@@ -1,5 +1,6 @@
-/* Matrix 像素风格侧边栏 */
-/* 使用全局 CSS 变量，由 useMatrixTheme.ts 控制 */
+@use "mr-variables" as *;
+
+/* MR 风格侧边栏 - 与 client 端保持一致 */
 
 /* $sideBarWidth: vertical 模式下主体内容距离网页文档左侧的距离 */
 @mixin merge-style($sideBarWidth) {
@@ -49,7 +50,7 @@
     height: 100vh;
     min-height: 100%;
     margin-left: $sideBarWidth;
-    background: var(--matrix-bg);
+    background: var(--mr-bg-base);
     transition: margin-left var(--pure-transition-duration);
 
     .el-scrollbar__wrap {
@@ -89,9 +90,9 @@
     height: 100%;
     overflow: visible;
     font-size: 0;
-    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
-    background: var(--matrix-bg) !important;
-    border-right: 1px solid var(--matrix-border);
+    font-family: $font-family;
+    background: var(--mr-bg-base) !important;
+    border-right: 1px solid var(--mr-border-subdued);
     transition: width var(--pure-transition-duration);
 
     .scrollbar-wrapper {
@@ -141,14 +142,14 @@
     .el-menu-item,
     .el-sub-menu__title {
       height: 50px;
-      color: var(--matrix-text-dim);
+      color: var(--mr-text-subdued);
       background-color: transparent !important;
-      font-family: 'SF Mono', 'Consolas', monospace;
+      font-family: $font-family;
       letter-spacing: 0.5px;
 
       &:hover {
-        color: var(--matrix-color) !important;
-        background: var(--matrix-bg) !important;
+        color: var(--mr-accent) !important;
+        background: var(--mr-bg-base) !important;
       }
 
       div,
@@ -167,21 +168,21 @@
 
     .is-active > .el-sub-menu__title,
     .is-active.submenu-title-noDropdown {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
 
       i {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .is-active {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
       transition: color 0.3s;
     }
 
     .el-menu-item.is-active.nest-menu > * {
       z-index: 1;
-      color: var(--matrix-color);
+      color: var(--mr-accent);
     }
 
     .el-menu-item.is-active.nest-menu::before {
@@ -190,8 +191,8 @@
       margin: 4px 0;
       clear: both;
       content: "";
-      background: var(--matrix-bg) !important;
-      border-left: 2px solid var(--matrix-color);
+      background: var(--mr-bg-base) !important;
+      border-left: 2px solid var(--mr-accent);
       border-radius: 0;
     }
 
@@ -199,7 +200,7 @@
     & .el-sub-menu .el-menu-item {
       min-width: $sideBarWidth !important;
       font-size: 13px;
-      background-color: var(--matrix-bg) !important;
+      background-color: var(--mr-bg-base) !important;
     }
 
     .el-menu--collapse
@@ -212,7 +213,7 @@
       height: 100%;
       clear: both;
       content: "";
-      background-color: var(--matrix-color);
+      background-color: var(--mr-accent);
       transition: all var(--pure-transition-duration) ease-in-out;
       transform: translateY(0);
     }
@@ -229,7 +230,7 @@
 
     .is-active.submenu-title-noDropdown.outer-most > * {
       z-index: 1;
-      color: var(--matrix-color);
+      color: var(--mr-accent);
     }
 
     .is-active.submenu-title-noDropdown.outer-most::before {
@@ -238,15 +239,15 @@
       margin: 4px 0;
       clear: both;
       content: "";
-      background: var(--matrix-bg) !important;
-      border-left: 2px solid var(--matrix-color);
+      background: var(--mr-bg-base) !important;
+      border-left: 2px solid var(--mr-accent);
       border-radius: 0;
     }
   }
 
   .el-menu--vertical {
     .el-menu--popup {
-      background-color: var(--matrix-bg) !important;
+      background-color: var(--mr-bg-base) !important;
 
       .el-menu-item {
         span {
@@ -264,39 +265,39 @@
 
     .is-active > .el-sub-menu__title,
     .is-active.submenu-title-noDropdown {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
 
       i {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .el-menu .el-sub-menu__title {
       min-width: $sideBarWidth !important;
       font-size: 13px;
-      background-color: var(--matrix-bg) !important;
+      background-color: var(--mr-bg-base) !important;
     }
 
     .el-menu-item,
     .el-sub-menu__title {
       height: 50px;
       line-height: 50px;
-      color: var(--matrix-text-dim);
-      background-color: var(--matrix-bg);
+      color: var(--mr-text-subdued);
+      background-color: var(--mr-bg-base);
 
       &:hover {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .is-active {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
       transition: color 0.3s;
     }
 
     .el-menu-item.is-active.nest-menu > * {
       z-index: 1;
-      color: var(--matrix-color);
+      color: var(--mr-accent);
     }
 
     .el-menu-item.is-active.nest-menu::before {
@@ -304,8 +305,8 @@
       inset: 0 8px;
       clear: both;
       content: "";
-      background: var(--matrix-bg) !important;
-      border-left: 2px solid var(--matrix-color);
+      background: var(--mr-bg-base) !important;
+      border-left: 2px solid var(--mr-accent);
       border-radius: 0;
     }
 
@@ -329,19 +330,19 @@
     }
 
     a > .is-active.submenu-title-noDropdown {
-      border-bottom: 2px solid var(--matrix-color);
+      border-bottom: 2px solid var(--mr-accent);
     }
 
     .el-menu--popup {
-      background-color: var(--matrix-bg) !important;
+      background-color: var(--mr-bg-base) !important;
 
       a > .is-active.submenu-title-noDropdown {
         border-bottom: none;
       }
 
       .el-menu-item {
-        color: var(--matrix-text-dim);
-        background-color: var(--matrix-bg);
+        color: var(--mr-text-subdued);
+        background-color: var(--mr-bg-base);
 
         span {
           font-size: 13px;
@@ -349,44 +350,44 @@
       }
 
       .el-sub-menu__title {
-        color: var(--matrix-text-dim);
+        color: var(--mr-text-subdued);
       }
     }
 
     .el-menu .el-sub-menu__title {
       min-width: $sideBarWidth !important;
       font-size: 13px;
-      background-color: var(--matrix-bg) !important;
+      background-color: var(--mr-bg-base) !important;
 
       &:hover {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .is-active > .el-sub-menu__title,
     .is-active.submenu-title-noDropdown {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
 
       i {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .nest-menu .el-sub-menu > .el-sub-menu__title,
     .el-menu-item {
       &:hover {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .el-menu-item.is-active {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
       transition: color 0.3s;
     }
 
     .el-menu-item.is-active.nest-menu > * {
       z-index: 1;
-      color: var(--matrix-color);
+      color: var(--mr-accent);
     }
 
     .el-menu-item.is-active.nest-menu::before {
@@ -394,8 +395,8 @@
       inset: 0 5px;
       clear: both;
       content: "";
-      background: var(--matrix-bg) !important;
-      border-left: 2px solid var(--matrix-color);
+      background: var(--mr-bg-base) !important;
+      border-left: 2px solid var(--mr-accent);
       border-radius: 0;
     }
   }
@@ -406,8 +407,8 @@
     justify-content: space-around;
     width: 100%;
     height: 48px;
-    background: var(--matrix-bg) !important;
-    font-family: 'SF Mono', 'Consolas', monospace;
+    background: var(--mr-bg-base) !important;
+    font-family: $font-family;
 
     .horizontal-header-left {
       display: flex;
@@ -422,7 +423,7 @@
       img {
         display: inline-block;
         height: 32px;
-        filter: drop-shadow(0 0 4px var(--matrix-color));
+        filter: none;
       }
 
       span {
@@ -433,10 +434,10 @@
         font-size: 14px;
         font-weight: 600;
         line-height: 32px;
-        color: var(--matrix-text);
+        color: var(--mr-text-base);
         text-overflow: ellipsis;
         white-space: nowrap;
-        text-shadow: 0 0 8px var(--matrix-color);
+        text-shadow: none;
       }
     }
 
@@ -452,7 +453,7 @@
       align-items: center;
       justify-content: flex-end;
       min-width: 340px;
-      color: var(--matrix-text);
+      color: var(--mr-text-base);
 
       .search-container,
       .fullscreen-icon,
@@ -460,13 +461,13 @@
       .el-dropdown-link,
       .set-icon {
         &:hover {
-          background: var(--matrix-bg);
+          background: var(--mr-bg-base);
         }
       }
 
       .dropdown-badge {
         height: 48px;
-        color: var(--matrix-text);
+        color: var(--mr-text-base);
       }
 
       .el-dropdown-link {
@@ -475,7 +476,7 @@
         justify-content: space-around;
         height: 48px;
         padding: 10px;
-        color: var(--matrix-text);
+        color: var(--mr-text-base);
         cursor: pointer;
 
         p {
@@ -487,7 +488,7 @@
           width: 22px;
           height: 22px;
           border-radius: 50%;
-          border: 1px solid var(--matrix-color);
+          border: 1px solid var(--mr-accent);
         }
       }
     }
@@ -502,10 +503,10 @@
     .el-menu-item,
     .el-sub-menu__title {
       padding-right: var(--el-menu-base-level-padding);
-      color: var(--matrix-text-dim);
+      color: var(--mr-text-subdued);
 
       &:hover {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
@@ -513,7 +514,7 @@
     .el-sub-menu__title {
       height: 48px;
       line-height: 48px;
-      background: var(--matrix-bg) !important;
+      background: var(--mr-bg-base) !important;
 
       svg {
         position: static !important;
@@ -522,15 +523,15 @@
 
     .is-active > .el-sub-menu__title,
     .is-active.submenu-title-noDropdown {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
 
       i {
-        color: var(--matrix-color) !important;
+        color: var(--mr-accent) !important;
       }
     }
 
     .is-active {
-      color: var(--matrix-color) !important;
+      color: var(--mr-accent) !important;
       transition: color 0.3s;
     }
   }
@@ -575,7 +576,7 @@ body[layout="vertical"] {
   }
 
   .sidebar-logo-container {
-    background: var(--matrix-bg);
+    background: var(--mr-bg-base);
   }
 
   .hideSidebar {
@@ -629,7 +630,7 @@ body[layout="vertical"] {
   .el-dropdown-link,
   .set-icon {
     &:hover {
-      background: var(--matrix-bg);
+      background: var(--mr-bg-base);
     }
   }
 }

@@ -3,7 +3,7 @@ import type { LocalForage, ProxyStorage, ExpiresData } from "./types.d";
 
 class StorageProxy implements ProxyStorage {
   protected storage: LocalForage;
-  constructor(storageModel) {
+  constructor(storageModel: any) {
     this.storage = storageModel;
     this.storage.config({
       // 首选IndexedDB作为第一驱动，不支持IndexedDB会自动降级到localStorage（WebSQL被弃用，详情看https://developer.chrome.com/blog/deprecating-web-sql）

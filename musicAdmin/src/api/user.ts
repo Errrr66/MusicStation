@@ -1,4 +1,6 @@
 import { http } from "@/utils/http";
+import { jwtDecode } from "jwt-decode";
+import { setToken, type DataInfo } from "@/utils/auth";
 
 // export type UserResult = {
 //   success: boolean;
@@ -45,33 +47,37 @@ export type RefreshTokenResult = {
 //   return http.request<LoginResult>("post", "/admin/login", { data });
 // };
 
-import { jwtDecode } from "jwt-decode";
-import { setToken, type DataInfo, getToken } from "@/utils/auth";
-
 export const getLogin = async (data?: object) => {
   const response = await http.request<LoginResult>("post", "/admin/login", {
     data
   });
 
-  if (response.data) {
-    const decodedToken: any = jwtDecode(response.data); // 解码 JWT
-    const claims = decodedToken.claims ?? {};
-    const { role, username } = claims; // 提取用户信息
-    const expires = new Date(decodedToken.exp * 1000); // 将时间戳转换为 Date 对象
+  if (response.data && typeof response.data === "string") {
+    try {
+      const decodedToken: any = jwtDecode(response.data); // 解码 JWT
+      const claims = decodedToken.claims ?? {};
+      const { role, username } = claims; // 提取用户信息
+      const expires = decodedToken.exp
+        ? new Date(decodedToken.exp * 1000)
+        : new Date(Date.now() + 6 * 60 * 60 * 1000); // 默认 6 小时
 
-    // 构建新的数据结构
-    const userData: DataInfo<Date> = {
-      accessToken: response.data, // 将 JWT 字符串作为 accessToken
-      expires,
-      refreshToken: "", // 后端没有返回 refreshToken，这里设置为空字符串
-      roles: [role], // 将 role 转换为数组
-      username,
-      avatar: claims.avatar ?? "",
-      nickname: claims.nickname ?? "",
-      permissions: claims.permissions ?? []
-    };
+      // 构建新的数据结构
+      const userData: DataInfo<Date> = {
+        accessToken: response.data, // 将 JWT 字符串作为 accessToken
+        expires,
+        refreshToken: "", // 后端没有返回 refreshToken，这里设置为空字符串
+        roles: role ? [role] : [], // 将 role 转换为数组
+        username: username ?? "",
+        avatar: claims.avatar ?? "",
+        nickname: claims.nickname ?? "",
+        permissions: claims.permissions ?? []
+      };
 
-    setToken(userData); // 调用 setToken 函数
+      setToken(userData); // 调用 setToken 函数
+    } catch (error) {
+      console.error("处理登录响应时出错：", error);
+      throw error;
+    }
   }
 
   return response;
@@ -79,10 +85,7 @@ export const getLogin = async (data?: object) => {
 
 /** 登出 */
 export const getLogout = () => {
-  const userData = getToken(); // 获取 token 数据
-  return http.request("post", "/admin/logout", {
-    headers: { Authorization: userData.accessToken } // 设置请求头
-  });
+  return http.request("post", "/admin/logout");
 };
 
 /** 刷新`token` */

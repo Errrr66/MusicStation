@@ -13,7 +13,7 @@ export function useFeedback(tableRef: Ref) {
     pageSize: 20,
     keyword: null
   });
-  const dataList = ref([]);
+  const dataList = ref<any[]>([]);
   const loading = ref(true);
   const selectedNum = ref(0);
   const pagination = reactive<PaginationProps>({
@@ -77,7 +77,7 @@ export function useFeedback(tableRef: Ref) {
     }
   ];
 
-  function handleDelete(row) {
+  function handleDelete(row: any) {
     deleteFeedback(row.feedbackId)
       .then(res => {
         if (res.code === 0) {
@@ -107,10 +107,10 @@ export function useFeedback(tableRef: Ref) {
     onSearch();
   }
 
-  function handleSelectionChange(val) {
+  function handleSelectionChange(val: any) {
     if (tableRef) {
       selectedNum.value = val.length;
-      selectedFeedbackIds.value = val.map(item => item.feedbackId);
+      selectedFeedbackIds.value = val.map((item: any) => item.feedbackId);
     }
   }
 
@@ -170,7 +170,7 @@ export function useFeedback(tableRef: Ref) {
       const result = await getFeedbackList(params);
       if (result.code === 0 && result.data) {
         dataList.value = result.data.items;
-        pagination.total = result.data.total;
+        pagination.total = result.data.total as number;
       } else {
         dataList.value = [];
         pagination.total = 0;

@@ -31,7 +31,7 @@ import Close from "@iconify-icons/ep/close";
 export function useTags() {
   const route = useRoute();
   const router = useRouter();
-  const instance = getCurrentInstance();
+  const instance = getCurrentInstance() as any;
   const pureSetting = useSettingStoreHook();
 
   const buttonTop = ref(0);
@@ -114,7 +114,7 @@ export function useTags() {
     }
   ]);
 
-  function conditionHandle(item, previous, next) {
+  function conditionHandle(item: any, previous: any, next: any) {
     if (isBoolean(route?.meta?.showLink) && route?.meta?.showLink === false) {
       if (Object.keys(route.query).length > 0) {
         return isEqual(route.query, item.query) ? previous : next;
@@ -127,26 +127,26 @@ export function useTags() {
   }
 
   const isFixedTag = computed(() => {
-    return item => {
+    return (item: any) => {
       return isBoolean(item?.meta?.fixedTag) && item?.meta?.fixedTag === true;
     };
   });
 
   const iconIsActive = computed(() => {
-    return (item, index) => {
+    return (item: any, index: any) => {
       if (index === 0) return;
       return conditionHandle(item, true, false);
     };
   });
 
   const linkIsActive = computed(() => {
-    return item => {
+    return (item: any) => {
       return conditionHandle(item, "is-active", "");
     };
   });
 
   const scheduleIsActive = computed(() => {
-    return item => {
+    return (item: any) => {
       return conditionHandle(item, "schedule-active", "");
     };
   });
@@ -167,7 +167,7 @@ export function useTags() {
   };
 
   /** 鼠标移入添加激活样式 */
-  function onMouseenter(index) {
+  function onMouseenter(index: any) {
     if (index) activeIndex.value = index;
     if (unref(showModel) === "smart") {
       if (hasClass(instance.refs["schedule" + index][0], "schedule-active"))
@@ -182,7 +182,7 @@ export function useTags() {
   }
 
   /** 鼠标移出恢复默认样式 */
-  function onMouseleave(index) {
+  function onMouseleave(index: any) {
     activeIndex.value = -1;
     if (unref(showModel) === "smart") {
       if (hasClass(instance.refs["schedule" + index][0], "schedule-active"))

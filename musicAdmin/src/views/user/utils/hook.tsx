@@ -51,11 +51,11 @@ export function useUser(tableRef: Ref) {
   });
   const formRef = ref();
   const ruleFormRef = ref();
-  const dataList = ref([]);
+  const dataList = ref<any[]>([]);
   const loading = ref(true);
   // 上传头像信息
   const avatarInfo = ref();
-  const switchLoadMap = ref({});
+  const switchLoadMap = ref<any>({});
   const { switchStyle } = usePublicHooks();
   const selectedNum = ref(0);
   const pagination = reactive<PaginationProps>({
@@ -101,7 +101,7 @@ export function useUser(tableRef: Ref) {
       minWidth: 90,
       formatter: ({ phone }) => {
         if (!phone) {
-          return null;
+          return "";
         }
         return hideTextAtIndex(phone, { start: 3, end: 6 });
       }
@@ -160,16 +160,16 @@ export function useUser(tableRef: Ref) {
     newPwd: ""
   });
   const pwdProgress = [
-    { color: "#e74242", text: "非常弱" },
-    { color: "#EFBD47", text: "弱" },
-    { color: "#ffa500", text: "一般" },
-    { color: "#1bbf1b", text: "强" },
-    { color: "#008000", text: "非常强" }
+    { color: "var(--mr-status-danger)", text: "非常弱" },
+    { color: "var(--mr-status-warning-light)", text: "弱" },
+    { color: "var(--mr-status-warning)", text: "一般" },
+    { color: "var(--mr-status-success)", text: "强" },
+    { color: "var(--mr-status-success-dark)", text: "非常强" }
   ];
   // 当前密码强度（0-4）
   const curScore = ref();
 
-  function onChange(row, index, newValue) {
+  function onChange(row: any, index: any, newValue: any) {
     ElMessageBox.confirm(
       `确认要${newValue === 1 ? "禁用" : "启用"} ${row.username} 用户吗?`,
       "系统提示",
@@ -217,11 +217,11 @@ export function useUser(tableRef: Ref) {
       });
   }
 
-  function handleUpdate(row) {
+  function handleUpdate(row: any) {
     openDialog("修改", row);
   }
 
-  function handleDelete(row) {
+  function handleDelete(row: any) {
     deleteUser(row.userId).then(res => {
       if (res.code === 0) {
         message(`您删除了用户编号为 ${row.userId} 的这条数据`, {
@@ -249,7 +249,7 @@ export function useUser(tableRef: Ref) {
   }
 
   /** 当CheckBox选择项发生变化时会触发该事件 */
-  function handleSelectionChange(val) {
+  function handleSelectionChange(val: any) {
     selectedNum.value = val.length;
     // 重置表格高度
     tableRef.value.setAdaptive();
@@ -292,8 +292,8 @@ export function useUser(tableRef: Ref) {
 
       if (result.code === 0 && result.data && result.data.items) {
         // 如果返回状态码为 0（成功），且 data 和 items 存在
-        pagination.total = result.data.total; // 设置总条目数
-        dataList.value = result.data.items.map(item => ({
+        pagination.total = result.data.total as number; // 设置总条目数
+        dataList.value = result.data.items.map((item: any) => ({
           userId: item.userId,
           username: item.username,
           phone: item.phone,
@@ -318,7 +318,7 @@ export function useUser(tableRef: Ref) {
     }
   }
 
-  const resetForm = formEl => {
+  const resetForm = (formEl: any) => {
     if (!formEl) return;
     formEl.resetFields();
     onSearch();
@@ -355,7 +355,7 @@ export function useUser(tableRef: Ref) {
           done(); // 关闭弹框
           onSearch(); // 刷新表格数据
         }
-        FormRef.validate(valid => {
+        FormRef.validate((valid: any) => {
           if (valid) {
             // 表单规则校验通过
             if (title === "新增") {
@@ -383,7 +383,7 @@ export function useUser(tableRef: Ref) {
 
   const cropRef = ref();
   /** 上传头像 */
-  function handleUpload(row) {
+  function handleUpload(row: any) {
     addDialog({
       title: "裁剪、上传头像",
       width: "40%",
@@ -393,7 +393,7 @@ export function useUser(tableRef: Ref) {
         h(ReCropperPreview, {
           ref: cropRef,
           imgSrc: row.avatar || userAvatar,
-          onCropper: info => (avatarInfo.value = info)
+          onCropper: (info: any) => (avatarInfo.value = info)
         }),
       beforeSure: done => {
         // 根据实际业务使用avatarInfo.value和row里的某些字段去调用上传头像接口即可
@@ -411,7 +411,7 @@ export function useUser(tableRef: Ref) {
   );
 
   /** 重置密码 */
-  function handleReset(row) {
+  function handleReset(row: any) {
     addDialog({
       title: `重置 ${row.username} 用户的密码`,
       width: "30%",
@@ -468,7 +468,7 @@ export function useUser(tableRef: Ref) {
       ),
       closeCallBack: () => (pwdForm.newPwd = ""),
       beforeSure: done => {
-        ruleFormRef.value.validate(valid => {
+        ruleFormRef.value.validate((valid: any) => {
           if (valid) {
             // 表单规则校验通过
             message(`已成功重置 ${row.username} 用户的密码`, {

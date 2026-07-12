@@ -57,7 +57,6 @@ export default defineComponent({
   setup(props, { emit }) {
     const width = ref(0);
     const translateX = ref(0);
-    const { isDark } = useDark();
     const initStatus = ref(false);
     const curMouseActive = ref(-1);
     const segmentedItembg = ref("");
@@ -66,7 +65,7 @@ export default defineComponent({
       ? toRef(props, "modelValue")
       : ref(0);
 
-    function handleChange({ option, index }, event: Event) {
+    function handleChange({ option, index }: any, event: Event) {
       if (props.disabled || option.disabled) return;
       event.preventDefault();
       isNumber(props.modelValue)
@@ -76,20 +75,18 @@ export default defineComponent({
       emit("change", { index, option });
     }
 
-    function handleMouseenter({ option, index }, event: Event) {
+    function handleMouseenter({ option, index }: any, event: Event) {
       if (props.disabled) return;
       event.preventDefault();
       curMouseActive.value = index;
       if (option.disabled || curIndex.value === index) {
         segmentedItembg.value = "";
       } else {
-        segmentedItembg.value = isDark.value
-          ? "#1f1f1f"
-          : "rgba(0, 0, 0, 0.06)";
+        segmentedItembg.value = "var(--mr-bg-hover)";
       }
     }
 
-    function handleMouseleave(_, event: Event) {
+    function handleMouseleave(_: any, event: Event) {
       if (props.disabled) return;
       event.preventDefault();
       curMouseActive.value = -1;
@@ -148,14 +145,12 @@ export default defineComponent({
                 ? null
                 : !option.disabled &&
                     (curIndex.value === index || curMouseActive.value === index)
-                  ? isDark.value
-                    ? "rgba(255, 255, 255, 0.85)"
-                    : "rgba(0,0,0,.88)"
-                  : ""
+                  ? "var(--mr-text-base)"
+                  : "var(--mr-text-subdued)"
             }}
-            onMouseenter={event => handleMouseenter({ option, index }, event)}
-            onMouseleave={event => handleMouseleave({ option, index }, event)}
-            onClick={event => handleChange({ option, index }, event)}
+            onMouseenter={(event: any) => handleMouseenter({ option, index }, event)}
+            onMouseleave={(event: any) => handleMouseleave({ option, index }, event)}
+            onClick={(event: any) => handleChange({ option, index }, event)}
           >
             <input type="radio" name="segmented" />
             <div

@@ -61,7 +61,7 @@ export default defineComponent({
     const isIndeterminate = ref(false);
     const instance = getCurrentInstance()!;
     const isExpandAll = ref(props.isExpandAll);
-    const filterColumns = cloneDeep(props?.columns).filter(column =>
+    const filterColumns = cloneDeep(props?.columns).filter((column: any) =>
       isBoolean(column?.hide)
         ? !column.hide
         : !(isFunction(column?.hide) && column?.hide())
@@ -71,11 +71,11 @@ export default defineComponent({
     const dynamicColumns = ref(cloneDeep(props?.columns));
 
     const getDropdownItemStyle = computed(() => {
-      return s => {
+      return (s: any) => {
         return {
           background:
             s === size.value ? "var(--matrix-color)" : "",
-          color: s === size.value ? "#fff" : "var(--matrix-text)"
+          color: s === size.value ? "var(--matrix-text-bright)" : "var(--matrix-text)"
         };
       };
     });
@@ -117,8 +117,8 @@ export default defineComponent({
       emit("fullscreen", isFullscreen.value);
     }
 
-    function toggleRowExpansionAll(data, isExpansion) {
-      data.forEach(item => {
+    function toggleRowExpansionAll(data: any[], isExpansion: boolean) {
+      data.forEach((item: any) => {
         props.tableRef.toggleRowExpansion(item, isExpansion);
         if (item.children !== undefined && item.children !== null) {
           toggleRowExpansionAll(item.children, isExpansion);
@@ -129,7 +129,7 @@ export default defineComponent({
     function handleCheckAllChange(val: boolean) {
       checkedColumns.value = val ? checkColumnList : [];
       isIndeterminate.value = false;
-      dynamicColumns.value.map(column =>
+      dynamicColumns.value.map((column: any) =>
         val ? (column.hide = false) : (column.hide = true)
       );
     }
@@ -143,7 +143,7 @@ export default defineComponent({
     }
 
     function handleCheckColumnListChange(val: boolean, label: string) {
-      dynamicColumns.value.filter(item => item.label === label)[0].hide = !val;
+      dynamicColumns.value.filter((item: any) => item.label === label)[0].hide = !val;
     }
 
     async function onReset() {
@@ -190,15 +190,15 @@ export default defineComponent({
         Sortable.create(wrapper, {
           animation: 300,
           handle: ".drag-btn",
-          onEnd: ({ newIndex, oldIndex, item }) => {
+          onEnd: ({ newIndex, oldIndex, item }: any) => {
             const targetThElem = item;
             const wrapperElem = targetThElem.parentNode as HTMLElement;
-            const oldColumn = dynamicColumns.value[oldIndex];
-            const newColumn = dynamicColumns.value[newIndex];
+            const oldColumn = dynamicColumns.value[oldIndex as number];
+            const newColumn = dynamicColumns.value[newIndex as number];
             if (oldColumn?.fixed || newColumn?.fixed) {
               // 当前列存在fixed属性 则不可拖拽
-              const oldThElem = wrapperElem.children[oldIndex] as HTMLElement;
-              if (newIndex > oldIndex) {
+              const oldThElem = wrapperElem.children[oldIndex as number] as HTMLElement;
+              if ((newIndex as number) > (oldIndex as number)) {
                 wrapperElem.insertBefore(targetThElem, oldThElem);
               } else {
                 wrapperElem.insertBefore(
@@ -216,7 +216,7 @@ export default defineComponent({
     };
 
     const isFixedColumn = (label: string) => {
-      return dynamicColumns.value.filter(item => item.label === label)[0].fixed
+      return dynamicColumns.value.filter((item: any) => item.label === label)[0].fixed
         ? true
         : false;
     };
@@ -259,7 +259,7 @@ export default defineComponent({
             {slots?.title ? (
               slots.title()
             ) : (
-              <p class="font-bold truncate text-[var(--matrix-color)]" style="font-family: 'SF Mono', Consolas, monospace; letter-spacing: 1px;">
+              <p class="font-bold truncate text-[var(--matrix-color)]" style="font-family: var(--mr-font-family); letter-spacing: 1px;">
                 <span style="animation: blink 1s infinite; margin-right: 8px;">&gt;</span>
                 {props.title}
               </p>
@@ -317,7 +317,7 @@ export default defineComponent({
                     label="列展示"
                     v-model={checkAll.value}
                     indeterminate={isIndeterminate.value}
-                    onChange={value => handleCheckAllChange(value)}
+                    onChange={(value: any) => handleCheckAllChange(value)}
                   />
                   <el-button type="primary" link onClick={() => onReset()} style="color: var(--matrix-color)">
                     重置
@@ -329,7 +329,7 @@ export default defineComponent({
                     <el-checkbox-group
                       ref={`GroupRef${unref(props.tableKey)}`}
                       modelValue={checkedColumns.value}
-                      onChange={value => handleCheckedColumnsChange(value)}
+                      onChange={(value: any) => handleCheckedColumnsChange(value)}
                     >
                       <el-space
                         direction="vertical"
@@ -355,14 +355,14 @@ export default defineComponent({
                                 key={index}
                                 label={item}
                                 value={item}
-                                onChange={value =>
+                                onChange={(value: any) =>
                                   handleCheckColumnListChange(value, item)
                                 }
                               >
                                 <span
                                   title={item}
                                   class="inline-block w-[120px] truncate"
-                                  style="color: var(--matrix-text); font-family: 'SF Mono', Consolas, monospace;"
+                                  style="color: var(--matrix-text); font-family: var(--mr-font-family);"
                                 >
                                   {item}
                                 </span>
@@ -386,7 +386,7 @@ export default defineComponent({
               />
             </div>
           </div>
-          {slots.default({
+          {slots.default?.({
             size: size.value,
             dynamicColumns: dynamicColumns.value
           })}

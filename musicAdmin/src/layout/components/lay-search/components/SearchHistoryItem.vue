@@ -33,12 +33,12 @@ function handleDelete(item) {
   <IconifyIconOffline
     v-show="item.type === 'history'"
     :icon="StarIcon"
-    class="w-[18px] h-[18px] mr-2 hover:text-[#d7d5d4]"
+    class="w-[18px] h-[18px] mr-2 hover:text-[var(--matrix-text)]"
     @click.stop="handleCollect(item)"
   />
   <IconifyIconOffline
     :icon="CloseIcon"
-    class="w-[18px] h-[18px] hover:text-[#d7d5d4] cursor-pointer"
+    class="w-[18px] h-[18px] hover:text-[var(--matrix-text)] cursor-pointer"
     @click.stop="handleDelete(item)"
   />
 </template>

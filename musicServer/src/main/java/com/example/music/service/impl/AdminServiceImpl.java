@@ -12,6 +12,8 @@ import com.example.music.util.JwtUtil;
 import com.example.music.util.PasswordUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements IAdminService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminServiceImpl.class);
 
     @Autowired
     private AdminMapper adminMapper;
@@ -67,14 +71,21 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
      */
     @Override
     public Result login(AdminDTO adminDTO) {
+        log.info("Admin login attempt, username={}", adminDTO.getUsername());
         Admin admin = adminMapper.selectOne(new QueryWrapper<Admin>().eq("username", adminDTO.getUsername()));
         if (admin == null) {
+            log.warn("Admin login failed, username not found: {}", adminDTO.getUsername());
             return Result.error(MessageConstant.USERNAME + MessageConstant.ERROR);
         }
 
-        if (PasswordUtils.matches(adminDTO.getPassword(), admin.getPassword())) {
+        boolean passwordMatched = PasswordUtils.matches(adminDTO.getPassword(), admin.getPassword());
+        log.debug("Admin password match result for username={}, matched={}, storedPasswordLength={}",
+                adminDTO.getUsername(), passwordMatched,
+                admin.getPassword() == null ? 0 : admin.getPassword().length());
+        if (passwordMatched) {
             // 兼容旧 MD5 密码：登录成功后迁移到 BCrypt
             if (PasswordUtils.isLegacyMd5(admin.getPassword())) {
+                log.info("Migrating legacy MD5 password to BCrypt for username={}", adminDTO.getUsername());
                 adminMapper.update(new Admin().setPassword(PasswordUtils.encode(adminDTO.getPassword())),
                         new QueryWrapper<Admin>().eq("id", admin.getAdminId()));
             }
@@ -88,9 +99,11 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
             // 将token存入redis
             stringRedisTemplate.opsForValue().set(token, token, 6, TimeUnit.HOURS);
 
+            log.info("Admin login success, username={}", adminDTO.getUsername());
             return Result.success(MessageConstant.LOGIN + MessageConstant.SUCCESS, token);
         }
 
+        log.warn("Admin login failed, password mismatch for username={}", adminDTO.getUsername());
         return Result.error(MessageConstant.PASSWORD + MessageConstant.ERROR);
     }
 

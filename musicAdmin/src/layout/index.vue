@@ -16,7 +16,6 @@ import {
   defineComponent
 } from "vue";
 import {
-  useDark,
   useGlobal,
   deviceDetection,
   useResizeObserver
@@ -24,12 +23,10 @@ import {
 
 import LayTag from "./components/lay-tag/index.vue";
 import LayContent from "./components/lay-content/index.vue";
-import LaySetting from "./components/lay-setting/index.vue";
 import NavHorizontal from "./components/lay-sidebar/NavHorizontal.vue";
 import BackTopIcon from "@/assets/svg/back_top.svg?component";
 
 const appWrapperRef = ref();
-const { isDark } = useDark();
 const { layout } = useLayout();
 const isMobile = deviceDetection();
 const pureSetting = useSettingStoreHook();
@@ -106,13 +103,7 @@ const LayHeader = defineComponent({
       "div",
       {
         class: { "fixed-header": set.fixedHeader },
-        style: [
-          set.hideTabs
-            ? isDark.value
-              ? "box-shadow: 0 1px 4px #0d0d0d"
-              : "box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08)"
-            : ""
-        ]
+        style: [set.hideTabs ? "box-shadow: 0 1px 4px var(--matrix-shadow)" : ""]
       },
       {
         default: () => [h(NavHorizontal), h(LayTag)]
@@ -145,7 +136,6 @@ const LayHeader = defineComponent({
         <LayContent :fixed-header="set.fixedHeader" />
       </el-scrollbar>
     </div>
-    <LaySetting />
   </div>
 </template>
 
@@ -173,7 +163,7 @@ const LayHeader = defineComponent({
   z-index: 2001;
   width: 100%;
   height: 100%;
-  background: #000;
+  background: var(--mr-bg-base);
   opacity: 0.3;
 }
 

@@ -18,7 +18,7 @@ export const useMultiTagsStore = defineStore({
   id: "pure-multiTags",
   state: () => ({
     // 存储标签页信息（路由信息）
-    multiTags: storageLocal().getItem<StorageConfigs>(
+    multiTags: (storageLocal().getItem<StorageConfigs>(
       `${responsiveStorageNameSpace()}configure`
     )?.multiTagsCache
       ? storageLocal().getItem<StorageConfigs>(
@@ -26,10 +26,10 @@ export const useMultiTagsStore = defineStore({
         )
       : [
           ...routerArrays,
-          ...usePermissionStoreHook().flatteningRoutes.filter(
+          ...(usePermissionStoreHook().flatteningRoutes as any[]).filter(
             v => v?.meta?.fixedTag
           )
-        ],
+        ]) as any[],
     multiTagsCache: storageLocal().getItem<StorageConfigs>(
       `${responsiveStorageNameSpace()}configure`
     )?.multiTagsCache
@@ -51,7 +51,7 @@ export const useMultiTagsStore = defineStore({
         storageLocal().removeItem(`${responsiveStorageNameSpace()}tags`);
       }
     },
-    tagsCache(multiTags) {
+    tagsCache(multiTags: any) {
       this.getMultiTagsCache &&
         storageLocal().setItem(
           `${responsiveStorageNameSpace()}tags`,
@@ -62,10 +62,10 @@ export const useMultiTagsStore = defineStore({
       mode: string,
       value?: T | multiType,
       position?: positionType
-    ): T {
+    ): any {
       switch (mode) {
         case "equal":
-          this.multiTags = value;
+          this.multiTags = value as any;
           this.tagsCache(this.multiTags);
           break;
         case "push":
@@ -130,7 +130,7 @@ export const useMultiTagsStore = defineStore({
             if (index === -1) return;
             this.multiTags.splice(index, 1);
           } else {
-            this.multiTags.splice(position?.startIndex, position?.length);
+            this.multiTags.splice(position!.startIndex!, position!.length!);
           }
           this.tagsCache(this.multiTags);
           return this.multiTags;

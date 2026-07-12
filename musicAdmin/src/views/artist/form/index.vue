@@ -19,11 +19,11 @@ const props = withDefaults(defineProps<FormProps>(), {
 const genderOptions = [
   {
     value: 0,
-    label: "男歌手"
+    label: "Male"
   },
   {
     value: 1,
-    label: "女歌手"
+    label: "Female"
   },
   {
     value: 2,

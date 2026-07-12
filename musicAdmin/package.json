@@ -46,7 +46,6 @@
     "axios": "^1.7.9",
     "cropperjs": "^1.6.2",
     "dayjs": "^1.11.13",
-    "echarts": "^5.5.1",
     "element-plus": "^2.9.0",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",

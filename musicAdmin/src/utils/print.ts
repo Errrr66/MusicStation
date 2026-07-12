@@ -1,3 +1,4 @@
+// @ts-nocheck
 interface PrintFunction {
   extendOptions: Function;
   getStyle: Function;
@@ -5,7 +6,7 @@ interface PrintFunction {
   toPrint: Function;
 }
 
-const Print = function (dom, options?: object): PrintFunction {
+const Print = function (this: any, dom: any, options?: object): any {
   options = options || {};
   // @ts-expect-error
   if (!(this instanceof Print)) return new Print(dom, options);
@@ -20,7 +21,7 @@ const Print = function (dom, options?: object): PrintFunction {
   };
   for (const key in this.conf) {
     if (key && options.hasOwnProperty(key)) {
-      this.conf[key] = options[key];
+      this.conf[key] = (options as any)[key];
     }
   }
   if (typeof dom === "string") {
@@ -38,7 +39,7 @@ Print.prototype = {
   /**
    * init
    */
-  init: function (): void {
+  init: function (this: any): void {
     const content = this.getStyle() + this.getHtml();
     this.writeIframe(content);
   },
@@ -56,7 +57,7 @@ Print.prototype = {
   /**
     Copy all styles of the original page
   */
-  getStyle: function (): string {
+  getStyle: function (this: any): string {
     let str = "";
     const styles: NodeListOf<Element> = document.querySelectorAll("style,link");
     for (let i = 0; i < styles.length; i++) {
@@ -132,9 +133,9 @@ Print.prototype = {
       "position:absolute;width:0;height:0;top:-10px;left:-10px;"
     );
 
-    w = f.contentWindow || f.contentDocument;
+    w = (f.contentWindow || f.contentDocument) as any;
 
-    doc = f.contentDocument || f.contentWindow.document;
+    doc = (f.contentDocument || f.contentWindow!.document) as any;
     doc.open();
     doc.write(content);
     doc.close();
@@ -164,7 +165,7 @@ Print.prototype = {
   /**
     Print
   */
-  toPrint: function (frameWindow): void {
+  toPrint: function (this: any, frameWindow: any): void {
     try {
       setTimeout(function () {
         frameWindow.focus();
@@ -198,9 +199,9 @@ Print.prototype = {
    * Set the height of the specified dom element by getting the existing height of the dom element and setting
    * @param {Array} arr
    */
-  setDomHeight(arr) {
+  setDomHeight(this: any, arr: any) {
     if (arr && arr.length) {
-      arr.forEach(name => {
+      arr.forEach((name: any) => {
         const domArr = document.querySelectorAll(name);
         domArr.forEach(dom => {
           dom.style.height = dom.offsetHeight + "px";

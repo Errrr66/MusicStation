@@ -25,7 +25,7 @@ export function usePlaylist(tableRef: Ref) {
     style: null
   });
   const formRef = ref();
-  const dataList = ref([]);
+  const dataList = ref<any[]>([]);
   const loading = ref(true);
   // 上传歌单封面信息
   const coverInfo = ref();
@@ -109,11 +109,11 @@ export function usePlaylist(tableRef: Ref) {
     ];
   });
 
-  function handleUpdate(row) {
+  function handleUpdate(row: any) {
     openDialog("修改", row);
   }
 
-  function handleDelete(row) {
+  function handleDelete(row: any) {
     deletePlaylist(row.playlistId).then(res => {
       if (res.code === 0) {
         message(`您删除了歌单编号为 ${row.playlistId} 的这条数据`, {
@@ -141,7 +141,7 @@ export function usePlaylist(tableRef: Ref) {
   }
 
   /** 当CheckBox选择项发生变化时会触发该事件 */
-  function handleSelectionChange(val) {
+  function handleSelectionChange(val: any) {
     selectedNum.value = val.length;
     // 重置表格高度
     tableRef.value.setAdaptive();
@@ -184,8 +184,8 @@ export function usePlaylist(tableRef: Ref) {
 
       if (result.code === 0 && result.data && result.data.items) {
         // 如果返回状态码为 0（成功），且 data 和 items 存在
-        pagination.total = result.data.total; // 设置总条目数
-        dataList.value = result.data.items.map(item => ({
+        pagination.total = result.data.total as number; // 设置总条目数
+        dataList.value = result.data.items.map((item: any) => ({
           playlistId: item.playlistId,
           title: item.title,
           cover: item.coverUrl,
@@ -206,7 +206,7 @@ export function usePlaylist(tableRef: Ref) {
     }
   }
 
-  const resetForm = formEl => {
+  const resetForm = (formEl: any) => {
     if (!formEl) return;
     formEl.resetFields();
     onSearch();
@@ -240,7 +240,7 @@ export function usePlaylist(tableRef: Ref) {
           done(); // 关闭弹框
           onSearch(); // 刷新表格数据
         }
-        FormRef.validate(valid => {
+        FormRef.validate((valid: any) => {
           if (valid) {
             // 表单规则校验通过
             if (formTitle === "新增") {
@@ -268,7 +268,7 @@ export function usePlaylist(tableRef: Ref) {
 
   const cropRef = ref();
   /** 上传歌单封面 */
-  async function handleUpload(row) {
+  async function handleUpload(row: any) {
     addDialog({
       title: "裁剪、上传歌单封面",
       width: "40%",
@@ -278,7 +278,7 @@ export function usePlaylist(tableRef: Ref) {
         h(ReCropperPreview, {
           ref: cropRef,
           imgSrc: row.cover || playlistCover,
-          onCropper: info => (coverInfo.value = info)
+          onCropper: (info: any) => (coverInfo.value = info)
         }),
       beforeSure: async done => {
         if (!coverInfo.value?.blob) {

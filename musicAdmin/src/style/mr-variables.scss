@@ -1,0 +1,230 @@
+/* Matrix 风格等宽字体，确保点阵显示的可读性 */
+$font-family: 'SF Mono', 'SFMono-Regular', 'Consolas', 'Monaco', 'Menlo', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+$font-family-display: 'SF Mono', 'SFMono-Regular', 'Consolas', 'Monaco', 'Menlo', monospace;
+
+:root {
+  /* Matrix 设计系统 - 黑白灰点阵风格 */
+  --mr-accent: #e8e8e8;
+  --mr-accent-hover: #ffffff;
+  --mr-accent-active: #a3a3a3;
+  --mr-accent-glow: rgba(255, 255, 255, 0.15);
+  --mr-bg-base: #050505;
+  --mr-bg-highlight: #0a0a0a;
+  --mr-bg-surface: #0a0a0a;
+  --mr-bg-elevated: #141414;
+  --mr-bg-tinted: #0f0f0f;
+  --mr-text-base: #f2f2f2;
+  --mr-text-subdued: #8a8a8a;
+  --mr-text-bright: #ffffff;
+  --mr-essential-positive: #e8e8e8;
+  --mr-essential-negative: #050505;
+  --mr-essential-subdued: #737373;
+  --mr-border-subdued: rgba(255, 255, 255, 0.12);
+  --mr-border-bright: rgba(255, 255, 255, 0.25);
+
+  /* 全局字体 */
+  --mr-font-family: #{$font-family};
+
+  /* 语义化状态色 */
+  --mr-status-success: #6abe39;
+  --mr-status-success-bg: #172412;
+  --mr-status-success-border: #274a17;
+  --mr-status-success-dark: #008000;
+  --mr-status-danger: #e84749;
+  --mr-status-danger-bg: #2b1316;
+  --mr-status-danger-border: #58191c;
+  --mr-status-warning: #f5a623;
+  --mr-status-warning-light: #efbd47;
+}
+
+$desktop-breakpoint: 768px;
+$desktop-small-breakpoint: 900px;
+
+$background-base: #050505;
+$background-highlight: #0a0a0a;
+$background-surface: #0a0a0a;
+$background-elevated: #141414;
+$background-tinted: #0f0f0f;
+
+$container-border-radius: 4px;
+
+$text-base: #f2f2f2;
+$text-subdued: #8a8a8a;
+$text-bright-accent: #ffffff;
+
+$essential-negative: #050505;
+$essential-positive: #e8e8e8;
+$essential-subdued: #737373;
+
+$decorative-subdued: #1a1a1a;
+
+$mr-accent: #e8e8e8;
+$mr-accent-light: #ffffff;
+$mr-accent-dark: #a3a3a3;
+
+$primary-button-bg: #e8e8e8;
+$primary-button-text: #050505;
+
+$secondary-button-bg: transparent;
+$secondary-button-border: #525252;
+$secondary-button-text: #f2f2f2;
+
+$progress-bar-bg: #1a1a1a;
+$progress-bar-fill: #e8e8e8;
+$progress-bar-fill-hover: #ffffff;
+
+$card-bg: #0a0a0a;
+$card-hover: #141414;
+
+$navbar-bg: #080808;
+$playing-bar-bg: #0a0a0a;
+$sidebar-bg: #050505;
+
+$border-subdued: rgba(255, 255, 255, 0.12);
+$border-bright: rgba(255, 255, 255, 0.25);
+
+/* 语义化状态色 */
+$status-success: #6abe39;
+$status-success-bg: #172412;
+$status-success-border: #274a17;
+$status-success-dark: #008000;
+$status-danger: #e84749;
+$status-danger-bg: #2b1316;
+$status-danger-border: #58191c;
+$status-warning: #f5a623;
+$status-warning-light: #efbd47;
+
+$transition-fast: 33ms;
+$transition-normal: 200ms;
+$transition-slow: 300ms;
+
+$easing-ease-out: cubic-bezier(0.3, 0, 0.7, 1);
+$easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+$font-size-xs: 0.625rem;
+$font-size-sm: 0.75rem;
+$font-size-base: 0.875rem;
+$font-size-md: 1rem;
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.5rem;
+$font-size-2xl: 2rem;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 20px;
+$spacing-2xl: 24px;
+$spacing-3xl: 32px;
+
+@mixin hide-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+  &::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+@mixin matrix-glow($color: $mr-accent, $spread: 8px) {
+  box-shadow: 0 0 $spread rgba($color, 0.4), 0 0 $spread * 2 rgba($color, 0.15);
+}
+
+@mixin matrix-text-glow($color: $mr-accent) {
+  text-shadow: 0 0 6px rgba($color, 0.6), 0 0 12px rgba($color, 0.3);
+}
+
+@mixin mr-button-primary {
+  background-color: $mr-accent;
+  color: $primary-button-text;
+  border: 1px solid $mr-accent;
+  border-radius: 2px;
+  font-family: $font-family;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-sm;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: all $transition-normal $easing-ease-in-out;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background-color: $mr-accent-light;
+    border-color: $mr-accent-light;
+    @include matrix-glow($mr-accent-light, 10px);
+  }
+
+  &:active {
+    background-color: $mr-accent-dark;
+    border-color: $mr-accent-dark;
+    transform: scale(0.98);
+  }
+}
+
+@mixin mr-button-secondary {
+  background-color: transparent;
+  color: $secondary-button-text;
+  border: 1px solid $secondary-button-border;
+  border-radius: 2px;
+  font-family: $font-family;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-sm;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all $transition-normal $easing-ease-in-out;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    border-color: $mr-accent;
+    color: $mr-accent;
+    @include matrix-glow($mr-accent, 6px);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@mixin mr-card {
+  background-color: $card-bg;
+  border: 1px solid $border-subdued;
+  border-radius: $container-border-radius;
+  transition: all $transition-normal $easing-ease-in-out;
+
+  &:hover {
+    background-color: $card-hover;
+    border-color: $border-bright;
+  }
+}
+
+@mixin mr-input {
+  background-color: $background-elevated;
+  border: 1px solid $border-subdued;
+  border-radius: 2px;
+  color: $text-base;
+  padding: 10px 14px;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  line-height: 1.4;
+  transition: all $transition-normal $easing-ease-in-out;
+
+  &::placeholder {
+    color: $text-subdued;
+  }
+
+  &:hover {
+    border-color: $border-bright;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $mr-accent;
+    @include matrix-glow($mr-accent, 6px);
+    color: $text-base;
+  }
+}

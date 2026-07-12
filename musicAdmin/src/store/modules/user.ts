@@ -61,23 +61,19 @@ export const useUserStore = defineStore({
       this.loginDay = Number(value);
     },
     /** 登入 */
-    async loginByUsername(data) {
-      return new Promise<LoginResult>((resolve, reject) => {
-        getLogin(data)
-          .then(data => {
-            resolve(data);
-          })
-          .catch(error => {
-            reject(error);
-          });
-      });
+    async loginByUsername(data: object) {
+      return getLogin(data);
     },
     /** 前端登出（调用接口） */
-    logOut() {
+    async logOut() {
       this.username = "";
       this.roles = [];
       this.permissions = [];
-      getLogout(); // 调用接口（后端登出）
+      try {
+        await getLogout(); // 调用接口（后端登出）
+      } catch (error) {
+        console.error("后端登出请求失败：", error);
+      }
       removeToken();
       useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
       resetRouter();

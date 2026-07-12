@@ -10,7 +10,7 @@ import { defineComponent, onMounted } from "vue";
 import { ElConfigProvider } from "element-plus";
 import { ReDialog } from "@/components/ReDialog";
 import zhCn from "element-plus/es/locale/lang/zh-cn";
-import { useMatrixTheme } from "@/layout/hooks/useMatrixTheme";
+import { useAdminTheme } from "@/layout/hooks/useAdminTheme";
 
 export default defineComponent({
   name: "app",
@@ -24,10 +24,10 @@ export default defineComponent({
     }
   },
   setup() {
-    const { initMatrixTheme } = useMatrixTheme();
+    const { syncTheme } = useAdminTheme();
 
     onMounted(() => {
-      initMatrixTheme();
+      syncTheme();
     });
 
     return {};

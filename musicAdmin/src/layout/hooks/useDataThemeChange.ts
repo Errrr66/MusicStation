@@ -32,8 +32,8 @@ export function useDataThemeChange() {
   ]);
 
   const { $storage } = useGlobal<GlobalPropertiesApi>();
-  const dataTheme = ref<boolean>($storage?.layout?.darkMode);
-  const overallStyle = ref<string>($storage?.layout?.overallStyle);
+  const dataTheme = ref<boolean>($storage?.layout?.darkMode as boolean);
+  const overallStyle = ref<string>($storage?.layout?.overallStyle as string);
   const body = document.documentElement as HTMLElement;
 
   function toggleClass(flag: boolean, clsName: string, target?: HTMLElement) {
@@ -51,7 +51,7 @@ export function useDataThemeChange() {
     layoutTheme.value.theme = theme;
     document.documentElement.setAttribute("data-theme", theme);
     // 如果非isClick，保留之前的themeColor
-    const storageThemeColor = $storage.layout.themeColor;
+    const storageThemeColor = $storage.layout.themeColor as string;
     $storage.layout = {
       layout: layout.value,
       theme,
@@ -66,7 +66,7 @@ export function useDataThemeChange() {
       setEpThemeColor(getConfig().EpThemeColor);
     } else {
       const colors = themeColors.value.find(v => v.themeColor === theme);
-      setEpThemeColor(colors.color);
+      setEpThemeColor(colors!.color);
     }
   }
 
@@ -91,7 +91,7 @@ export function useDataThemeChange() {
 
   /** 浅色、深色整体风格切换 */
   function dataThemeChange(overall?: string) {
-    overallStyle.value = overall;
+    overallStyle.value = overall as string;
     if (useEpThemeStoreHook().epTheme === "light" && dataTheme.value) {
       setLayoutThemeColor("default", false);
     } else {
@@ -116,8 +116,8 @@ export function useDataThemeChange() {
     useAppStoreHook().setLayout(Layout);
     setEpThemeColor(EpThemeColor);
     useMultiTagsStoreHook().multiTagsCacheChange(MultiTagsCache);
-    toggleClass(Grey, "html-grey", document.querySelector("html"));
-    toggleClass(Weak, "html-weakness", document.querySelector("html"));
+    toggleClass(Grey, "html-grey", document.querySelector("html") as HTMLElement | undefined);
+    toggleClass(Weak, "html-weakness", document.querySelector("html") as HTMLElement | undefined);
     router.push("/login");
     useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
     resetRouter();

@@ -38,11 +38,11 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
     album: null
   });
   const formRef = ref();
-  const dataList = ref([]);
+  const dataList = ref<any[]>([]);
   const loading = ref(true);
   // 上传封面信息
   const coverInfo = ref();
-  const treeData = ref([]);
+  const treeData = ref<any[]>([]);
   const treeLoading = ref(true);
   const selectedNum = ref(0);
   const pagination = reactive<PaginationProps>({
@@ -99,7 +99,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
       minWidth: 130,
       cellRenderer: ({ row }) =>
         row.style && Array.isArray(row.style)
-          ? row.style.map((tag, index) => (
+          ? row.style.map((tag: any, index: any) => (
               <el-tag key={index} class="mr-1">
                 {tag}
               </el-tag>
@@ -130,11 +130,11 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
     ];
   });
 
-  function handleUpdate(row) {
+  function handleUpdate(row: any) {
     openDialog("修改", row);
   }
 
-  function handleDelete(row) {
+  function handleDelete(row: any) {
     deleteSong(row.songId).then(res => {
       if (res.code === 0) {
         message(`您删除了歌曲编号为 ${row.songId} 的这条数据`, {
@@ -162,7 +162,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
   }
 
   /** 当CheckBox选择项发生变化时会触发该事件 */
-  function handleSelectionChange(val) {
+  function handleSelectionChange(val: any) {
     selectedNum.value = val.length;
     // 重置表格高度
     tableRef.value.setAdaptive();
@@ -206,7 +206,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
 
       if (result.code === 0 && Array.isArray(result.data)) {
         // 转换成树形结构
-        treeData.value = result.data.map(item => ({
+        treeData.value = result.data.map((item: any) => ({
           label: item.artistName, // 歌手名称
           value: item.artistId, // 唯一标识符
           children: [] // 默认没有子节点，后续可以根据需要添加
@@ -235,8 +235,8 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
 
       if (result.code === 0 && result.data && result.data.items) {
         // 如果返回状态码为 0（成功），且 data 和 items 存在
-        pagination.total = result.data.total; // 设置总条目数
-        dataList.value = result.data.items.map(item => ({
+        pagination.total = result.data.total as number; // 设置总条目数
+        dataList.value = result.data.items.map((item: any) => ({
           songId: item.songId,
           songName: item.songName,
           artistName: item.artistName,
@@ -270,16 +270,16 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
     }
   );
 
-  const resetForm = formEl => {
+  const resetForm = (formEl: any) => {
     if (!formEl) return;
     formEl.resetFields();
-    form.artistId = "";
+    form.artistId = null;
     treeRef.value.onTreeReset();
     onSearch();
   };
 
-  function onTreeSelect({ artistId, selected }) {
-    form.artistId = selected ? artistId : "";
+  function onTreeSelect({ artistId, selected }: any) {
+    form.artistId = selected ? artistId : null;
     pagination.currentPage = 1; // 重置页码
     form.pageNum = 1; // 重置页码参数
     onSearch();
@@ -316,7 +316,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
           done(); // 关闭弹框
           onSearch(); // 刷新表格数据
         }
-        FormRef.validate(valid => {
+        FormRef.validate((valid: any) => {
           if (valid) {
             // 表单规则校验通过
             if (title === "新增") {
@@ -356,7 +356,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
 
   const cropRef = ref();
   /** 上传封面 */
-  async function handleUpload(row) {
+  async function handleUpload(row: any) {
     addDialog({
       title: "裁剪、上传封面",
       width: "40%",
@@ -366,7 +366,7 @@ export function useSong(tableRef: Ref, treeRef: Ref) {
         h(ReCropperPreview, {
           ref: cropRef,
           imgSrc: row.cover || songCover,
-          onCropper: info => (coverInfo.value = info)
+          onCropper: (info: any) => (coverInfo.value = info)
         }),
       beforeSure: async done => {
         if (!coverInfo.value?.blob) {

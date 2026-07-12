@@ -18,11 +18,11 @@ export const usePermissionStore = defineStore({
     // 静态路由生成的菜单
     constantMenus,
     // 整体路由生成的菜单（静态、动态）
-    wholeMenus: [],
+    wholeMenus: [] as any[],
     // 整体路由（一维数组格式）
-    flatteningRoutes: [],
+    flatteningRoutes: [] as any[],
     // 缓存页面keepAlive
-    cachePageList: []
+    cachePageList: [] as any[]
   }),
   actions: {
     /** 组装整体路由生成的菜单 */
@@ -31,7 +31,7 @@ export const usePermissionStore = defineStore({
         filterTree(ascending(this.constantMenus.concat(routes)))
       );
       this.flatteningRoutes = formatFlatteningRoutes(
-        this.constantMenus.concat(routes)
+        this.constantMenus.concat(routes) as any
       );
     },
     cacheOperate({ mode, name }: cacheType) {

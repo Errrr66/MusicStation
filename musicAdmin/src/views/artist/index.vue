@@ -75,8 +75,8 @@ const {
             clearable
             class="!w-[180px]"
           >
-            <el-option label="男歌手" value="0" />
-            <el-option label="女歌手" value="1" />
+            <el-option label="Male" value="0" />
+            <el-option label="Female" value="1" />
             <el-option label="组合/乐队" value="2" />
           </el-select>
         </el-form-item>

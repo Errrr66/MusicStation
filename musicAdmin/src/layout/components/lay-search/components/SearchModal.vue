@@ -374,7 +374,7 @@ onKeyStroke("ArrowDown", handleDown, { target: inputRef });
     .input-indicator {
       .indicator-bracket {
         color: var(--matrix-color);
-        font-family: 'SF Mono', 'Consolas', monospace;
+        font-family: var(--mr-font-family);
         font-size: 18px;
         font-weight: 600;
         animation: blink 1s infinite;
@@ -399,7 +399,7 @@ onKeyStroke("ArrowDown", handleDown, { target: inputRef });
 
       .el-input__inner {
         color: var(--matrix-text);
-        font-family: 'SF Mono', 'Consolas', monospace;
+        font-family: var(--mr-font-family);
         font-size: 14px;
         letter-spacing: 0.5px;
 
@@ -433,14 +433,14 @@ onKeyStroke("ArrowDown", handleDown, { target: inputRef });
     color: var(--matrix-color-dim);
 
     .empty-icon {
-      font-family: 'SF Mono', 'Consolas', monospace;
+      font-family: var(--mr-font-family);
       font-size: 32px;
       margin-bottom: 12px;
       animation: blink 1.5s infinite;
     }
 
     .empty-text {
-      font-family: 'SF Mono', 'Consolas', monospace;
+      font-family: var(--mr-font-family);
       font-size: 13px;
       letter-spacing: 1px;
     }

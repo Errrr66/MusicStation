@@ -76,7 +76,7 @@ export function useNav() {
   function changeTitle(meta: routeMetaType) {
     const Title = getConfig().Title;
     if (Title) document.title = `${meta.title} | ${Title}`;
-    else document.title = meta.title;
+    else document.title = meta.title as string;
   }
 
   /** 退出登录 */
@@ -85,22 +85,21 @@ export function useNav() {
   }
 
   function backTopMenu() {
-    router.push(getTopMenu()?.path);
-  }
-
-  function onPanel() {
-    emitter.emit("openPanel");
+    const topMenu = getTopMenu();
+    if (topMenu?.path) {
+      router.push(topMenu.path);
+    }
   }
 
   function toggleSideBar() {
     pureApp.toggleSideBar();
   }
 
-  function handleResize(menuRef) {
+  function handleResize(menuRef: any) {
     menuRef?.handleResize();
   }
 
-  function resolvePath(route) {
+  function resolvePath(route: any) {
     if (!route.children) return console.error(errorInfo);
     const httpReg = /^http(s?):\/\//;
     const routeChildPath = route.children[0]?.path;
@@ -139,7 +138,6 @@ export function useNav() {
     ExitFullscreen,
     toggle,
     backTopMenu,
-    onPanel,
     getDivStyle,
     changeTitle,
     toggleSideBar,

@@ -1,3 +1,4 @@
+@use "mr-variables" as *;
 @use "theme";
 @use "transition";
 @use "element-plus";
@@ -11,26 +12,64 @@
   --pure-transition-duration: 0.3s;
 
   /* 常用border-color 需要时可取用 */
-  --pure-border-color: rgb(5 5 5 / 6%);
+  --pure-border-color: var(--mr-border-subdued);
 
   /* switch关闭状态下的color 需要时可取用 */
-  --pure-switch-off-color: #a6a6a6;
+  --pure-switch-off-color: #727272;
 
   /** 主题色 */
-  --pure-theme-sub-menu-active-text: initial;
+  --pure-theme-sub-menu-active-text: var(--mr-text-base);
   --pure-theme-menu-bg: none;
   --pure-theme-menu-hover: none;
   --pure-theme-sub-menu-bg: transparent;
-  --pure-theme-menu-text: initial;
+  --pure-theme-menu-text: var(--mr-text-subdued);
   --pure-theme-sidebar-logo: none;
-  --pure-theme-menu-title-hover: initial;
+  --pure-theme-menu-title-hover: var(--mr-text-base);
   --pure-theme-menu-active-before: transparent;
 
   /* 使得admin端内部边框全部倒角 */
-  --el-border-radius-base: 10px;
+  --el-border-radius-base: 8px;
   --el-border-radius-small: 4px;
   --el-border-radius-round: 20px;
   --el-border-radius-circle: 100%;
+
+  /* Matrix 设计系统变量 - 默认深色矩阵（黑白灰） */
+  --mr-accent: #e8e8e8;
+  --mr-accent-hover: #ffffff;
+  --mr-accent-active: #a3a3a3;
+  --mr-accent-glow: rgba(255, 255, 255, 0.15);
+  --mr-bg-base: #050505;
+  --mr-bg-highlight: #0a0a0a;
+  --mr-bg-surface: #0a0a0a;
+  --mr-bg-elevated: #141414;
+  --mr-bg-tinted: #0f0f0f;
+  --mr-text-base: #f2f2f2;
+  --mr-text-subdued: #8a8a8a;
+  --mr-text-bright: #ffffff;
+  --mr-essential-positive: #e8e8e8;
+  --mr-essential-negative: #050505;
+  --mr-essential-subdued: #737373;
+  --mr-border-subdued: rgba(255, 255, 255, 0.12);
+  --mr-border-bright: rgba(255, 255, 255, 0.25);
+
+  /* 全局字体 */
+  --mr-font-family: 'SF Mono', 'SFMono-Regular', 'Consolas', 'Monaco', 'Menlo',
+    'DejaVu Sans Mono', 'Liberation Mono', monospace;
+
+  /* Matrix 点阵显示变量 */
+  --matrix-color: #e8e8e8;
+  --matrix-color-light: #ffffff;
+  --matrix-color-dark: #a3a3a3;
+  --matrix-bg: #050505;
+  --matrix-border: rgba(255, 255, 255, 0.12);
+  --matrix-text: #f2f2f2;
+  --matrix-text-dim: #8a8a8a;
+  --matrix-color-dim: #8a8a8a;
+  --matrix-bg-light: #0a0a0a;
+  --matrix-bg-hover: #141414;
+  --matrix-shadow: rgba(255, 255, 255, 0.15);
+  --matrix-input-bg: #141414;
+  --matrix-card-bg: #0a0a0a;
 }
 
 /* 灰色模式 */

@@ -20,12 +20,12 @@ export const useSettingStore = defineStore({
     }
   },
   actions: {
-    CHANGE_SETTING({ key, value }) {
+    CHANGE_SETTING({ key, value }: any) {
       if (Reflect.has(this, key)) {
-        this[key] = value;
+        (this as any)[key] = value;
       }
     },
-    changeSetting(data) {
+    changeSetting(data: any) {
       this.CHANGE_SETTING(data);
     }
   }

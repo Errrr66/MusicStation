@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useNav } from "@/layout/hooks/useNav";
+import { useAdminTheme } from "@/layout/hooks/useAdminTheme";
 import LaySearch from "../lay-search/index.vue";
 import { ref, nextTick, computed } from "vue";
 import { isAllEmpty } from "@pureadmin/utils";
@@ -8,18 +9,20 @@ import LaySidebarItem from "../lay-sidebar/components/SidebarItem.vue";
 import LaySidebarFullScreen from "../lay-sidebar/components/SidebarFullScreen.vue";
 
 import LogoutCircleRLine from "@iconify-icons/ri/logout-circle-r-line";
-import Setting from "@iconify-icons/ri/settings-3-line";
+import SunLine from "@iconify-icons/ri/sun-line";
+import MoonLine from "@iconify-icons/ri/moon-line";
 
 const menuRef = ref();
 
 const {
   route,
   logout,
-  onPanel,
   username,
   userAvatar,
   avatarsStyle
 } = useNav();
+
+const { isDark, toggleTheme } = useAdminTheme();
 
 const defaultActive = computed(() =>
   !isAllEmpty(route.meta?.activePath) ? route.meta.activePath : route.path
@@ -52,6 +55,13 @@ nextTick(() => {
     <div class="horizontal-header-right">
       <LaySearch id="header-search" />
       <LaySidebarFullScreen id="full-screen" />
+      <span
+        class="set-icon navbar-bg-hover theme-toggle"
+        :title="isDark ? '切换浅色主题' : '切换深色主题'"
+        @click="toggleTheme"
+      >
+        <IconifyIconOffline :icon="isDark ? SunLine : MoonLine" />
+      </span>
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover">
           <img :src="userAvatar" :style="avatarsStyle" />
@@ -69,13 +79,6 @@ nextTick(() => {
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <span
-        class="set-icon navbar-bg-hover"
-        title="打开系统配置"
-        @click="onPanel"
-      >
-        <IconifyIconOffline :icon="Setting" />
-      </span>
     </div>
   </div>
 </template>

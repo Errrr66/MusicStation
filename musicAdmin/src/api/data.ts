@@ -8,7 +8,7 @@ export const getAllUsersCount = () => {
   return http.request<Result>("get", "/admin/getAllUsersCount", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     }
   });
 };
@@ -19,7 +19,7 @@ export const getAllArtistsCount = (gender?: number, area?: string) => {
   return http.request<Result>("get", "/admin/getAllArtistsCount", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     params: { gender, area }
   });
@@ -31,7 +31,7 @@ export const getAllSongsCount = (style?: string) => {
   return http.request<Result>("get", "/admin/getAllSongsCount", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     params: { style }
   });
@@ -43,7 +43,7 @@ export const getAllPlaylistsCount = (style?: string) => {
   return http.request<Result>("get", "/admin/getAllPlaylistsCount", {
     headers: {
       "Content-Type": "application/json",
-      Authorization: userData.accessToken
+      Authorization: userData!.accessToken
     },
     params: { style }
   });

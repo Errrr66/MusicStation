@@ -40,7 +40,7 @@ defineProps<{
 .matrix-footer {
   display: flex;
   align-items: center;
-  font-family: 'SF Mono', 'Consolas', monospace;
+  font-family: var(--mr-font-family);
   font-size: 12px;
   color: var(--matrix-color-dim);
 

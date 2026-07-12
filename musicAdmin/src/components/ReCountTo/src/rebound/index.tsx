@@ -13,11 +13,11 @@ export default defineComponent({
   props: reboundProps,
   setup(props) {
     const ulRef = ref();
-    const timer = ref(null);
+    const timer = ref<any>(null);
 
     onBeforeMount(() => {
       const ua = navigator.userAgent.toLowerCase();
-      const testUA = regexp => regexp.test(ua);
+      const testUA = (regexp: RegExp) => regexp.test(ua);
       const isSafari = testUA(/safari/g) && !testUA(/chrome/g);
 
       // Safari浏览器的兼容代码

@@ -32,11 +32,17 @@ export const TokenKey = "authorized-token";
 export const multipleTabsKey = "multiple-tabs";
 
 /** 获取`token` */
-export function getToken(): DataInfo<number> {
-  // 此处与`TokenKey`相同，此写法解决初始化时`Cookies`中不存在`TokenKey`报错
-  return Cookies.get(TokenKey)
-    ? JSON.parse(Cookies.get(TokenKey))
-    : storageLocal().getItem(userKey);
+export function getToken(): DataInfo<number> | null {
+  const cookieValue = Cookies.get(TokenKey);
+  if (cookieValue && typeof cookieValue === "string") {
+    try {
+      return JSON.parse(cookieValue);
+    } catch {
+      Cookies.remove(TokenKey);
+      return null;
+    }
+  }
+  return storageLocal().getItem(userKey);
 }
 
 /**
@@ -153,7 +159,19 @@ export function setToken(data: DataInfo<Date>) {
   const nickname = data.nickname ?? "";
   const permissions = data.permissions ?? [];
 
-  function setUserKey({ username, roles, avatar, nickname, permissions }) {
+  function setUserKey({
+    username,
+    roles,
+    avatar,
+    nickname,
+    permissions
+  }: {
+    username: string;
+    roles: Array<string>;
+    avatar: string;
+    nickname: string;
+    permissions: Array<string>;
+  }) {
     useUserStoreHook().SET_AVATAR(avatar);
     useUserStoreHook().SET_USERNAME(username);
     useUserStoreHook().SET_NICKNAME(nickname);
@@ -170,7 +188,7 @@ export function setToken(data: DataInfo<Date>) {
     });
   }
 
-  if (username && roles) {
+  if (username && Array.isArray(roles)) {
     setUserKey({
       username,
       roles,
@@ -204,6 +222,13 @@ export function removeToken() {
   Cookies.remove(TokenKey);
   Cookies.remove(multipleTabsKey);
   storageLocal().removeItem(userKey);
+  // 同步清除 Pinia 中的用户状态，避免 token 过期后页面仍显示旧用户信息
+  const store = useUserStoreHook();
+  store.SET_USERNAME("");
+  store.SET_ROLES([]);
+  store.SET_PERMS([]);
+  store.SET_AVATAR("");
+  store.SET_NICKNAME("");
 }
 
 /** 格式化token（jwt格式） */

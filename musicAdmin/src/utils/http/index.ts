@@ -18,7 +18,8 @@ import { message } from "@/utils/message";
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
 const runtimeBaseUrl =
-  (import.meta.env.VITE_API_URL as string) || "http://127.0.0.1:8080";
+  (import.meta.env.VITE_API_URL as string) ||
+  (import.meta.env.DEV ? "/api" : "http://127.0.0.1:8080");
 
 const defaultConfig: AxiosRequestConfig = {
   baseURL: runtimeBaseUrl,
@@ -42,7 +43,7 @@ class PureHttp {
   }
 
   /** `token`过期后，暂存待执行的请求 */
-  private static requests = [];
+  private static requests: Array<(token: string) => void> = [];
 
   /** 防止重复刷新`token` */
   private static isRefreshing = false;
@@ -57,7 +58,7 @@ class PureHttp {
   private static retryOriginalRequest(config: PureHttpRequestConfig) {
     return new Promise(resolve => {
       PureHttp.requests.push((token: string) => {
-        config.headers["Authorization"] = formatToken(token);
+        config.headers!["Authorization"] = formatToken(token);
         resolve(config);
       });
     });
@@ -79,8 +80,8 @@ class PureHttp {
           return config;
         }
         /** 请求白名单，放置一些不需要`token`的接口（通过设置请求白名单，防止`token`过期后再请求造成的死循环问题） */
-        const whiteList = ["/refresh-token", "/login"];
-        if (whiteList.some(url => config.url.endsWith(url))) {
+        const whiteList = ["/refresh-token", "/login", "/admin/login"];
+        if (config.url && whiteList.some(url => config.url!.endsWith(url))) {
           return config;
         }
         const data = getToken();
@@ -95,7 +96,7 @@ class PureHttp {
             }
             return Promise.reject(new Error("token expired, please login again"));
           }
-          config.headers["Authorization"] = formatToken(data.accessToken);
+          config.headers!["Authorization"] = formatToken(data.accessToken);
         }
         return config;
       },
@@ -166,7 +167,7 @@ class PureHttp {
     return new Promise((resolve, reject) => {
       PureHttp.axiosInstance
         .request(config)
-        .then((response: undefined) => {
+        .then((response: any) => {
           resolve(response);
         })
         .catch(error => {
